@@ -62,6 +62,20 @@ Un changement d'état déplace le poids, la taille ou l'épaisseur du filet — 
 - Un seul pas d'espacement, plus d'air au-dessus d'un titre qu'en dessous.
 - Une seule action primaire par écran.
 
+## La surface d'un jeu
+
+Vingt jeux, vingt surfaces. Aucun n'hérite de la composition d'un autre : une frise de six étapes, un répartiteur d'attention sur quatre pistes et une boutique suivie de vagues ne se rangent pas pareil. Chacun a sa fiche sous [.impeccable/surfaces/](.impeccable/surfaces/), et chacun se dessine à son tour.
+
+Ce qui ne se redécide pas, en revanche, et qui vaut pour les vingt :
+
+- **Le coût d'un geste est annoncé, sa conséquence ne l'est jamais.** Un joueur qui connaît le prix de son erreur avant de la commettre joue les règles, pas la situation, et le jeu ne mesure plus rien.
+- **La partie vit dans le composant du jeu ; ce qui est soumis est la trace du déroulé.** Le contrat de plugin n'expose qu'une soumission par jeu — un jeu à état garde donc son avancée chez lui, et rend l'historique de ses gestes comme réponse.
+- **Un état est une quantité** : le remplissage, la taille, l'épaisseur du filet. Jamais une couleur seule, jamais une opacité réduite. La règle générale du produit s'applique ici sans exception, y compris sur un compteur qui passe en négatif.
+- **Un relevé qui s'allonge ne pousse jamais la décision courante hors de l'écran.** Un journal, une pile de tours, une liste de choix passés se plafonne et se replie. Sans ça, le dernier tour d'une partie longue oblige à faire défiler pour agir.
+- **L'avancée est un changement discret.** Ce monde avance par crans, il ne fond pas : aucune animation d'étape, aucun compteur qui s'anime, aucun retour de satisfaction. Une entrée qui apparaît en bas d'une liste est la seule exception tolérée.
+
+Un jeu ne dit jamais ce qu'il note. Le contrat annonce le cadre, jamais les critères.
+
 ## Adresse
 
 Vouvoiement. Phrases courtes. Aucun point d'exclamation. L'outil pose un diagnostic, il n'encourage pas.

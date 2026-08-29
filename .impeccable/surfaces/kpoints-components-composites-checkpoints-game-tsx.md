@@ -11,15 +11,9 @@ Premier jeu à état du parcours.
 
 **Chaque jeu a sa propre surface, et cette fiche ne vaut que pour celle-ci.** `three-tracks` répartit une attention sur quatre pistes, `task-board` est un tableau à trois modes de délégation, `scope-break` un regroupement par glisser-déposer, `repo-kit` une boutique suivie de vagues. Aucun ne se compose comme une frise de six étapes, et chacun demandera sa propre passe.
 
-Ce qui se transmet d'un jeu à l'autre, et qui est décidé ici pour la première fois :
+Les cinq règles communes à tous les jeux — coût annoncé et conséquence tue, partie dans le composant et trace comme réponse, état porté par une quantité, relevé qui ne chasse pas la décision, avancée discrète — sont remontées dans [DESIGN.md](../../DESIGN.md), section « La surface d'un jeu ». Elles ne se rediscutent pas ici.
 
-- La partie vit dans le hook du jeu ; la réponse soumise est la trace du déroulé.
-- Le coût d'un geste est annoncé, sa conséquence ne l'est jamais.
-- Un état est une quantité — remplissage, taille, filet — jamais une couleur seule, jamais une opacité.
-- Un relevé qui s'allonge derrière la décision courante ne doit jamais pousser cette décision hors de l'écran.
-- L'avancée est un changement discret. Aucune animation, aucun retour de satisfaction.
-
-Ce qui ne se transmet pas : la composition, les régions, les plages, et tout ce qui suit.
+Cette fiche ne porte que ce qui est propre à cet écran : sa composition, ses régions, ses plages et son mouvement.
 
 ## Périmètre et mode
 
