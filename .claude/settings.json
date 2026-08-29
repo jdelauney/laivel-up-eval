@@ -13,6 +13,7 @@
     "aidd-dev@laivel-plugins": true,
     "aidd-vcs@laivel-plugins": true,
     "aidd-pm@laivel-plugins": true,
-    "aidd-orchestrator@laivel-plugins": true
+    "aidd-orchestrator@laivel-plugins": true,
+    "aidd-ui@laivel-plugins": true
   }
 }
