@@ -4,6 +4,12 @@ status: pending
 
 # Instruction: Les règles de lecture et le catalogue JSON
 
+## Appuis du socle
+
+- Le registre de règles se calque sur `src/core/registry/game-registry.ts` : une `Map`, un `resolve` qui lève en se nommant avec la liste des types connus, et un `register-rules.ts` sur le modèle de `src/games/register-games.ts`.
+- Le suffixe `*.rule.ts` n'existe pas encore dans la table de nommage de `TECHNICAL.md` §4 ni dans `coding-assertions.md`. L'ajouter dans le même geste, sinon la convention se contredit dès le premier fichier de cette phase.
+- `config/` porte déjà `grid.json`, `course.json` et `signature.json` : les axes que les signaux visent sont lisibles à l'écriture du catalogue, ils ne s'inventent pas.
+
 ## Architecture projection
 
 > Tree of the final files. ✅ create · ✏️ modify · ❌ delete
@@ -115,9 +121,10 @@ journey
 
 > Ajouter une lecture ne modifie aucun fichier existant hors le câblage.
 
-1. Créer `rule-registry.ts` et `register-rules.ts`, sur le modèle du registre de jeux.
+1. Créer `rule-registry.ts` et `register-rules.ts`, sur le modèle du registre de jeux : un type absent lève en se nommant et en listant les connus, comme `UnknownGameTypeError`.
 2. Créer `signal-reader.ts` : pour chaque signal du catalogue, résoudre sa règle, l'appliquer au faisceau, rendre le cran avec sa valeur observée et sa source.
 3. Un signal sans observation ne rend pas un cran zéro : il ne rend rien.
+4. Inscrire le suffixe `*.rule.ts` dans la table de nommage de `TECHNICAL.md` §4 et dans `aidd_docs/memory/coding-assertions.md`.
 
 ### `7)` Écrire le catalogue
 
@@ -141,4 +148,5 @@ journey
 | 5 | Un document de brainstorm sur la relance automatique n'ouvre pas le cran `boucles` |
 | 6 | Ajouter un type de règle ne modifie que `register-rules.ts` |
 | 6 | Un signal sans observation laisse l'axe sans valeur |
+| 6 | Un type de règle inconnu lève en nommant le type et les types enregistrés |
 | 7 | Déplacer un seuil dans `config/signals.json` change le cran rendu, sans qu'une ligne de code bouge |

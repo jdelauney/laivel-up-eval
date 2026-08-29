@@ -1,0 +1,148 @@
+{
+  "version": "aidd-2026-08-19",
+  "title": "Référentiel AIDD — sept niveaux d'adoption",
+  "dimensions": [
+    {
+      "id": "taille",
+      "label": "Taille de la plus grosse feature livrée avec l'IA",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "aucune feature livrée avec l'IA" },
+        { "from": 0.25, "label": "S — peu de complexité" },
+        { "from": 0.5, "label": "M — complexité moyenne" },
+        { "from": 0.75, "label": "L — multi-étapes" },
+        { "from": 1, "label": "XL — multi-modules" }
+      ]
+    },
+    {
+      "id": "harness",
+      "label": "Harness monté autour du modèle",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "rien" },
+        { "from": 0.25, "label": "prompts" },
+        { "from": 0.5, "label": "context engineering" },
+        { "from": 0.75, "label": "context engineering, behavior" },
+        { "from": 1, "label": "context engineering, behavior, boucles" }
+      ]
+    },
+    {
+      "id": "intervention",
+      "label": "Reprise humaine du travail de l'IA",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "aucun travail de l'IA à reprendre" },
+        { "from": 0.25, "label": "après coup, sur la majorité" },
+        { "from": 0.5, "label": "après coup, sur une partie" },
+        { "from": 0.75, "label": "aux étapes clés" },
+        { "from": 1, "label": "jamais" }
+      ]
+    },
+    {
+      "id": "parallele",
+      "label": "Chantiers menés en parallèle",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "aucun" },
+        { "from": 0.33, "label": "1 chantier" },
+        { "from": 0.66, "label": "2 chantiers" },
+        { "from": 1, "label": "3 chantiers et plus" }
+      ]
+    },
+    {
+      "id": "initiative",
+      "label": "Initiative des agents",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "chaque tâche est lancée par un humain" },
+        { "from": 0.5, "label": "les agents mènent jusqu'au bout une tâche qu'on leur confie" },
+        { "from": 1, "label": "les agents prennent les tâches et enchaînent les PR" }
+      ]
+    }
+  ],
+  "levels": [
+    {
+      "id": "white",
+      "label": "❖ White",
+      "order": 1,
+      "conditions": [
+        { "dimension": "taille", "max": 0 },
+        { "dimension": "harness", "max": 0 }
+      ],
+      "nextLevelHint": "Confier une première feature de taille S à l'IA et la mener jusqu'au bout : c'est là que Red commence."
+    },
+    {
+      "id": "red",
+      "label": "🔺 Red",
+      "order": 2,
+      "conditions": [
+        { "dimension": "taille", "min": 0.25 },
+        { "dimension": "harness", "min": 0.25 },
+        { "dimension": "intervention", "min": 0.25 },
+        { "dimension": "parallele", "min": 0.33 }
+      ],
+      "nextLevelHint": "Poser la mémoire du projet — architecture, conventions, contexte — et la maintenir : ce context engineering ouvre Blue, sur des features de taille M."
+    },
+    {
+      "id": "blue",
+      "label": "🔹 Blue",
+      "order": 3,
+      "conditions": [
+        { "dimension": "taille", "min": 0.5 },
+        { "dimension": "harness", "min": 0.5 },
+        { "dimension": "intervention", "min": 0.5 },
+        { "dimension": "parallele", "min": 0.33 }
+      ],
+      "nextLevelHint": "Versionner règles et agents dans le dépôt pour cadrer le comportement de l'IA, et viser des PR de taille L presque sans commit correctif."
+    },
+    {
+      "id": "green",
+      "label": "🟢 Green",
+      "order": 4,
+      "conditions": [
+        { "dimension": "taille", "min": 0.75 },
+        { "dimension": "harness", "min": 0.75 },
+        { "dimension": "intervention", "min": 0.75 },
+        { "dimension": "parallele", "min": 0.33 }
+      ],
+      "nextLevelHint": "Mener trois chantiers de front le même jour, chacun jusqu'au bout : c'est le passage à Copper."
+    },
+    {
+      "id": "copper",
+      "label": "🥉 Copper",
+      "order": 5,
+      "conditions": [
+        { "dimension": "taille", "min": 0.75 },
+        { "dimension": "harness", "min": 0.75 },
+        { "dimension": "intervention", "min": 0.75 },
+        { "dimension": "parallele", "min": 1 }
+      ],
+      "nextLevelHint": "Automatiser la relance : un script rejoue l'IA tant qu'une commande du projet échoue, jusqu'à ne plus reprendre une seule ligne à la main."
+    },
+    {
+      "id": "silver",
+      "label": "🥈 Silver",
+      "order": 6,
+      "conditions": [
+        { "dimension": "taille", "min": 0.75 },
+        { "dimension": "harness", "min": 1 },
+        { "dimension": "intervention", "min": 1 },
+        { "dimension": "parallele", "min": 1 }
+      ],
+      "nextLevelHint": "Laisser les agents prendre les tâches eux-mêmes et enchaîner plusieurs PR par jour, sans qu'un humain les lance."
+    },
+    {
+      "id": "gold",
+      "label": "🥇 Gold",
+      "order": 7,
+      "conditions": [
+        { "dimension": "taille", "min": 0.75 },
+        { "dimension": "harness", "min": 1 },
+        { "dimension": "intervention", "min": 1 },
+        { "dimension": "parallele", "min": 1 },
+        { "dimension": "initiative", "min": 1 }
+      ],
+      "nextLevelHint": "Sommet du référentiel : il se tient tant que les agents livrent seuls, jour après jour."
+    }
+  ]
+}
