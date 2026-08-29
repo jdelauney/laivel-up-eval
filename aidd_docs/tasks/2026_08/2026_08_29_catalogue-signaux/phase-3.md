@@ -7,9 +7,10 @@ status: pending
 ## Appuis du socle
 
 - `src/infrastructure/` porte déjà `clock/` et `persistence/` : `evidence/` suit la même règle, un sous-dossier par port, un fichier `<techno>.adapter.ts` sans préfixe de port.
-- `LocalSessionStorageAdapter` reçoit sa dépendance externe au constructeur (`storage: Storage | undefined = globalThis.localStorage`), avec le défaut réel en production. L'adapter dossier fait pareil avec son lecteur de fichiers : c'est ce qui rend ses cas de pièce absente exerçables sans monter une arborescence de test.
+- `LocalSessionStorageAdapter` reçoit sa dépendance externe au constructeur, **sans valeur par défaut** : c'est `composition-root.ts` qui lui passe `globalThis.localStorage`. Un défaut lisant un global rendrait l'absence inexprimable — passer `undefined` déclencherait le défaut — et ferait dépendre l'adapter du runtime. L'adapter dossier prend son lecteur de fichiers de la même façon : c'est ce qui rend ses cas de pièce absente exerçables sans monter une arborescence de test.
 - Ce même adapter avale ses erreurs plutôt que de lever, parce qu'un stockage abîmé ne doit pas bloquer un joueur. L'adapter dossier applique la règle inverse pour ce qu'il ne comprend pas : une pièce absente est nominale, mais elle est **tracée** dans le rapport, jamais silencieuse.
 - L'adapter dossier est un usage interne. Il ne passe pas par `composition-root.ts`, qui ne câble que la partie jouée ; le banc de la phase 4 l'instancie directement.
+- **Collision à trancher avant d'écrire `axis-score.ts`.** `DimensionRow` (`src/features/scoring-summary/components/composites/dimension-row.tsx`) lit `measured` en booléen : à `false` il affiche `—`, un filet pointillé et « aucun critère ne mesure cette dimension ». Le statut à trois valeurs de la tâche 3 n'a pas de place dans ce rendu. Ou bien le statut s'ajoute à côté de `measured`, qui garde son sens actuel, ou bien `DimensionRow` apprend le cran `inféré` et sa marque propre. Ne pas laisser un axe `inféré` retomber sur `measured: true` : il s'afficherait comme une mesure, ce que le composant se donne justement pour mission de distinguer.
 
 ## Architecture projection
 
@@ -91,7 +92,7 @@ journey
 > Un axe non mesuré plafonne le niveau, il ne vaut pas zéro.
 
 1. Créer `axis-score.ts` : contributions obtenues sur contributions possibles, normalisé dans `[0,1]`.
-2. Poser le statut : `mesuré` quand une observation de famille `repo` porte l'axe, `inféré` quand seul le parcours ou un artefact en prose le porte, `non mesuré` sinon.
+2. Poser le statut : `mesuré` quand une observation de famille `repo` porte l'axe, `inféré` quand seul le parcours ou un artefact en prose le porte, `non mesuré` sinon. Trancher la collision avec `DimensionScore.measured` relevée plus haut, et faire suivre `DimensionRow` : un axe `inféré` porte sa marque propre, jamais celle d'une mesure.
 3. Un axe `non mesuré` sort un plafond de niveau annonçable, distinct du score.
 4. Garder l'axe `intervention` sous garde : sans preuve qu'un assistant est à l'œuvre, il reste `non mesuré`.
 5. Le déclaratif et l'analyse statique ne contribuent à aucun score ; ils produisent une ligne d'écart et une contre-preuve.
@@ -110,3 +111,4 @@ journey
 | 3 | Un axe sans aucune observation ressort `non mesuré` et pose un plafond, son score n'est pas `0` |
 | 3 | Un profil sans commit co-signé par un assistant laisse `intervention` `non mesuré` malgré zéro reprise |
 | 3 | Un déclaratif annonçant un niveau haut ne déplace aucun score |
+| 3 | Un axe `inféré` se distingue à l'écran d'un axe `mesuré`, il ne réutilise pas sa marque |

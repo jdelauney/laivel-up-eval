@@ -46,7 +46,7 @@ export const composeFrom = (
       facade: new GameSessionFacade({
         registry: buildGameRegistry(),
         scoring: new WeightedMappingStrategy(),
-        persistence: new LocalSessionStorageAdapter(),
+        persistence: new LocalSessionStorageAdapter(globalThis.localStorage),
         clock: new SystemClock(),
         grid,
         course,

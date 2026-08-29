@@ -9,6 +9,9 @@ status: pending
 - `FixedClock` (`src/infrastructure/clock/fixed.adapter.ts`) est l'horloge du banc : elle avance d'un pas constant, donc deux exécutions rendent la même trace. Aucun `Date` direct, ni dans le banc ni sous `core/`.
 - La porte de push est déjà câblée dans `lefthook.yml` : `npm run typecheck` et `npm run test` y tournent en parallèle. Le banc entre dans `npm run test`, il n'ajoute pas un troisième job.
 - Le banc n'emprunte pas `composition-root.ts`, qui câble la partie jouée avec son horloge système et son stockage navigateur. Il monte sa propre composition depuis les mêmes unités, horloge figée comprise — c'est ce qui garde « aucun chemin de code réservé aux tests » vrai.
+- **Un harnais du même critère existe déjà.** `runReplay` (`src/core/session/run-replay.helper.ts`) fait passer un profil de réponses pré-enregistrées par la façade de production, sans aucun branchement « si rejeu », et `ReplayProfile.meta.expectedLevel` porte le niveau attendu. C'est le précédent d'`expected-levels.ts` : reprendre sa forme plutôt qu'en inventer une seconde.
+- Les deux harnais visent la même grille par deux entrées différentes — des réponses de parcours d'un côté, des preuves de dépôt de l'autre. Ils doivent rester d'accord : un profil qui retombe sur deux niveaux selon l'entrée est un défaut de calibration, pas deux mesures.
+- Aucun profil de rejeu n'est encore sur le disque : `config/` ne porte que `grid.json`, `course.json` et `signature.json`. `runReplay` est écrit et testé sur des profils construits en mémoire, il n'a pas de données.
 
 ## Architecture projection
 
@@ -68,7 +71,7 @@ journey
 
 > Le banc est un outil de développement, pas une fonctionnalité livrée.
 
-1. Créer `expected-levels.ts` : les quatre profils et leur niveau attribué, une seule fois.
+1. Créer `expected-levels.ts` : les quatre profils et leur niveau attribué, une seule fois, sur la forme de `ReplayProfile.meta` — `label`, `expectedLevel`, `expectedSignature` optionnelle.
 2. Créer `calibration-bench.test.ts` : chaque profil traverse le **moteur de production**, jamais un chemin de test dédié.
 3. Le banc lit les dossiers depuis un chemin configurable, il ne les copie pas dans le dépôt.
 4. Monter la composition du banc sur `FixedClock`, pas sur `SystemClock` : c'est la seule différence permise avec la partie jouée, et elle porte sur le temps, pas sur les règles.
