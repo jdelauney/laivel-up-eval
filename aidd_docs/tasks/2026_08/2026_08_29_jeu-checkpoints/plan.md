@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu checkpoints se joue de bout en bout dans le parcours et produit un score sur l'axe intervention, sans qu'aucun contrat existant ne bouge."
-status: in-progress
+status: implemented
 ---
 
 # Plan: Le jeu `checkpoints`, premier jeu à état
