@@ -1151,6 +1151,7 @@
           "type": "three-tracks",
           "label": "Où passez-vous votre attention ?",
           "config": {
+            "statement": "Vous disposez de sept tours. La partie s'arrête au septième. Chaque tour, vous répartissez trois unités d'attention, deux au plus sur un même chantier. Sur chaque chantier, vous choisissez le nombre d'unités que vous lui accordez ce tour, de zéro au plafond. Un chantier n'avance que les tours où vous le servez. Un chantier délaissé dérive, puis il est perdu. Le travail qu'il reste à faire sur chaque chantier est chiffré et visible.",
             "turns": 7,
             "attentionPerTurn": 3,
             "maxPerTrack": 2,

@@ -20,6 +20,7 @@ const track = (id: string, work: number) => ({
 })
 
 const config: ThreeTracksConfig = threeTracksConfigSchema.parse({
+  statement: 'Consigne de test.',
   turns: 3,
   attentionPerTurn: 3,
   maxPerTrack: 2,

@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu three-tracks se joue de bout en bout dans le parcours et produit un score sur l'axe parallele, sans qu'aucun contrat existant ne bouge."
-status: implemented
+status: reviewed
 ---
 
 # Plan: Le jeu `three-tracks`, l'allocation d'attention

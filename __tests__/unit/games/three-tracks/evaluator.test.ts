@@ -20,6 +20,7 @@ const track = (id: string, work: number) => ({
 
 /** Le barème du parcours : trois tours, de quoi merger ou abandonner un chantier. */
 const config: ThreeTracksConfig = threeTracksConfigSchema.parse({
+  statement: 'Consigne de test.',
   turns: 3,
   attentionPerTurn: 6,
   maxPerTrack: 2,
@@ -30,6 +31,7 @@ const config: ThreeTracksConfig = threeTracksConfigSchema.parse({
 
 /** Un barème plus long, dédié au piège du pic : le temps de laisser le pic retomber. */
 const peakConfig: ThreeTracksConfig = threeTracksConfigSchema.parse({
+  statement: 'Consigne de test.',
   turns: 5,
   attentionPerTurn: 6,
   maxPerTrack: 2,

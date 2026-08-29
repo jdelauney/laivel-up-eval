@@ -12,6 +12,7 @@ import { ThreeTracksGame } from '@/games/three-tracks/components/composites/thre
  */
 
 const config = {
+  statement: 'Vous disposez de deux tours. Consigne de test.',
   turns: 2,
   attentionPerTurn: 2,
   maxPerTrack: 1,
@@ -31,6 +32,12 @@ describe('three tracks game, rendered', () => {
     expect(screen.getByText(/2 unités à placer/i)).toBeInTheDocument()
   })
 
+  it('shows the statement above the register, from the first turn', () => {
+    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+
+    expect(screen.getByText(config.statement)).toBeInTheDocument()
+  })
+
   it('renders the register as a real table, a chantier per row header', () => {
     render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
 
@@ -43,14 +50,21 @@ describe('three tracks game, rendered', () => {
     ).toBeInTheDocument()
   })
 
-  it("shows each track's brief in its row header, not just its label", () => {
+  it('keeps the brief reachable in its own cell, out of the row header name', () => {
     render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    const table = screen.getByRole('table')
 
-    const alphaRow = screen.getByRole('rowheader', { name: /Chantier Alpha/ })
-    expect(within(alphaRow).getByText('brief alpha')).toBeInTheDocument()
+    const alphaHeader = within(table).getByRole('rowheader', {
+      name: /Chantier Alpha/,
+    })
+    expect(alphaHeader).not.toHaveTextContent('brief alpha')
 
-    const betaRow = screen.getByRole('rowheader', { name: /Chantier Beta/ })
-    expect(within(betaRow).getByText('brief beta')).toBeInTheDocument()
+    expect(
+      within(table).getByRole('cell', { name: /brief alpha/i }),
+    ).toBeInTheDocument()
+    expect(
+      within(table).getByRole('cell', { name: /brief beta/i }),
+    ).toBeInTheDocument()
   })
 
   it('offers a zero pastille, never disabled, before anything is placed', () => {
@@ -60,6 +74,19 @@ describe('three tracks game, rendered', () => {
       name: /zéro unité sur Chantier Alpha, tour 1/i,
     })
     expect(zero).not.toBeDisabled()
+  })
+
+  it('shows the digit of every pastille on screen, zero included', () => {
+    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+
+    const zero = screen.getByRole('radio', {
+      name: /zéro unité sur Chantier Alpha, tour 1/i,
+    })
+    const one = screen.getByRole('radio', {
+      name: /une unité sur Chantier Alpha, tour 1/i,
+    })
+    expect(zero).toHaveTextContent('0')
+    expect(one).toHaveTextContent('1')
   })
 
   it('never disables the close-turn action, even at zero units placed', () => {
@@ -112,9 +139,53 @@ describe('three tracks game, rendered', () => {
   })
 })
 
+describe('three tracks game, the open column names the choice', () => {
+  it('shows the turn fraction on the open column header', () => {
+    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    const table = screen.getByRole('table')
+
+    const open = within(table).getByRole('columnheader', {
+      name: /tour 1 sur 2, en cours/i,
+    })
+    expect(open).toHaveTextContent('1/2')
+    expect(open).toHaveClass('font-semibold')
+  })
+
+  /**
+   * Verrouille le défaut signalé par le chef de projet : les chiffres
+   * `0`, `1`, `2` des pastilles étaient visibles sans que rien ne dise ce
+   * qu'ils représentent. Le nom accessible du groupe radio portait déjà
+   * « attention » pour un lecteur d'écran ; un joueur voyant n'avait rien
+   * d'équivalent avant ce libellé visible sur l'en-tête de la colonne.
+   */
+  it('names the open column as the attention one, visibly, not only for a screen reader', () => {
+    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    const table = screen.getByRole('table')
+
+    const open = within(table).getByRole('columnheader', {
+      name: /tour 1 sur 2, en cours/i,
+    })
+    expect(open).toHaveTextContent(/attention/i)
+  })
+
+  it('keeps as many cells per body row as column headers', () => {
+    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    const table = screen.getByRole('table')
+
+    const headerCount = within(table).getAllByRole('columnheader').length
+    const firstBodyRow = within(table).getAllByRole('row')[1] as HTMLElement
+    const bodyCellCount =
+      within(firstBodyRow).getAllByRole('cell').length +
+      within(firstBodyRow).getAllByRole('rowheader').length
+
+    expect(bodyCellCount).toBe(headerCount)
+  })
+})
+
 describe('three tracks game, state legibility without color', () => {
   /** Un plafond agressif : un chantier neuf dérive puis meurt en deux tours. */
   const stateConfig = {
+    statement: 'Consigne de test.',
     turns: 3,
     attentionPerTurn: 2,
     maxPerTrack: 2,
@@ -126,7 +197,7 @@ describe('three tracks game, state legibility without color', () => {
     ],
   }
 
-  it('marks a neglected row DÉRIVE and shows a point for its idle turn', () => {
+  it('marks a neglected row DÉRIVE, visible without relying on color', () => {
     render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
 
     fireEvent.click(
@@ -143,9 +214,7 @@ describe('three tracks game, state legibility without color', () => {
       .closest('tr')
     expect(alphaRow).not.toBeNull()
     expect(within(alphaRow as HTMLElement).getByText('DÉRIVE')).toBeVisible()
-    expect(
-      within(alphaRow as HTMLElement).getAllByText('·').length,
-    ).toBeGreaterThan(0)
+    expect(alphaRow).toHaveClass('border-dashed')
   })
 
   it('marks a merged row MERGÉ and offers no selector on its row', () => {
@@ -196,6 +265,19 @@ describe('three tracks game, state legibility without color', () => {
       screen.getByText(/aucune unité ne peut être placée/i),
     ).toBeInTheDocument()
     expect(screen.queryByText(/unités? à placer/i)).not.toBeInTheDocument()
+  })
+
+  it('never repeats a screen-reader phrase across the barred cells of a lost row', () => {
+    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
+    fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
+
+    const alphaRow = screen
+      .getByRole('rowheader', { name: /Chantier Alpha/ })
+      .closest('tr') as HTMLElement
+
+    expect(within(alphaRow).queryByText(/hors jeu/i)).not.toBeInTheDocument()
   })
 
   it('keeps a border on a lost row instead of leaving it bare', () => {

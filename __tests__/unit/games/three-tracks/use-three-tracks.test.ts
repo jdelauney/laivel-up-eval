@@ -5,6 +5,7 @@ import { useThreeTracks } from '@/games/three-tracks/hooks/use-three-tracks.hook
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
 
 const config = {
+  statement: 'Consigne de test.',
   turns: 3,
   attentionPerTurn: 3,
   maxPerTrack: 2,
@@ -31,6 +32,7 @@ describe('use three tracks', () => {
   it('opens on the first turn, with the full attention of the turn to place', () => {
     const { result } = renderGame()
 
+    expect(result.current.statement).toBe(config.statement)
     expect(result.current.turnNumber).toBe(1)
     expect(result.current.turnsTotal).toBe(3)
     expect(result.current.attentionRemaining).toBe(3)

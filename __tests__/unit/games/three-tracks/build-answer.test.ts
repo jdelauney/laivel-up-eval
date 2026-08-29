@@ -13,6 +13,7 @@ const tracks = [
 ]
 
 const baseConfig: ThreeTracksConfig = threeTracksConfigSchema.parse({
+  statement: 'Consigne de test.',
   turns: 4,
   attentionPerTurn: 3,
   maxPerTrack: 2,

@@ -22,6 +22,7 @@ const track = (id: string, work: number) => ({
 /** Le barème du parcours, pour que les comptes du plan soient vérifiés ici. */
 const buildConfig = (): ThreeTracksConfig =>
   threeTracksConfigSchema.parse({
+    statement: 'Consigne de test.',
     turns: 6,
     attentionPerTurn: 3,
     maxPerTrack: 2,

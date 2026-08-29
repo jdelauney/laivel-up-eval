@@ -15,7 +15,6 @@ export type TrackView = {
   work: number
   status: TrackStatus
   progress: number
-  elapsedAllocations: readonly number[]
   pending: number
   maxSelectable: number
 }
@@ -78,7 +77,6 @@ export const useThreeTracks = (
       work: track.work,
       status,
       progress: simulated?.progress ?? 0,
-      elapsedAllocations: playedTurns.map((turn) => turn[track.id] ?? 0),
       pending: trackPending,
       /**
        * Le plus haut posable sur ce chantier, là, maintenant : jamais plus
@@ -123,6 +121,7 @@ export const useThreeTracks = (
   }
 
   return {
+    statement: parsed.statement,
     tracks,
     turnNumber,
     turnsTotal: parsed.turns,

@@ -15,6 +15,7 @@ import { TrackRegister } from './track-register'
  */
 export const ThreeTracksGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
+    statement,
     tracks,
     turnNumber,
     turnsTotal,
@@ -38,6 +39,12 @@ export const ThreeTracksGame = ({ config, onSubmit }: GameComponentProps) => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Même traitement typographique que le banc d'essai : un jeu à état
+       * n'a pas droit à un contrat plus discret qu'un jeu sans état. */}
+      <p className="max-w-[52ch] text-lg text-plane-foreground leading-relaxed">
+        {statement}
+      </p>
+
       <PositionLine
         turnNumber={turnNumber}
         turnsTotal={turnsTotal}

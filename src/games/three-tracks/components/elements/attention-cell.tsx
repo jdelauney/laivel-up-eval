@@ -13,6 +13,21 @@ import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group'
  * doit voir qu'il a le droit de ne rien poser sur un chantier. Une valeur que
  * l'attention restante ne permet plus se désactive par une marque
  * structurelle — un filet plus pâle — jamais par un grisé.
+ *
+ * Chaque pastille porte aussi son chiffre à l'écran, zéro compris : un
+ * joueur voyant doit lire ce qu'il pose sans dépendre du nom accessible, qui
+ * reste la source de vérité pour un lecteur d'écran et ne change pas. Le
+ * chiffre est donc `aria-hidden`, il ne duplique jamais l'annonce portée par
+ * `aria-label`.
+ *
+ * Le marquage de la sélection change de mécanique pour lui laisser sa place :
+ * un point de deux pixels au centre de la pastille se confondrait avec un
+ * chiffre qui occupe le même centre. La pastille sélectionnée se remplit donc
+ * en totalité plutôt que de loger un point en son cœur — un remplissage,
+ * la quantité physique que `DESIGN.md` autorise pour porter un état — et le
+ * chiffre s'inverse sur `--plane` pour rester lisible sur le fond plein. La
+ * pastille indisponible garde son filet pâle existant et reprend le même
+ * jeton, `--plane-rule`, pour son chiffre : jamais une opacité réduite.
  */
 
 const unitLabel = (value: number): string => {
@@ -62,11 +77,18 @@ export const AttentionCell = ({
           value={option}
           disabled={disabled}
           aria-label={`${unitLabel(option)} sur ${trackLabel}, tour ${turnNumber}`}
-          className={`flex size-4 shrink-0 items-center justify-center rounded-full border outline-none transition-none focus-visible:ring-2 focus-visible:ring-plane-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-plane disabled:cursor-not-allowed disabled:opacity-100 ${
+          className={`group flex size-5 shrink-0 items-center justify-center rounded-full border outline-none transition-none focus-visible:ring-2 focus-visible:ring-plane-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-plane disabled:cursor-not-allowed disabled:opacity-100 data-checked:bg-plane-foreground ${
             disabled ? 'border-plane-rule' : 'border-plane-foreground'
           }`}
         >
-          <RadioPrimitive.Indicator className="size-2 rounded-full bg-plane-foreground" />
+          <span
+            aria-hidden="true"
+            className={`font-medium text-[10px] leading-none tabular-nums group-data-checked:text-plane ${
+              disabled ? 'text-plane-rule' : 'text-plane-foreground'
+            }`}
+          >
+            {option}
+          </span>
         </RadioPrimitive.Root>
       )
     })}

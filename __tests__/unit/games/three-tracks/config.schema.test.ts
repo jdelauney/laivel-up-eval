@@ -9,6 +9,7 @@ const track = (id: string, work: number) => ({
 })
 
 const validConfig = () => ({
+  statement: 'Consigne de test.',
   turns: 5,
   attentionPerTurn: 3,
   maxPerTrack: 2,
@@ -28,6 +29,14 @@ describe('three-tracks config schema', () => {
     const parsed = threeTracksConfigSchema.parse(validConfig())
 
     expect(parsed.tracks.map((track) => track.id)).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('rejects a config without a statement, naming the field', () => {
+    const config: Record<string, unknown> = validConfig()
+    delete config.statement
+
+    const issue = firstIssue(config)
+    expect(issue.path).toEqual(['statement'])
   })
 
   it('rejects a config with fewer than two tracks', () => {
