@@ -5,10 +5,15 @@ import {
   GameAlreadyOverError,
   initialState,
   meanStakeOn,
+  NoStakeForNatureError,
   replayBets,
+  type SimulationState,
   stakesOn,
 } from '@/games/confidence-bet/helpers/run-simulation.helper'
-import type { Bet } from '@/games/confidence-bet/schema/answer.schema'
+import {
+  type Bet,
+  UnknownSnippetError,
+} from '@/games/confidence-bet/schema/answer.schema'
 import {
   type ConfidenceBetConfig,
   confidenceBetConfigSchema,
@@ -98,6 +103,14 @@ describe('confidence-bet simulation', () => {
     expect(replayBets(config, bets)).toEqual(replayBets(config, bets))
   })
 
+  it('refuses a bet aiming at a snippet the config does not declare, with the shared error', () => {
+    const config = buildConfig()
+
+    expect(() =>
+      applyBet(config, initialState(config), bet('ghost', 50)),
+    ).toThrow(UnknownSnippetError)
+  })
+
   it('refuses a bet once every snippet of the config is already played', () => {
     const config = buildConfig()
     const bets = config.snippets.map((entry) =>
@@ -185,6 +198,25 @@ describe('confidence-bet simulation', () => {
       const state = replayBets(config, [bet('u1', 90), bet('u2', 10)])
 
       expect(stakesOn(state, 'undecidable')).toEqual([90, 10])
+    })
+
+    /**
+     * Le schéma de configuration refuse un corpus sans l'une des trois
+     * natures, ce qui ferme cette branche à toute partie réelle. L'état est
+     * donc construit à la main plutôt que rejoué, pour couvrir le refus sans
+     * une configuration invalide que le schéma rejetterait avant même
+     * d'atteindre `meanStakeOn`.
+     */
+    it('refuses to average a nature absent from the results, rather than returning 0', () => {
+      const stateWithNoFlawedResult: SimulationState = {
+        played: 1,
+        capital: 140,
+        results: [{ snippetId: 's1', nature: 'sound', stake: 90, delta: 40 }],
+      }
+
+      expect(() => meanStakeOn(stateWithNoFlawedResult, 'flawed')).toThrow(
+        NoStakeForNatureError,
+      )
     })
   })
 })

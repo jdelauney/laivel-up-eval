@@ -19,7 +19,7 @@ import { MemoryPersistence } from '../../fixtures/memory-persistence'
  * `config/course.json`. `verification` vit dans la signature, pas dans la
  * grille officielle — `getVerdict().signature`, jamais `.result`.
  *
- * Le tableau des huit profils tient sur `g1-1` seul, isolé dans son propre
+ * Le tableau des neuf profils tient sur `g1-1` seul, isolé dans son propre
  * parcours à un jeu : dans le parcours réel, `g1-2`, `g1-3`, `g4-1` et `g4-2`
  * visent aussi `verification`, et leur contribuer brouillerait les chiffres
  * du tableau, qui sont ceux de `g1-1` seul. Le chargement du parcours
@@ -92,145 +92,202 @@ const realG1_1Config = () =>
   confidenceBetConfigSchema.parse(realG1_1().game.config)
 
 /**
- * Les huit profils du tableau de `phase-4.md`, en mises `s1·s2 / f1·f2 / u1·u2`
- * — les identifiants réels du corpus de `config/course.json`. Capital de
- * départ 100, mouvement maximal 40 par extrait tranchable ; ces chiffres ont
- * été vérifiés à la main contre le moteur avant d'être écrits ici.
+ * Les neuf profils du tableau de `phase-4.md`, en mises `x1`…`x6` — les
+ * identifiants neutres du corpus réel de `config/course.json`
+ * (`x1` flawed, `x2` undecidable, `x3` sound, `x4` flawed, `x5` sound,
+ * `x6` undecidable). Capital de départ 100, mouvement maximal 40 par
+ * extrait tranchable ; ces chiffres ont été vérifiés à la main contre le
+ * moteur avant d'être écrits ici.
  */
 const CALIBRATED_BOTH_SIDES: Bet[] = [
-  bet('s1', 90),
-  bet('s2', 90),
-  bet('f1', 10),
-  bet('f2', 10),
-  bet('u1', 50),
-  bet('u2', 50),
+  bet('x1', 10),
+  bet('x2', 50),
+  bet('x3', 90),
+  bet('x4', 10),
+  bet('x5', 90),
+  bet('x6', 50),
 ]
 
 const CALIBRATED_ONE_HESITATION_EACH_SIDE: Bet[] = [
-  bet('s1', 90),
-  bet('s2', 70),
-  bet('f1', 10),
-  bet('f2', 30),
-  bet('u1', 50),
-  bet('u2', 50),
+  bet('x1', 10),
+  bet('x2', 50),
+  bet('x3', 90),
+  bet('x4', 30),
+  bet('x5', 70),
+  bet('x6', 50),
 ]
 
 const READS_CODE_CANNOT_SAY_IT_DOES_NOT_KNOW: Bet[] = [
-  bet('s1', 90),
-  bet('s2', 90),
-  bet('f1', 10),
-  bet('f2', 10),
-  bet('u1', 90),
-  bet('u2', 90),
+  bet('x1', 10),
+  bet('x2', 90),
+  bet('x3', 90),
+  bet('x4', 10),
+  bet('x5', 90),
+  bet('x6', 90),
 ]
 
 const DISCRIMINATING_BUT_LUKEWARM: Bet[] = [
-  bet('s1', 70),
-  bet('s2', 70),
-  bet('f1', 30),
-  bet('f2', 30),
-  bet('u1', 50),
-  bet('u2', 50),
+  bet('x1', 30),
+  bet('x2', 50),
+  bet('x3', 70),
+  bet('x4', 30),
+  bet('x5', 70),
+  bet('x6', 50),
 ]
 
 const ALL_CONFIDENT: Bet[] = [
-  bet('s1', 90),
-  bet('s2', 90),
-  bet('f1', 90),
-  bet('f2', 90),
-  bet('u1', 90),
-  bet('u2', 90),
+  bet('x1', 90),
+  bet('x2', 90),
+  bet('x3', 90),
+  bet('x4', 90),
+  bet('x5', 90),
+  bet('x6', 90),
 ]
 
 const ALL_SUSPICIOUS: Bet[] = [
-  bet('s1', 10),
-  bet('s2', 10),
-  bet('f1', 10),
-  bet('f2', 10),
-  bet('u1', 10),
-  bet('u2', 10),
+  bet('x1', 10),
+  bet('x2', 10),
+  bet('x3', 10),
+  bet('x4', 10),
+  bet('x5', 10),
+  bet('x6', 10),
 ]
 
 const HEDGER_NEUTRAL_EVERYWHERE: Bet[] = [
-  bet('s1', 50),
-  bet('s2', 50),
-  bet('f1', 50),
-  bet('f2', 50),
-  bet('u1', 50),
-  bet('u2', 50),
+  bet('x1', 50),
+  bet('x2', 50),
+  bet('x3', 50),
+  bet('x4', 50),
+  bet('x5', 50),
+  bet('x6', 50),
 ]
 
 const CONFIDENT_BACKWARDS: Bet[] = [
-  bet('s1', 90),
-  bet('s2', 10),
-  bet('f1', 90),
-  bet('f2', 10),
-  bet('u1', 50),
-  bet('u2', 50),
+  bet('x1', 90),
+  bet('x2', 50),
+  bet('x3', 90),
+  bet('x4', 10),
+  bet('x5', 10),
+  bet('x6', 50),
+]
+
+/**
+ * Le neuvième profil, seul à se noter extrait par extrait plutôt que par
+ * nature : il lit honnêtement les trois premiers extraits déclarés
+ * (`x1` flawed, `x2` undecidable, `x3` sound) puis répète leur maille
+ * 10·50·90 sur les trois derniers sans les lire. Sur un corpus rangé par
+ * nature, ce même joueur aurait décroché 7/7 en n'ayant lu que la moitié
+ * du corpus ; l'entrelacement des natures dans `config/course.json` ferme
+ * ce raccourci.
+ */
+const DEDUCES_THE_PATTERN_INSTEAD_OF_READING: Bet[] = [
+  bet('x1', 10),
+  bet('x2', 50),
+  bet('x3', 90),
+  bet('x4', 10),
+  bet('x5', 50),
+  bet('x6', 90),
 ]
 
 const TABLE_FROM_PHASE_4 = [
   {
     name: 'Calibré, tranché des deux côtés',
     bets: CALIBRATED_BOTH_SIDES,
+    satisfied: { c1: true, c2: true, c3: true, c4: true },
     score: 1,
     capital: 260,
   },
   {
     name: 'Calibré, une hésitation de chaque côté',
     bets: CALIBRATED_ONE_HESITATION_EACH_SIDE,
+    satisfied: { c1: true, c2: true, c3: true, c4: true },
     score: 1,
     capital: 220,
   },
   {
     name: "Lit le code, ne sait pas dire qu'il ne sait pas",
     bets: READS_CODE_CANNOT_SAY_IT_DOES_NOT_KNOW,
+    satisfied: { c1: true, c2: true, c3: true, c4: false },
     score: 6 / 7,
     capital: 180,
   },
   {
     name: 'Discriminant mais tiède',
     bets: DISCRIMINATING_BUT_LUKEWARM,
+    satisfied: { c1: true, c2: false, c3: true, c4: true },
     score: 5 / 7,
     capital: 180,
   },
   {
     name: 'Tout confiant',
     bets: ALL_CONFIDENT,
+    satisfied: { c1: false, c2: true, c3: false, c4: false },
     score: 2 / 7,
     capital: 20,
   },
   {
     name: 'Tout méfiant',
     bets: ALL_SUSPICIOUS,
+    satisfied: { c1: true, c2: false, c3: false, c4: false },
     score: 2 / 7,
     capital: 20,
   },
   {
     name: 'Hédgeur, la mise neutre partout',
     bets: HEDGER_NEUTRAL_EVERYWHERE,
+    satisfied: { c1: false, c2: false, c3: false, c4: true },
     score: 1 / 7,
     capital: 100,
   },
   {
     name: 'Confiant à contresens',
     bets: CONFIDENT_BACKWARDS,
+    satisfied: { c1: false, c2: false, c3: false, c4: true },
     score: 1 / 7,
     capital: 100,
+  },
+  {
+    name: 'Lit les trois premiers, répète la maille sur les trois derniers',
+    bets: DEDUCES_THE_PATTERN_INSTEAD_OF_READING,
+    satisfied: { c1: true, c2: false, c3: true, c4: false },
+    score: 4 / 7,
+    capital: 180,
   },
 ] as const
 
 describe('confidence-bet in the course', () => {
   it.each(TABLE_FROM_PHASE_4)(
     'scores "$name" at $score on verification',
-    ({ bets, score, capital }) => {
+    ({ bets, satisfied, score, capital }) => {
       const dimension = verificationDimension(playG1_1(bets))
       const answer = buildConfidenceBetAnswer(realG1_1Config(), bets)
 
+      const satisfiedByCriterion = Object.fromEntries(
+        dimension.contributions.map((contribution) => [
+          contribution.criterionId,
+          contribution.satisfied,
+        ]),
+      )
+
+      expect(satisfiedByCriterion['g1-1-c1']).toBe(satisfied.c1)
+      expect(satisfiedByCriterion['g1-1-c2']).toBe(satisfied.c2)
+      expect(satisfiedByCriterion['g1-1-c3']).toBe(satisfied.c3)
+      expect(satisfiedByCriterion['g1-1-c4']).toBe(satisfied.c4)
       expect(dimension.score).toBeCloseTo(score, 3)
       expect(answer.finalCapital).toBe(capital)
     },
   )
+
+  it('keeps the pattern-guessing profile strictly under the profile that read all the code', () => {
+    const deducesThePattern = verificationDimension(
+      playG1_1(DEDUCES_THE_PATTERN_INSTEAD_OF_READING),
+    )
+    const readsAllTheCode = verificationDimension(
+      playG1_1(READS_CODE_CANNOT_SAY_IT_DOES_NOT_KNOW),
+    )
+
+    expect(deducesThePattern.score).toBeLessThan(readsAllTheCode.score)
+  })
 
   it('holds the guard rail: reading the code well is not enough for a clean sweep', () => {
     const cleanSweep = verificationDimension(playG1_1(CALIBRATED_BOTH_SIDES))
@@ -254,7 +311,7 @@ describe('confidence-bet in the course', () => {
     expect(allSuspicious.score).toBeLessThan(0.4)
   })
 
-  it('makes the hedger the lowest of the eight, tied with the backwards profile', () => {
+  it('makes the hedger the lowest of the nine, tied with the backwards profile', () => {
     const scores = TABLE_FROM_PHASE_4.map(
       ({ bets }) => verificationDimension(playG1_1(bets)).score,
     )

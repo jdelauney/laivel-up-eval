@@ -19,7 +19,12 @@ export const movementToneClassName = (delta: number): string => {
   return 'text-caution'
 }
 
-const formatDelta = (delta: number): string =>
+/**
+ * Exportée à côté de `movementToneClassName` : le panneau et le journal
+ * lisent tous deux le même mouvement, une seconde implémentation aurait
+ * divergé au premier ajustement de signe.
+ */
+export const formatDelta = (delta: number): string =>
   delta > 0 ? `+${delta}` : `${delta}`
 
 /**

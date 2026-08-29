@@ -17,15 +17,39 @@
             "startingCapital": 100,
             "snippets": [
               {
-                "id": "s1",
-                "label": "Validation d'un montant",
+                "id": "x1",
+                "label": "Bornage d'une valeur",
                 "language": "ts",
-                "code": "function parseAmount(raw: string): number {\n  const value = Number(raw)\n  if (!Number.isFinite(value) || value < 0) {\n    throw new Error(`montant invalide : ${raw}`)\n  }\n  return value\n}",
-                "nature": "sound",
-                "reveal": "Ce code est fiable : la valeur non finie et la valeur négative sont toutes deux rejetées avant de servir."
+                "code": "function clamp(value: number, min: number, max: number): number {\n  return Math.min(min, Math.max(max, value))\n}",
+                "nature": "flawed",
+                "reveal": "Ce code est défectueux : les deux bornes sont croisées. Avec `min` à 0, `max` à 10 et une valeur de 5, `Math.max(10, 5)` rend 10, puis `Math.min(0, 10)` rend 0 — la fonction rend la borne basse au lieu de la valeur."
               },
               {
-                "id": "s2",
+                "id": "x2",
+                "label": "Abonnement dans un effet",
+                "language": "tsx",
+                "code": "useEffect(() => {\n  const subscription = client.subscribe(options)\n  return () => subscription.unsubscribe()\n}, [client, options])",
+                "nature": "undecidable",
+                "reveal": "Cet extrait ne peut pas être tranché : si le parent reconstruit `options` à chaque rendu, l'abonnement se ferme et se rouvre en boucle ; si `options` est stable, l'extrait est exactement juste. Le parent n'est pas montré."
+              },
+              {
+                "id": "x3",
+                "label": "Regroupement par clé",
+                "language": "ts",
+                "code": "export function groupBy<T>(\n  items: readonly T[],\n  keyOf: (item: T) => string,\n): Map<string, T[]> {\n  const groups = new Map<string, T[]>()\n  for (const item of items) {\n    const key = keyOf(item)\n    const bucket = groups.get(key)\n    if (bucket === undefined) groups.set(key, [item])\n    else bucket.push(item)\n  }\n  return groups\n}",
+                "nature": "sound",
+                "reveal": "Ce code est fiable : la `Map` écarte d'emblée le piège des clés héritées du prototype, une clé comme `__proto__` ou `constructor` y est une clé comme une autre. Le seau est créé une seule fois, et la liste reçue n'est jamais mutée."
+              },
+              {
+                "id": "x4",
+                "label": "Enregistrement d'un lot",
+                "language": "ts",
+                "code": "export async function saveAll(items: readonly Item[]): Promise<void> {\n  items.forEach(async (item) => {\n    await persist(item)\n  })\n}",
+                "nature": "flawed",
+                "reveal": "Ce code est défectueux : `forEach` jette la promesse que lui rend son callback. `saveAll` se résout avant le premier enregistrement, et un échec de `persist` part en rejet non traité. Un `for...of` avec `await`, ou un `Promise.all`, ferait le travail."
+              },
+              {
+                "id": "x5",
                 "label": "Découpage d'une liste en morceaux",
                 "language": "ts",
                 "code": "export function chunk<T>(items: readonly T[], size: number): T[][] {\n  if (size < 1) throw new RangeError('la taille doit valoir au moins 1')\n  const chunks: T[][] = []\n  for (let index = 0; index < items.length; index += size) {\n    chunks.push(items.slice(index, index + size))\n  }\n  return chunks\n}",
@@ -33,36 +57,12 @@
                 "reveal": "Ce code est fiable : la taille nulle ou négative est rejetée avant la boucle, ce qui ferme la boucle infinie ; `slice` borne de lui-même le dernier morceau, et l'entrée n'est jamais mutée."
               },
               {
-                "id": "f1",
-                "label": "Bornage d'une valeur",
-                "language": "ts",
-                "code": "function clamp(value: number, min: number, max: number): number {\n  return Math.min(min, Math.max(max, value))\n}",
-                "nature": "flawed",
-                "reveal": "Ce code est défectueux : `Math.min` et `Math.max` sont inversés par rapport à l'idiome habituel (`Math.max(min, Math.min(max, value))`), la fonction ne borne jamais correctement sa valeur."
-              },
-              {
-                "id": "f2",
-                "label": "Nouvelle tentative réseau",
-                "language": "ts",
-                "code": "import { fetchWithRetry } from 'undici'\n\nexport const loadProfile = (id: string) => fetchWithRetry(`/profiles/${id}`, { retries: 3 })",
-                "nature": "flawed",
-                "reveal": "Ce code est défectueux : `undici` n'exporte aucune fonction `fetchWithRetry`, cet import échoue au chargement."
-              },
-              {
-                "id": "u1",
+                "id": "x6",
                 "label": "Application d'une remise",
                 "language": "ts",
                 "code": "export function applyDiscount(order: Order): Order {\n  const discount = computeDiscount(order)\n  return { ...order, total: roundMoney(order.total - discount) }\n}",
                 "nature": "undecidable",
                 "reveal": "Cet extrait ne peut pas être tranché : il est juste ou faux d'un centime selon la façon dont `computeDiscount` et `roundMoney` arrondissent, et selon qu'une remise supérieure au total est possible. Ni l'un ni l'autre n'est montré."
-              },
-              {
-                "id": "u2",
-                "label": "Abonnement dans un effet",
-                "language": "tsx",
-                "code": "useEffect(() => {\n  const subscription = client.subscribe(options)\n  return () => subscription.unsubscribe()\n}, [client, options])",
-                "nature": "undecidable",
-                "reveal": "Cet extrait ne peut pas être tranché : si le parent reconstruit `options` à chaque rendu, l'abonnement se ferme et se rouvre en boucle ; si `options` est stable, l'extrait est exactement juste. Le parent n'est pas montré."
               }
             ]
           },

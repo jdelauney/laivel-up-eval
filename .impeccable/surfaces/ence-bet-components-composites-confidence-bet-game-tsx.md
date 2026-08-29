@@ -73,4 +73,4 @@ Une seule exception à l'avancée discrète : l'entrée qui apparaît dans le re
 
 Tournée du 30/08, Chromium, 1440×900 et 390×844, dans [qa/](../../aidd_docs/tasks/2026_08/2026_08_30_jeu-confidence-bet/qa/).
 
-Aucun débordement horizontal imputable à ce jeu, aux deux gabarits. Le débordement observé à 390 vient de la rampe des groupes et persiste avec la colonne du jeu entièrement masquée : il est suivi par [la-rampe-deborde-sur-mobile.md](../../aidd_docs/backlog/defects/la-rampe-deborde-sur-mobile.md).
+Aucun débordement imputable à ce jeu : la colonne du jeu forcée à 390 px mesure `scrollWidth` 390 pour `clientWidth` 390. Le débordement de la page à 390 vient de la rampe des groupes et persiste avec la colonne du jeu masquée ; il est suivi par [la-rampe-deborde-sur-mobile.md](../../aidd_docs/backlog/defects/la-rampe-deborde-sur-mobile.md).

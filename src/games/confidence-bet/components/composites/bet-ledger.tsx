@@ -1,8 +1,5 @@
 import type { LedgerEntry } from '../../hooks/use-confidence-bet.hook'
-import { movementToneClassName } from '../elements/reveal-panel'
-
-const formatDelta = (delta: number): string =>
-  delta > 0 ? `+${delta}` : `${delta}`
+import { formatDelta, movementToneClassName } from '../elements/reveal-panel'
 
 /**
  * Les extraits déjà joués, en ajout seul, sur le modèle du journal de

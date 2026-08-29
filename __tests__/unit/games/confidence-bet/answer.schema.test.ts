@@ -3,6 +3,7 @@ import {
   IncompleteTraceError,
   parseConfidenceBetTrace,
   StakeOutOfScaleError,
+  TraceLengthMismatchError,
   UnknownSnippetError,
 } from '@/games/confidence-bet/schema/answer.schema'
 import {
@@ -80,5 +81,13 @@ describe('confidence-bet answer schema', () => {
     const call = () => parseConfidenceBetTrace(trace, config)
     expect(call).toThrow(StakeOutOfScaleError)
     expect(call).toThrow('s1')
+  })
+
+  it('rejects a forged trace that duplicates a bet to outnumber the declared snippets', () => {
+    const trace = completeTrace()
+    trace.bets.push({ snippetId: 's1', stake: 90 })
+
+    const call = () => parseConfidenceBetTrace(trace, config)
+    expect(call).toThrow(TraceLengthMismatchError)
   })
 })

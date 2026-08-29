@@ -1,4 +1,5 @@
 import type { Bet } from '../schema/answer.schema'
+import { UnknownSnippetError } from '../schema/answer.schema'
 import type {
   ConfidenceBetConfig,
   SnippetNature,
@@ -34,6 +35,23 @@ export class GameAlreadyOverError extends Error {
   }
 }
 
+/**
+ * Rendre `0` sur une nature absente des résultats rouvrirait, par vacuité,
+ * exactement le trou que `confidenceBetConfigSchema` ferme au chargement :
+ * un critère `mean-stake-on-*` verrait `0 < seuil` réussir sans qu'aucune
+ * mise n'ait jamais été posée. Le garde de configuration rend la branche
+ * inatteignable en jeu ; l'erreur nommée la ferme aussi côté code.
+ */
+export class NoStakeForNatureError extends Error {
+  readonly nature: SnippetNature
+
+  constructor(nature: SnippetNature) {
+    super(`aucune mise n'a été posée sur un extrait « ${nature} »`)
+    this.name = 'NoStakeForNatureError'
+    this.nature = nature
+  }
+}
+
 export const initialState = (config: ConfidenceBetConfig): SimulationState => ({
   played: 0,
   capital: config.startingCapital,
@@ -46,7 +64,7 @@ const natureOf = (
 ): SnippetNature => {
   const snippet = config.snippets.find((entry) => entry.id === snippetId)
   if (snippet === undefined) {
-    throw new Error(`l'extrait « ${snippetId} » n'est pas déclaré`)
+    throw new UnknownSnippetError(snippetId)
   }
   return snippet.nature
 }
@@ -142,7 +160,7 @@ export const meanStakeOn = (
   nature: SnippetNature,
 ): number => {
   const stakes = stakesOn(state, nature)
-  if (stakes.length === 0) return 0
+  if (stakes.length === 0) throw new NoStakeForNatureError(nature)
 
   return stakes.reduce((sum, stake) => sum + stake, 0) / stakes.length
 }
