@@ -146,15 +146,6 @@ describe('game session facade', () => {
     ])
   })
 
-  it('describes the repository proven axes before any session exists', () => {
-    const axes = buildFacade().repositoryProvenAxes()
-
-    expect(axes).toEqual([
-      { id: 'intervention', label: "Reprise humaine du travail de l'IA" },
-      { id: 'parallele', label: 'Chantiers menés en parallèle' },
-    ])
-  })
-
   it('previews a stored run without opening it', () => {
     const persistence = new MemoryPersistence()
     const played = buildFacade(persistence)

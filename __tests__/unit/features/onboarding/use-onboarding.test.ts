@@ -122,15 +122,6 @@ describe('onboarding', () => {
     expect(result.current.estimatedMinutes).toBe(5)
   })
 
-  it('exposes the repository proven axes the facade gives', () => {
-    const { result } = renderOnboarding(buildFacade(new MemoryPersistence()))
-
-    expect(result.current.repositoryProvenAxes).toEqual([
-      { id: 'intervention', label: "Reprise humaine du travail de l'IA" },
-      { id: 'parallele', label: 'Chantiers menés en parallèle' },
-    ])
-  })
-
   it('drops the stored run when the player starts over', () => {
     const persistence = new MemoryPersistence()
     const played = buildFacade(persistence)

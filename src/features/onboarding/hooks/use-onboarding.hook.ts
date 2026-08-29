@@ -22,7 +22,6 @@ export const useOnboarding = () => {
   const rail: RailGroup[] = buildRail(facade.courseShape(), 0)
   const totalSituations = rail.reduce((sum, group) => sum + group.gameCount, 0)
   const estimatedMinutes = estimateCourseMinutes(totalSituations)
-  const repositoryProvenAxes = facade.repositoryProvenAxes()
 
   const start = useCallback(
     (playerName: string, repository?: RepositorySlug | undefined): void => {
@@ -65,6 +64,5 @@ export const useOnboarding = () => {
     rail,
     totalSituations,
     estimatedMinutes,
-    repositoryProvenAxes,
   }
 }

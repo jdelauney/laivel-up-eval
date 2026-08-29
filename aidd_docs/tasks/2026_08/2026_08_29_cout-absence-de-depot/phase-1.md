@@ -1,8 +1,22 @@
 ---
-status: done
+status: cancelled
 ---
 
 # Instruction: Nommer dans le domaine les axes que le dépôt prouve
+
+## Cancellation
+
+Annulée après revue, sur décision produit : l'accueil ne recopie pas les
+libellés officiels de `config/grid.json`, il nomme les deux axes en mots
+ordinaires. Plus aucun libellé n'est donc lu dans la grille, ce qui retire
+tout appelant à ce que cette phase avait livré — l'aide de domaine
+`repository-proven-axes.helper.ts`, la méthode `repositoryProvenAxes()` de
+la façade, et son exposition par `use-onboarding.hook.ts`. Code non appelé
+est du code mort : il a été retiré plutôt que gardé « pour l'Epic 4 »,
+laquelle le réintroduira si elle en a besoin.
+
+Le reste de ce fichier documente ce qui avait été construit puis retiré, pour
+mémoire seulement — rien ci-dessous n'est présent dans le code.
 
 ## Architecture projection
 

@@ -28,10 +28,6 @@ import {
   type LevelVerdict,
   resolveLevel,
 } from '../scoring/helpers/level-resolver.helper'
-import {
-  type RepositoryProvenAxis,
-  repositoryProvenAxes,
-} from '../scoring/helpers/repository-proven-axes.helper'
 
 /**
  * Le seul point d'entrée applicatif. Il cache le registre, les évaluateurs, le
@@ -137,15 +133,6 @@ export class GameSessionFacade {
         label: group.label,
         gameCount: group.games.length,
       }))
-  }
-
-  /**
-   * Les deux axes qu'un dépôt sait prouver, lus dans la grille tenue privée.
-   * Lisible avant tout démarrage : l'accueil en a besoin avant qu'aucune
-   * session n'existe.
-   */
-  repositoryProvenAxes(): RepositoryProvenAxis[] {
-    return repositoryProvenAxes(this.grid)
   }
 
   /**

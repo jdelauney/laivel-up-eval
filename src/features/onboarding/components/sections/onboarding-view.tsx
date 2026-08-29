@@ -6,8 +6,8 @@ import {
   type OnboardingFormInput,
   onboardingFormSchema,
 } from '../../schema/onboarding-form.schema'
-import { MissingRepositoryNotice } from '../composites/missing-repository-notice'
 import { ResumeRun } from '../composites/resume-run'
+import { MissingRepositoryNotice } from '../elements/missing-repository-notice'
 import { TextField } from '../elements/text-field'
 
 /**
@@ -31,7 +31,6 @@ export const OnboardingView = () => {
     rail,
     totalSituations,
     estimatedMinutes,
-    repositoryProvenAxes,
   } = useOnboarding()
 
   const form = useForm({
@@ -163,7 +162,7 @@ export const OnboardingView = () => {
 
           <form.Field name="repository">
             {(field) => (
-              <>
+              <div className="flex max-w-sm flex-col gap-2">
                 <TextField
                   name={field.name}
                   label="Votre dépôt (facultatif)"
@@ -186,9 +185,9 @@ export const OnboardingView = () => {
                   onBlur={field.handleBlur}
                 />
                 {field.state.value.trim() === '' ? (
-                  <MissingRepositoryNotice axes={repositoryProvenAxes} />
+                  <MissingRepositoryNotice />
                 ) : null}
-              </>
+              </div>
             )}
           </form.Field>
 

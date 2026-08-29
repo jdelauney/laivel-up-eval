@@ -274,16 +274,10 @@ describe('onboarding view', () => {
   describe('missing repository notice', () => {
     const NOTICE = /Entrer sans dépôt est un usage prévu/
 
-    it('is visible at opening and names both axes', () => {
+    it('is visible at opening', () => {
       renderOnboarding()
 
       expect(screen.getByText(NOTICE)).toBeInTheDocument()
-      expect(
-        screen.getByText(/Reprise humaine du travail de l'IA/),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByText(/Chantiers menés en parallèle/),
-      ).toBeInTheDocument()
     })
 
     it('disappears once a repository is typed, and returns once the field is cleared', () => {
@@ -315,17 +309,6 @@ describe('onboarding view', () => {
         ).toBeVisible()
       })
       expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
-    })
-
-    it('never states a scoring vocabulary word while it is shown', () => {
-      const { container } = renderOnboarding()
-
-      expect(screen.getByText(NOTICE)).toBeInTheDocument()
-
-      const renderedWords = wordsRenderedBy(container)
-      for (const forbiddenWord of SCORING_VOCABULARY) {
-        expect(renderedWords).not.toContain(forbiddenWord)
-      }
     })
   })
 })
