@@ -1,4 +1,5 @@
 import type { Course, Game, Group } from '../contracts/course.schema'
+import type { RepositorySlug } from '../contracts/repository-slug.schema'
 import type {
   SessionSnapshot,
   Submission,
@@ -30,13 +31,20 @@ const orderedGroups = (course: Course): Group[] =>
 
 export class GameSession {
   readonly playerName: string
+  /** Le dépôt désigné à l'entrée, facultatif ; il ne pèse sur aucun calcul. */
+  readonly repository: RepositorySlug | undefined
   private readonly groups: Group[]
   private groupIndex: number
   private gameIndex: number
   private readonly submissions: Submission[]
 
-  constructor(course: Course, playerName: string) {
+  constructor(
+    course: Course,
+    playerName: string,
+    repository?: RepositorySlug | undefined,
+  ) {
     this.playerName = playerName
+    this.repository = repository
     this.groups = orderedGroups(course)
     this.groupIndex = 0
     this.gameIndex = 0
@@ -44,7 +52,11 @@ export class GameSession {
   }
 
   static restore(course: Course, snapshot: SessionSnapshot): GameSession {
-    const session = new GameSession(course, snapshot.playerName)
+    const session = new GameSession(
+      course,
+      snapshot.playerName,
+      snapshot.repository,
+    )
     session.groupIndex = snapshot.groupIndex
     session.gameIndex = snapshot.gameIndex
     session.submissions.push(...snapshot.submissions)
@@ -54,6 +66,7 @@ export class GameSession {
   snapshot(): SessionSnapshot {
     return {
       playerName: this.playerName,
+      repository: this.repository,
       groupIndex: this.groupIndex,
       gameIndex: this.gameIndex,
       submissions: [...this.submissions],

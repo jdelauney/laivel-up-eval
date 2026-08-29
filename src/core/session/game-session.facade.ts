@@ -2,6 +2,7 @@ import { CommandHistory } from '../commands/history.command'
 import { SubmitAnswerCommand } from '../commands/submit-answer.command'
 import type { Course, Game } from '../contracts/course.schema'
 import type { Grid } from '../contracts/grid.schema'
+import type { RepositorySlug } from '../contracts/repository-slug.schema'
 import {
   type SessionSnapshot,
   sessionSnapshotSchema,
@@ -114,8 +115,8 @@ export class GameSessionFacade {
     }
   }
 
-  start(playerName: string): void {
-    this.session = new GameSession(this.course, playerName)
+  start(playerName: string, repository?: RepositorySlug | undefined): void {
+    this.session = new GameSession(this.course, playerName, repository)
     this.history.clear()
     this.persistence.write(this.session.snapshot())
   }
@@ -150,13 +151,19 @@ export class GameSessionFacade {
    * décision, pas un effet de bord du chargement.
    */
   storedRun():
-    | { playerName: string; submitted: number; total: number }
+    | {
+        playerName: string
+        repository: RepositorySlug | undefined
+        submitted: number
+        total: number
+      }
     | undefined {
     const snapshot = this.storedSnapshot()
     if (snapshot === undefined) return undefined
 
     return {
       playerName: snapshot.playerName,
+      repository: snapshot.repository,
       submitted: snapshot.submissions.length,
       total: this.course.groups.reduce(
         (sum, group) => sum + group.games.length,
@@ -192,6 +199,14 @@ export class GameSessionFacade {
   /** Le pseudo saisi au démarrage, retrouvé tel quel après une reprise. */
   playerName(): string | undefined {
     return this.session?.playerName
+  }
+
+  /**
+   * Le dépôt désigné au démarrage, sous sa forme normalisée. Il est déclaratif
+   * comme le pseudo : `getVerdict()` ne le lit pas, et aucun niveau n'en dépend.
+   */
+  designatedRepository(): RepositorySlug | undefined {
+    return this.session?.repository
   }
 
   /**

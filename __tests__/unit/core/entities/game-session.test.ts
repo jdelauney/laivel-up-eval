@@ -133,6 +133,23 @@ describe('game session progression', () => {
     expect(restored.submissionFor('g1')?.answer).toEqual({ done: true })
   })
 
+  it('carries the designated repository into the snapshot and back', () => {
+    const session = new GameSession(course, 'Alice', 'alice/atelier')
+
+    const restored = GameSession.restore(course, session.snapshot())
+
+    expect(session.snapshot().repository).toBe('alice/atelier')
+    expect(restored.repository).toBe('alice/atelier')
+    expect(restored.playerName).toBe('Alice')
+  })
+
+  it('produces a snapshot without a repository when none was designated', () => {
+    const session = new GameSession(course, 'Alice')
+
+    expect(session.repository).toBeUndefined()
+    expect(session.snapshot().repository).toBeUndefined()
+  })
+
   it('counts progress over every game of the course', () => {
     const session = new GameSession(course, 'Alice')
     session.submit('g1', {}, satisfied, at)
