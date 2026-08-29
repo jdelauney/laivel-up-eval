@@ -31,7 +31,7 @@ Quand les deux sources parlent d'un même axe, le dépôt tranche : il est factu
 
 ## Success Evidence
 
-Une même personne, avec et sans dépôt, obtient deux verdicts cohérents : le second est plus précis, jamais contradictoire. Un dépôt auquel il manque des pièces produit un verdict et la liste de ce qui manquait, pas une erreur. Deux lectures du même dépôt rendent les mêmes valeurs.
+Une même personne, avec et sans dépôt, obtient deux verdicts cohérents : le second est plus précis, jamais contradictoire. Un dépôt auquel il manque des pièces produit un verdict et la liste de ce qui manquait, pas une erreur. Deux lectures d'un dépôt dont l'activité n'a pas bougé entre-temps rendent les mêmes valeurs ; une pull request ouverte ou mergée entre les deux change légitimement le résultat.
 
 ## Dependencies and Unknowns
 
@@ -42,7 +42,8 @@ Une même personne, avec et sans dépôt, obtient deux verdicts cohérents : le 
 | 60 requêtes par heure et par IP sans jeton, soit environ 55 PR par lecture | décision | Mesuré par `aidd_docs/backlog/spikes/preuves-du-depot-calculables-sans-jeton.md`. Le jeton reste facultatif |
 | GraphQL est fermé sans jeton, tout passe par REST au coût d'un appel par PR | décision | Mesuré ; c'est ce terme qui fixe le plafond |
 | Une lecture pleine consomme le budget de l'heure | décision | Deux lectures du même dépôt dans l'heure sont impossibles sans jeton |
-| La fenêtre d'analyse retenue, et le sort d'un dépôt au-delà du plafond | unknown | Décision produit, ouverte |
+| La fenêtre d'analyse retenue, et le sort d'un dépôt au-delà du plafond | décision | Tranchés le 29/08 : fenêtre bornée par date **et** plafonnée en nombre de PR, la première borne atteinte l'emportant ; au-delà, lecture partielle annoncée comme telle, qui plafonne le niveau plus bas qu'une lecture complète. Consignés dans `aidd_docs/tasks/2026_08/2026_08_29_preuves-du-depot-git/spec.md` |
+| Les deux valeurs de bornes — la durée et le nombre de PR | unknown | Réglage, ouvert. Le budget mesuré n'autorise qu'environ 55 PR par heure |
 | Un dépôt privé et un dépôt inexistant rendent le même `404` | décision | Le rapport dit « non lisible » sans nommer la cause |
 | Le cas du dépôt vide | unknown | `409` documenté sur les commits, non reproduit ; se confirme contre un vrai dépôt vide |
 | Les seuils par cran, transposés des données d'exemple | assumption | Acceptée ; aucune vérification à froid ne les couvre |
