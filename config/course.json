@@ -11,7 +11,7 @@
           "type": "confidence-bet",
           "label": "Quelle confiance accordez-vous à ce code ?",
           "config": {
-            "statement": "Six extraits de code vous sont présentés un par un. Pour chacun, misez votre confiance avant de voir le verdict : la mise se verrouille dès qu'elle est engagée, elle ne se reprend jamais. Sur un extrait sain, une mise haute rapporte ; sur un extrait défectueux, une mise basse rapporte. Certains extraits ne peuvent pas être tranchés avec ce qui est montré : s'en écarter y coûte, dans un sens comme dans l'autre.",
+            "statement": "Six extraits de code vous sont présentés un par un. Pour chacun, misez la confiance que vous accordez à son exactitude — pas ce que vous en feriez en revue — avant de voir le verdict : la mise se verrouille dès qu'elle est engagée, elle ne se reprend jamais. Sur un extrait sain, une mise haute rapporte ; sur un extrait défectueux, une mise basse rapporte. Certains extraits ne peuvent pas être tranchés avec ce qui est montré : s'en écarter y coûte, dans un sens comme dans l'autre.",
             "stakes": [10, 30, 50, 70, 90],
             "neutralStake": 50,
             "startingCapital": 100,

@@ -371,4 +371,33 @@ describe('confidence-bet in the course', () => {
 
     expect(() => confidenceBetConfigSchema.parse(game.config)).not.toThrow()
   })
+
+  /**
+   * Le défaut critique de la première revue : un corpus rangé par nature
+   * offrait sa seconde moitié à qui déduisait la maille sur la première. Le
+   * profil 9 ne protège l'entrelacement que par accident — ses mises sont
+   * figées sur l'ordre actuel, et un réordonnancement le ferait échouer sur
+   * un écart de score sans jamais nommer l'invariant. Celui-ci le nomme.
+   */
+  it('never runs two snippets of the same nature back to back', () => {
+    const { snippets } = realG1_1Config()
+    const runs = snippets
+      .slice(1)
+      .filter((snippet, index) => snippet.nature === snippets[index].nature)
+      .map((snippet) => snippet.id)
+
+    expect(runs).toEqual([])
+  })
+
+  /** Un identifiant qui encode sa nature la donne à l'inspecteur du
+   * navigateur, avant tout engagement, par le `name` du groupe radio. */
+  it('never encodes a snippet nature in its identifier', () => {
+    const { snippets } = realG1_1Config()
+
+    expect(
+      snippets.filter((snippet) =>
+        /^(sound|flawed|undecidable|[sfu]\d)/i.test(snippet.id),
+      ),
+    ).toEqual([])
+  })
 })
