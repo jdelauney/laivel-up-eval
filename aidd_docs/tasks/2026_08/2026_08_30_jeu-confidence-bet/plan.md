@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu confidence-bet se joue de bout en bout dans le parcours à la place du placeholder g1-1, et produit un score sur la dimension verification, sans qu'aucun contrat existant ne bouge."
-status: implemented
+status: reviewed
 ---
 
 # Plan: Le jeu `confidence-bet`, la mise de confiance à l'aveugle
@@ -33,7 +33,7 @@ status: implemented
 | Le mouvement de capital est **linéaire** : `mise − neutre` sur un extrait sain, `neutre − mise` sur un défectueux, `−|mise − neutre|` sur un indécidable | La story impose « le gain ou la perte est proportionnel à la mise ». Le linéaire est la seule forme que le joueur lit sans calcul, et une seule formule sert l'écran et le verdict. Sur l'indécidable, aucune direction n'est la bonne : seul l'éloignement du doute se paie, ce qui s'annonce honnêtement dans la consigne sans rien dire des seuils |
 | La consigne annonce que **certains extraits ne peuvent pas être tranchés** avec ce qui est montré, et que s'en éloigner coûte | Cacher l'existence de cette nature ferait du garde-fou une énigme, et le jeu mesurerait la résolution d'énigme au lieu de la calibration. C'est l'erreur que le plan de `three-tracks` a déjà nommée. Le cadre s'annonce, la bande et les seuils restent tus |
 | La calibration ne lit que les extraits tranchables, le garde-fou ne lit que les indécidables | Sur un indécidable, le meilleur `delta` atteignable est nul : les compter dans la calibration la ferait décroître mécaniquement sans rien mesurer. Le capital porte les deux, chaque critère n'en lit qu'une moitié |
-| Quatre critères, pesés **2 · 2 · 2 · 1** sur la seule dimension `verification` | Les trois premiers sont les trois critères nommés par la story et pèsent pareil ; le garde-fou tranche entre deux joueurs qui les satisfont également. Le barème a été vérifié contre le moteur sur six profils, dont le tableau vit dans `phase-4.md` |
+| Quatre critères, pesés **2 · 2 · 2 · 1** sur la seule dimension `verification` | Les trois premiers sont les trois critères nommés par la story et pèsent pareil ; le garde-fou tranche entre deux joueurs qui les satisfont également. Le barème a été vérifié contre le moteur sur neuf profils, dont le tableau vit dans `phase-4.md` |
 | Le jeu ne vise **que** `verification`, la dimension de signature, et abandonne le mapping `intervention` du placeholder | L'epic partage le parcours en deux : six groupes portent la signature, le septième porte les axes officiels. Le placeholder visait `intervention` parce qu'il ne mesurait rien de précis ; un jeu de jugement critique qui monterait un axe du référentiel officiel brouillerait cette frontière |
 | La révélation arrive **après** l'engagement, extrait par extrait, et la mise ne se reprend jamais | C'est l'acceptance première de la story. Elle se tient par construction : la trace n'expose aucun chemin pour réécrire une mise posée, sur le modèle du registre en ajout seul de `three-tracks` |
 | Aucun aléa, aucune horloge : les extraits, leur nature, l'échelle et les seuils sont déclarés dans le parcours | Deux parties aux mêmes mises rendent le même verdict, condition du mode rejeu et du pari de reproductibilité du produit |
