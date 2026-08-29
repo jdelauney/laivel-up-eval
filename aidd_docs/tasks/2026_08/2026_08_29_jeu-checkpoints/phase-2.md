@@ -49,7 +49,7 @@ journey
   section Edge case - joueur qui corrige tout
     une trace ou chaque etape est corrigee ou re-cadree => evaluer => le troisieme critere manque, le score d intervention reste bas: 1: system
   section Edge case - joueur qui ne touche a rien
-    une trace ou tout est laisse passer => evaluer => les deux premiers criteres satisfaits, le troisieme aussi: 1: system
+    une trace ou tout est laisse passer => evaluer => le premier critere manque faute de reprise, les deux suivants sont satisfaits: 1: system
   section Edge case - regle inconnue
     un critere portant un type de regle non gere => evaluer => une erreur nommant la regle et le jeu: 1: system
   section Edge case - trace hors contrat
