@@ -1,0 +1,18 @@
+{
+  "extraKnownMarketplaces": {
+    "laivel-plugins": {
+      "source": {
+        "source": "file",
+        "path": "./.claude-plugin/marketplace.json"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "aidd-context@laivel-plugins": true,
+    "aidd-refine@laivel-plugins": true,
+    "aidd-dev@laivel-plugins": true,
+    "aidd-vcs@laivel-plugins": true,
+    "aidd-pm@laivel-plugins": true,
+    "aidd-orchestrator@laivel-plugins": true
+  }
+}

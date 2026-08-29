@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "aidd-dev",
+  "version": "2.4.1",
+  "description": "Code transformation: plan, implement, assert, audit, review, test, refactor, debug, for-sure, plus short standalone Browser QA evidence. Hosts engineering agents.",
+  "author": {
+    "name": "AI-Driven Dev",
+    "url": "https://github.com/ai-driven-dev"
+  },
+  "skills": [
+    "./skills/01-plan",
+    "./skills/02-implement",
+    "./skills/03-assert",
+    "./skills/04-audit",
+    "./skills/05-review",
+    "./skills/06-test",
+    "./skills/07-refactor",
+    "./skills/08-debug",
+    "./skills/09-for-sure",
+    "./skills/10-todo",
+    "./skills/11-browser-qa"
+  ],
+  "agents": [
+    "./agents/executor.md",
+    "./agents/checker.md"
+  ],
+  "keywords": [
+    "sdlc",
+    "implementation",
+    "review",
+    "testing",
+    "refactor",
+    "debug"
+  ],
+  "repository": "https://github.com/ai-driven-dev/framework",
+  "homepage": "https://ai-driven.dev",
+  "license": "MIT"
+}
