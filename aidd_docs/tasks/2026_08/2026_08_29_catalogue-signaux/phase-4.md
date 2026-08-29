@@ -4,6 +4,12 @@ status: pending
 
 # Instruction: Le banc de calibration
 
+## Appuis du socle
+
+- `FixedClock` (`src/infrastructure/clock/fixed.adapter.ts`) est l'horloge du banc : elle avance d'un pas constant, donc deux exécutions rendent la même trace. Aucun `Date` direct, ni dans le banc ni sous `core/`.
+- La porte de push est déjà câblée dans `lefthook.yml` : `npm run typecheck` et `npm run test` y tournent en parallèle. Le banc entre dans `npm run test`, il n'ajoute pas un troisième job.
+- Le banc n'emprunte pas `composition-root.ts`, qui câble la partie jouée avec son horloge système et son stockage navigateur. Il monte sa propre composition depuis les mêmes unités, horloge figée comprise — c'est ce qui garde « aucun chemin de code réservé aux tests » vrai.
+
 ## Architecture projection
 
 > Tree of the final files. ✅ create · ✏️ modify · ❌ delete
@@ -65,6 +71,7 @@ journey
 1. Créer `expected-levels.ts` : les quatre profils et leur niveau attribué, une seule fois.
 2. Créer `calibration-bench.test.ts` : chaque profil traverse le **moteur de production**, jamais un chemin de test dédié.
 3. Le banc lit les dossiers depuis un chemin configurable, il ne les copie pas dans le dépôt.
+4. Monter la composition du banc sur `FixedClock`, pas sur `SystemClock` : c'est la seule différence permise avec la partie jouée, et elle porte sur le temps, pas sur les règles.
 
 ### `2)` Le rapport d'écart
 
@@ -90,8 +97,9 @@ journey
 
 ### `5)` Brancher le banc sur la porte de push
 
-1. Ajouter le banc au job de tests déjà câblé dans `lefthook.yml`.
+1. Le banc est un test Vitest : il entre dans le `npm run test` déjà câblé au `pre-push` de `lefthook.yml`, aucun job à ajouter.
 2. Une régression de scoring bloque le push, comme un test qui casse.
+3. Retirer de `coding-assertions.md` la mention « quand le banc de calibration existera », devenue fausse à ce point.
 
 ## Test acceptance criteria
 

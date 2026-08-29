@@ -1,6 +1,6 @@
 # Codebase Map
 
-> Le dépôt ne porte aujourd'hui que `components/ui`, `lib/`, l'entrée Vite et un test de santé. Les autres zones sont la carte cible contractualisée dans [`../TECHNICAL.md`](../TECHNICAL.md) §3 : **c'est là qu'un fichier nouveau doit atterrir**.
+> Le dépôt porte aujourd'hui `core/`, `games/`, `infrastructure/`, `store/`, `providers/`, `composition-root.ts`, `components/ui`, `lib/`, l'entrée Vite et un test de santé. `features/` reste la carte cible contractualisée dans [`../TECHNICAL.md`](../TECHNICAL.md) §3 : **c'est là qu'un fichier nouveau doit atterrir**.
 
 ```mermaid
 flowchart TD
@@ -10,6 +10,7 @@ flowchart TD
   src --> core["core/ · domaine pur"]
   src --> infra["infrastructure/ · implémentations des ports"]
   src --> store["store/ · état UI Zustand"]
+  src --> providers["providers/ · contextes React"]
   src --> root["composition-root.ts · câblage DI"]
   config["config/ · grille, signature, parcours, profils"] --> core
   tests["__tests__/ · unit · integration · e2e"] --> src
@@ -20,9 +21,10 @@ flowchart TD
 - `src/components/` : UI générique sans état métier. `ui/` tient les primitifs shadcn installés par la CLI — Biome les exclut du lint.
 - `src/features/` : un sous-dossier par fonctionnalité, gabarit interne `components/` · `hooks/` · `actions/` · `schema/`.
 - `src/games/` : un sous-dossier par jeu, même gabarit plus `helpers/` et l'evaluator à la racine du dossier. **Reste à la racine, pas sous `features/`** : c'est un système de plugins à contrat formel, un contributeur doit voir en cinq secondes où ajouter un jeu.
-- `src/core/` : `entities/`, `contracts/` (schémas Zod), `ports/` (interfaces), `commands/`, `registry/`, `session/`.
-- `src/infrastructure/` : un sous-dossier par port implémenté.
-- `config/` : les quatre JSON data-driven. Vide aujourd'hui.
+- `src/core/` : `entities/`, `contracts/` (schémas Zod, `helpers/` pour la validation), `ports/` (interfaces), `commands/`, `registry/`, `scoring/`, `session/`.
+- `src/infrastructure/` : un sous-dossier par port implémenté — `clock/`, `persistence/`. Un adapter reçoit sa dépendance externe au constructeur, avec le défaut réel en production : c'est la couture qui rend son comportement testable.
+- `src/providers/` : les contextes React qui portent le résultat du câblage jusqu'aux écrans. Aucun composant n'importe la façade directement.
+- `config/` : les quatre JSON data-driven. `grid.json`, `course.json` et `signature.json` sont posés ; `signals.json` arrive avec le catalogue de signaux.
 - `__tests__/` : à la racine, en miroir de `src/`.
 
 ## Règles de placement
@@ -47,4 +49,4 @@ Un helper est partageable entre l'action jouée et l'evaluator au scoring — un
 ## Points d'entrée
 
 - `src/main.tsx` monte `App` dans `#root`. `index.html` est le template Vite.
-- `src/composition-root.ts` sera le seul endroit où tout se câble.
+- `src/composition-root.ts` est le seul endroit où tout se câble. Il rend `ready` ou `invalid-config` : une configuration hors contrat n'ouvre pas de session, elle remonte le champ fautif à l'écran. `main.tsx` passe ce résultat à `SessionProvider`.

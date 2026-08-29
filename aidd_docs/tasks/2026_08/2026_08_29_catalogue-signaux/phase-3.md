@@ -4,6 +4,13 @@ status: pending
 
 # Instruction: L'adapter dossier et le scoring par axe
 
+## Appuis du socle
+
+- `src/infrastructure/` porte déjà `clock/` et `persistence/` : `evidence/` suit la même règle, un sous-dossier par port, un fichier `<techno>.adapter.ts` sans préfixe de port.
+- `LocalSessionStorageAdapter` reçoit sa dépendance externe au constructeur (`storage: Storage | undefined = globalThis.localStorage`), avec le défaut réel en production. L'adapter dossier fait pareil avec son lecteur de fichiers : c'est ce qui rend ses cas de pièce absente exerçables sans monter une arborescence de test.
+- Ce même adapter avale ses erreurs plutôt que de lever, parce qu'un stockage abîmé ne doit pas bloquer un joueur. L'adapter dossier applique la règle inverse pour ce qu'il ne comprend pas : une pièce absente est nominale, mais elle est **tracée** dans le rapport, jamais silencieuse.
+- L'adapter dossier est un usage interne. Il ne passe pas par `composition-root.ts`, qui ne câble que la partie jouée ; le banc de la phase 4 l'instancie directement.
+
 ## Architecture projection
 
 > Tree of the final files. ✅ create · ✏️ modify · ❌ delete
@@ -65,10 +72,11 @@ journey
 > Un usage interne, pas une voie d'entrée produit.
 
 1. Créer `organizer-folder.adapter.ts` derrière le port `EvidenceSource`.
-2. Lire `profile.json`, `git-activity.json`, `pull-requests.json`, `sonar-measures.json`, `repo-context/`, `code/`, `declaratif.md`, `session.md`.
-3. Chaque pièce absente est un cas nominal : elle ne produit pas d'observation, elle ne lève pas d'erreur.
-4. Rendre, à côté du faisceau, le rapport de ce qui a été trouvé et de ce qui ne l'a pas été.
-5. Parcourir `repo-context/` en arborescence, pas seulement les compteurs de `git-activity.json` : ces compteurs ratent des artefacts réellement présents.
+2. Injecter le lecteur de fichiers au constructeur, avec le lecteur réel en défaut, comme `LocalSessionStorageAdapter` le fait de son `Storage`. Les cas de pièce absente se jouent alors sans arborescence sur le disque.
+3. Lire `profile.json`, `git-activity.json`, `pull-requests.json`, `sonar-measures.json`, `repo-context/`, `code/`, `declaratif.md`, `session.md`.
+4. Chaque pièce absente est un cas nominal : elle ne produit pas d'observation, elle ne lève pas d'erreur.
+5. Rendre, à côté du faisceau, le rapport de ce qui a été trouvé et de ce qui ne l'a pas été.
+6. Parcourir `repo-context/` en arborescence, pas seulement les compteurs de `git-activity.json` : ces compteurs ratent des artefacts réellement présents.
 
 ### `2)` La préséance des preuves
 
@@ -96,6 +104,7 @@ journey
 | 1 | Le dossier de `arthur`, sans `declaratif.md`, produit un faisceau sans erreur |
 | 1 | Les artefacts de `arthur/repo-context/.claude/` sont vus alors que `rules_count` vaut `0` |
 | 1 | Un dossier vide rend un faisceau vide et un rapport listant chaque pièce absente |
+| 1 | Les cas de pièce absente passent par un lecteur injecté, sans écrire un seul fichier sur le disque |
 | 2 | Un axe où dépôt et parcours divergent retient le cran du dépôt et conserve l'autre dans la trace |
 | 3 | Deux exécutions sur le même dossier rendent des scores identiques |
 | 3 | Un axe sans aucune observation ressort `non mesuré` et pose un plafond, son score n'est pas `0` |

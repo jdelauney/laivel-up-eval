@@ -6,7 +6,7 @@ status: pending
 
 ## Socle en place
 
-> Le core est importé et vert (`typecheck`, `lint`, `test`). Cette phase s'y greffe, elle ne le refait pas.
+> Le domaine et l'infrastructure sont importés et verts (`typecheck`, `lint`, `test`). Cette phase s'y greffe, elle ne les refait pas.
 
 | Acquis | Fichier | Ce que la phase en réutilise |
 | --- | --- | --- |
@@ -15,12 +15,17 @@ status: pending
 | Statut de mesure | `src/core/ports/scoring-strategy.interface.ts` | `DimensionScore.measured` distingue déjà « non visée » de « visée et ratée ». Le faisceau de preuves doit produire la même distinction, sous le même mot |
 | Modèle de registre | `src/core/registry/game-registry.ts` + `src/games/register-games.ts` | Le registre de règles de la phase 2 en est la copie : `resolve` lève en se nommant, un seul point de câblage |
 | Convention de port | `src/core/ports/*.interface.ts` | Interface nue, commentaire d'intention, aucun détail d'implémentation |
+| Point de câblage unique | `src/composition-root.ts` | `composeFrom(rawGrid, rawCourse, rawSignature)` charge les JSON et rend `ready` ou `invalid-config` porteur du champ fautif. Le catalogue entre par là, et par nulle autre porte |
+| Couture d'adapter | `src/infrastructure/persistence/local-session-storage.adapter.ts` | Sa dépendance externe (`Storage`) est injectée au constructeur, avec le défaut réel en production. L'adapter dossier de la phase 3 injecte son lecteur de fichiers de la même façon |
+| Déterminisme | `src/infrastructure/clock/fixed.adapter.ts` | `FixedClock` avance d'un pas constant : c'est l'horloge du banc de la phase 4, aucun `Date` direct |
+| Données de configuration | `config/grid.json`, `config/course.json`, `config/signature.json` | La grille officielle et la signature sont sur le disque : les axes que le catalogue peut viser sont déjà connus, ils ne sont plus hypothétiques |
 
-Écarts relevés à l'import, corrigés avant de démarrer la phase :
+Écarts relevés à l'import, tranchés :
 
 - `parse-config.helper.ts` vit sous `contracts/helpers/`, pas directement sous `contracts/` : l'arbre ci-dessous est aligné sur le disque.
 - `src/core/store/session.store.ts` doublonnait `src/store/session.store.ts`. Supprimé : `core/` est le domaine pur, l'état UI Zustand vit sous `src/store/`.
-- Les phases 2 à 4 projettent des helpers à plat (`src/core/scoring/axis-score.ts`) alors que le socle range ses helpers sous `helpers/`. À trancher au moment de leur révision.
+- Les helpers à plat des phases 2 à 4 restent à plat : `helpers/` est réservé au calcul pur partagé (`dimension-band.helper.ts`), tandis qu'`axis-score.ts` et `evidence-precedence.ts` sont des unités de scoring, au même rang que `weighted-mapping.strategy.ts`.
+- `src/providers/` est une zone nouvelle, absente de `TECHNICAL.md` §3 et de la carte du code. Elle ne concerne pas cette phase, mais elle doit y entrer.
 
 ## Architecture projection
 
@@ -30,18 +35,22 @@ status: pending
 .
 ├── config/
 │   └── signals.json                                    ✅ squelette versionné, catalogue vide
-├── src/core/
-│   ├── contracts/
-│   │   ├── evidence-bundle.schema.ts                   ✅ le format interne normalisé
-│   │   ├── signals-catalog.schema.ts                   ✅ le contrat du catalogue
-│   │   └── helpers/
-│   │       └── parse-config.helper.ts                  ✏️ en place avec le socle, étendu au catalogue
-│   └── ports/
-│       └── evidence-source.interface.ts                ✅ le port d'entrée des adapters
-└── __tests__/unit/core/contracts/
-    ├── signals-catalog.schema.test.ts                  ✅
-    ├── evidence-bundle.schema.test.ts                  ✅
-    └── parse-config.helper.test.ts                     ✅ la validation croisée catalogue × grille
+├── src/
+│   ├── composition-root.ts                             ✏️ le catalogue rejoint grille, parcours et signature
+│   └── core/
+│       ├── contracts/
+│       │   ├── evidence-bundle.schema.ts               ✅ le format interne normalisé
+│       │   ├── signals-catalog.schema.ts               ✅ le contrat du catalogue
+│       │   └── helpers/
+│       │       └── parse-config.helper.ts              ✏️ en place avec le socle, étendu au catalogue
+│       └── ports/
+│           └── evidence-source.interface.ts            ✅ le port d'entrée des adapters
+└── __tests__/unit/
+    ├── core/contracts/
+    │   ├── signals-catalog.schema.test.ts              ✅
+    │   ├── evidence-bundle.schema.test.ts              ✅
+    │   └── parse-config.helper.test.ts                 ✅ la validation croisée catalogue × grille
+    └── composition-root.test.ts                        ✅ un catalogue hors contrat n ouvre pas de session
 ```
 
 ## User Journey
@@ -112,7 +121,8 @@ journey
 2. Ouvrir `parseConfiguration` à un quatrième argument optionnel `rawSignals`, et croiser les axes du catalogue contre le `knownDimensions` déjà calculé — la même passe qui contrôle les mappings de parcours, pas une seconde.
 3. Refuser au chargement un signal dont l'axe n'est déclaré ni par la grille ni par la signature, en nommant les deux.
 4. Refuser au chargement des `steps` qui ne montent pas.
-5. Poser `config/signals.json` avec sa version et un catalogue vide, valide contre le schéma. Le dossier `config/` existe et est vide : c'est son premier fichier.
+5. Poser `config/signals.json` à côté de `grid.json`, `course.json` et `signature.json`, avec sa version et un catalogue vide, valide contre le schéma.
+6. Élargir `composeFrom` au catalogue et le charger dans `composeApp`. C'est le seul fichier à toucher hors `core/` : la branche `invalid-config` existe déjà et rattrape la `ConfigValidationError` sans être réécrite.
 
 ## Test acceptance criteria
 
@@ -126,3 +136,4 @@ journey
 | 4 | Un signal visant `qualite` alors que ni la grille ni la signature ne la déclarent est refusé au chargement, le message nomme le signal et la dimension |
 | 4 | `config/signals.json` vide se charge sans erreur |
 | 4 | `parseConfiguration` appelé sans catalogue se comporte exactement comme avant : les appels du socle ne changent pas |
+| 4 | Un `signals.json` hors contrat rend `composeFrom` en `invalid-config` portant le champ fautif, sans lever, exactement comme une grille malformée |
