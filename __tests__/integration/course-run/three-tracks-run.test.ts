@@ -104,7 +104,7 @@ const paralleleDimension = (facade: GameSessionFacade) => {
 }
 
 /**
- * Les six parties du tableau de `phase-4.md`, reconstruites en allocations
+ * Les neuf parties du tableau de `phase-4.md`, reconstruites en allocations
  * d'attention tour par tour. Chaque partie a été rejouée dans
  * `run-simulation.helper.ts` avant d'être écrite ici : les chiffres qu'elle
  * rend (mergés, perdus, médiane) sont ceux du tableau, pas un arrondi.
@@ -168,7 +168,89 @@ const OUVRE_QUATRE_EN_LACHE_TROIS: PlayedTurn[] = [
 /** Ne place rien de la partie : aucune unité d'attention posée sur aucun tour. */
 const NE_PLACE_RIEN: PlayedTurn[] = [{}, {}, {}, {}, {}, {}, {}]
 
+/**
+ * Ne place rien, ne perd rien : une seule unité par tour, en rotation sur les
+ * quatre chantiers, jamais assez pour en merger un, toujours assez pour
+ * qu'aucun ne meure. Le meilleur score atteignable sans le moindre merge — la
+ * médiane et le garde-fou seuls, aucun palier de merge.
+ */
+const ROTATION_MINIMALE: PlayedTurn[] = [
+  { migration: 1 },
+  { panier: 1 },
+  { 'api-v2': 1 },
+  { affichage: 1 },
+  { migration: 1 },
+  { panier: 1 },
+  { 'api-v2': 1 },
+]
+
+/**
+ * Un merge, trois pertes : toute l'attention va sur `migration` jusqu'à son
+ * merge au tour 2, les trois autres chantiers ne reçoivent jamais rien et
+ * meurent de négligence. Le pire score atteignable avec un seul merge.
+ */
+const UN_MERGE_TROIS_PERTES: PlayedTurn[] = [
+  { migration: 2 },
+  { migration: 2 },
+  {},
+  {},
+  {},
+  {},
+  {},
+]
+
+/**
+ * Un merge, rien de perdu : `migration` est mené au merge dès le tour 2, le
+ * reste de l'attention tourne juste assez sur les trois autres chantiers
+ * pour qu'aucun ne dérive jusqu'à la mort ni ne merge à son tour.
+ */
+const UN_MERGE_RIEN_PERDU: PlayedTurn[] = [
+  { migration: 2, panier: 1 },
+  { migration: 2, 'api-v2': 1 },
+  { affichage: 1 },
+  { panier: 1 },
+  { 'api-v2': 1 },
+  { affichage: 1 },
+  {},
+]
+
 const TABLE_FROM_PHASE_4 = [
+  {
+    name: 'Ne place rien, ne perd rien (rotation minimale)',
+    allocation: ROTATION_MINIMALE,
+    score: 0.25,
+    band: 'aucun',
+  },
+  {
+    name: 'Ne place jamais rien',
+    allocation: NE_PLACE_RIEN,
+    score: 0,
+    band: 'aucun',
+  },
+  {
+    name: '1 merge, trois pertes',
+    allocation: UN_MERGE_TROIS_PERTES,
+    score: 0.375,
+    band: '1 chantier',
+  },
+  {
+    name: 'Ouvre quatre, en lâche trois',
+    allocation: OUVRE_QUATRE_EN_LACHE_TROIS,
+    score: 0.375,
+    band: '1 chantier',
+  },
+  {
+    name: '1 merge, rien de perdu',
+    allocation: UN_MERGE_RIEN_PERDU,
+    score: 0.625,
+    band: '1 chantier',
+  },
+  {
+    name: 'Étale, mais en perd un',
+    allocation: ETALE_EN_PERD_UN,
+    score: 0.875,
+    band: '2 chantiers',
+  },
   {
     name: 'Rotation soignée',
     allocation: ROTATION_SOIGNEE,
@@ -186,24 +268,6 @@ const TABLE_FROM_PHASE_4 = [
     allocation: DEUX_A_LA_FOIS_EN_SERIE,
     score: 1,
     band: '3 chantiers et plus',
-  },
-  {
-    name: 'Étale, mais en perd un',
-    allocation: ETALE_EN_PERD_UN,
-    score: 0.833,
-    band: '2 chantiers',
-  },
-  {
-    name: 'Ouvre quatre, en lâche trois',
-    allocation: OUVRE_QUATRE_EN_LACHE_TROIS,
-    score: 0.333,
-    band: '1 chantier',
-  },
-  {
-    name: 'Ne place rien de la partie',
-    allocation: NE_PLACE_RIEN,
-    score: 0,
-    band: 'aucun',
   },
 ] as const
 
@@ -234,6 +298,19 @@ describe('three-tracks in the course', () => {
       expect(dimension.score).toBe(1)
       expect(dimension.band).toBe('3 chantiers et plus')
     }
+  })
+
+  it('makes merges dominate the score: the best score without a single merge stays below the worst score with one', () => {
+    const bestWithoutAMerge = paralleleDimension(
+      playWholeCourse(ROTATION_MINIMALE),
+    )
+    const worstWithAMerge = paralleleDimension(
+      playWholeCourse(UN_MERGE_TROIS_PERTES),
+    )
+
+    expect(bestWithoutAMerge.score).toBeCloseTo(0.25, 3)
+    expect(worstWithAMerge.score).toBeCloseTo(0.375, 3)
+    expect(bestWithoutAMerge.score).toBeLessThan(worstWithAMerge.score)
   })
 
   it('holds the guard rail: three merges with one lost track never reach the top band, at equal merge count', () => {

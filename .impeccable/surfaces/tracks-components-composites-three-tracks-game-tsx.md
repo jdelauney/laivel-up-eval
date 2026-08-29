@@ -60,7 +60,7 @@ L'état d'un chantier passe par le filet de sa ligne et une mention en petites c
 | Ouvert | plein, filet de base | poids normal | vides |
 | Dérive | pointillé, filet de base | poids normal, mention `DÉRIVE` | vides |
 | Mergé | plein, filet épais | `font-semibold`, mention `MERGÉ` | barrées d'un filet horizontal |
-| Perdu | creusé, sans filet | poids normal, mention `PERDU` en `--missed` | barrées d'un filet horizontal |
+| Perdu | creusé, filet conservé | poids normal, mention `PERDU` en `--missed` | barrées d'un filet horizontal |
 
 La ligne d'un chantier perdu reste à pleine opacité. Le vermillon ne porte que le mot, jamais la ligne.
 

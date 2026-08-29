@@ -92,6 +92,18 @@ describe('three-tracks answer schema', () => {
     expect(call).toThrow('2')
   })
 
+  it('rejects two allocations of the same turn that together exceed the per track cap', () => {
+    const trace = completeTrace()
+    trace.turns[1].allocations = [
+      { trackId: 'b', attention: 2 },
+      { trackId: 'b', attention: 1 },
+    ]
+
+    const call = () => parseThreeTracksTrace(trace, config)
+    expect(call).toThrow(TrackAttentionExceededError)
+    expect(call).toThrow('2')
+  })
+
   it('rejects a turn whose allocations exceed the attention available', () => {
     const trace = completeTrace()
     trace.turns[2].allocations = [

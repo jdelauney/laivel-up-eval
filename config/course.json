@@ -1194,7 +1194,7 @@
               "mapping": [
                 {
                   "dimension": "parallele",
-                  "weight": 2
+                  "weight": 3
                 }
               ]
             },
@@ -1208,7 +1208,7 @@
               "mapping": [
                 {
                   "dimension": "parallele",
-                  "weight": 2
+                  "weight": 3
                 }
               ]
             },

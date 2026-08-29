@@ -23,10 +23,17 @@ const olderTurnsLabel = (count: number): string =>
  * Une cellule non écoulée d'un chantier hors jeu est barrée, jamais vide et
  * jamais cachée : ni actif, ni désactivé, la fiche interdit les trois autres
  * traitements.
+ *
+ * `aria-hidden` porte sur le filet décoratif seul, jamais sur la cellule : un
+ * `<td>` retiré de l'arbre d'accessibilité désaligne le nombre de cellules de
+ * la ligne par rapport à l'en-tête, et l'association de « Avancement » à sa
+ * colonne devient fausse. La cellule annonce donc ce qu'elle est — un
+ * chantier hors jeu à ce tour — par un texte réservé aux lecteurs d'écran.
  */
 const BarredCell = ({ className = '' }: { className?: string }) => (
-  <td aria-hidden="true" className={`p-2 ${className}`}>
-    <span className="block h-px bg-plane-rule" />
+  <td className={`p-2 ${className}`}>
+    <span aria-hidden="true" className="block h-px bg-plane-rule" />
+    <span className="sr-only">Chantier hors jeu à ce tour</span>
   </td>
 )
 
@@ -65,6 +72,19 @@ const stateMentionClassName = (status: TrackStatus): string =>
 
 const isOutOfGame = (status: TrackStatus): boolean =>
   status === 'merged' || status === 'lost'
+
+/**
+ * Le nom accessible de la tête de ligne : le libellé du chantier, suivi de sa
+ * mention d'état quand il y en a une. Le brief n'y figure jamais — c'est une
+ * phrase entière, elle réannoncerait à chaque cellule parcourue de la ligne,
+ * sept tours × quatre chantiers. Il reste lisible à l'écran, seulement sorti
+ * du nom : `aria-label` sur le `th` remplace le nom calculé depuis son
+ * contenu, la mention d'état doit donc y être répétée pour rester annoncée.
+ */
+const rowAccessibleName = (track: TrackView): string => {
+  const mention = STATE_MENTION[track.status]
+  return mention === undefined ? track.label : `${track.label}, ${mention}`
+}
 
 export const TrackRegister = ({
   tracks,
@@ -163,6 +183,7 @@ export const TrackRegister = ({
           <tr key={track.id} className={ROW_BORDER[track.status]}>
             <th
               scope="row"
+              aria-label={rowAccessibleName(track)}
               className={`p-2 align-top text-plane-foreground ${ROW_HEAD_WEIGHT[track.status]}`}
             >
               <span>{track.label}</span>

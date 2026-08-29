@@ -104,15 +104,29 @@ export const parseThreeTracksTrace = (
       throw new IncompleteTraceError(turnNumber)
     }
 
-    let turnTotal = 0
+    /**
+     * Le plafond par chantier se vérifie sur la somme des allocations visant
+     * un même `trackId` dans le tour, jamais entrée par entrée : une trace
+     * forgée ou rejouée pourrait sinon fractionner une même attention en
+     * plusieurs allocations et passer sous le plafond déclaré.
+     */
+    const attentionByTrack = new Map<string, number>()
     turn.allocations.forEach((allocation) => {
       if (!knownTrackIds.has(allocation.trackId)) {
         throw new UnknownTrackError(turnNumber, allocation.trackId)
       }
-      if (allocation.attention > config.maxPerTrack) {
-        throw new TrackAttentionExceededError(turnNumber, allocation.trackId)
+      attentionByTrack.set(
+        allocation.trackId,
+        (attentionByTrack.get(allocation.trackId) ?? 0) + allocation.attention,
+      )
+    })
+
+    let turnTotal = 0
+    attentionByTrack.forEach((attention, trackId) => {
+      if (attention > config.maxPerTrack) {
+        throw new TrackAttentionExceededError(turnNumber, trackId)
       }
-      turnTotal += allocation.attention
+      turnTotal += attention
     })
 
     if (turnTotal > config.attentionPerTurn) {

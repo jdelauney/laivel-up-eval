@@ -99,13 +99,13 @@ Dans `config/course.json`, remplacer le corps du jeu `g7-2` — de `"type"` jusq
               "id": "g7-2-c1",
               "question": "Au moins un chantier a-t-il été mené jusqu'au merge ?",
               "rule": { "type": "merged-at-least", "threshold": 1 },
-              "mapping": [{ "dimension": "parallele", "weight": 2 }]
+              "mapping": [{ "dimension": "parallele", "weight": 3 }]
             },
             {
               "id": "g7-2-c2",
               "question": "Trois chantiers ou plus ont-ils été menés jusqu'au merge ?",
               "rule": { "type": "merged-at-least", "threshold": 3 },
-              "mapping": [{ "dimension": "parallele", "weight": 2 }]
+              "mapping": [{ "dimension": "parallele", "weight": 3 }]
             },
             {
               "id": "g7-2-c3",
@@ -138,30 +138,34 @@ Aucun des quatre chantiers ne se lit comme le plus urgent. C'est délibéré, et
 
 ### `2)` Le barème, déjà vérifié contre le moteur
 
-> Six parties ont été rejouées dans la simulation de la phase 1 et notées à la main contre les bandes de `config/grid.json`. Le tableau ci-dessous est le contrat que le test d'intégration doit reproduire.
+> Neuf parties ont été rejouées dans la simulation de la phase 1 et notées à la main contre les bandes de `config/grid.json`. Le tableau ci-dessous est le contrat que le test d'intégration doit reproduire. Les deux critères `merged-at-least` pèsent 3 chacun, la médiane et le garde-fou pèsent 1 chacun : 8 points possibles au total.
 
 | Partie | Mergés | Perdus | Médiane | Score | Bande attendue |
 | --- | --- | --- | --- | --- | --- |
+| Ne place rien, ne perd rien (rotation minimale) | 0 | 0 | 4 | 0.250 | aucun |
+| Ne place jamais rien | 0 | 4 | 0 | 0.000 | aucun |
+| 1 merge, trois pertes | 1 | 3 | 1 | 0.375 | 1 chantier |
+| Ouvre quatre, en lâche trois | 2 | 2 | 2 | 0.375 | 1 chantier |
+| 1 merge, rien de perdu | 1 | 0 | 4 | 0.625 | 1 chantier |
+| Étale, mais en perd un | 3 | 1 | 3 | 0.875 | 2 chantiers |
 | Rotation soignée | 3 | 0 | 4 | 1.000 | 3 chantiers et plus |
 | Une unité partout, à tour de rôle | 3 | 0 | 4 | 1.000 | 3 chantiers et plus |
 | Deux chantiers à la fois, en série | 3 | 0 | 4 | 1.000 | 3 chantiers et plus |
-| Étale, mais en perd un | 3 | 1 | 3 | 0.833 | 2 chantiers |
-| Ouvre quatre, en lâche trois | 2 | 2 | 2 | 0.333 | 1 chantier |
-| Ne place rien de la partie | 0 | 4 | 0 | 0.000 | aucun |
 
 Ce que ce tableau prouve, et qu'il faut préserver en ajustant quoi que ce soit :
 
 1. Le cran le plus haut s'atteint par trois routes différentes. Le jeu mesure une pratique, pas la découverte d'une solution unique.
 2. Trois merges avec un chantier perdu **ne donne pas** le cran haut. C'est le garde-fou qui mord.
-3. Ouvrir quatre chantiers puis en lâcher trois retombe à un tiers, malgré deux merges affichés.
+3. Ouvrir quatre chantiers puis en lâcher trois retombe sur la bande d'un chantier, malgré deux merges affichés.
 4. La bande basse n'est atteignable que parce que la clôture d'un tour n'exige pas que l'attention soit placée. Si cette règle change, elle redevient inatteignable et l'axe cesse de discriminer par le bas.
+5. Les merges dominent le score : le meilleur score atteignable sans merger un seul chantier (médiane et garde-fou seuls, 0.250) reste strictement sous le pire score atteignable avec un seul merge (0.375). Une partie qui n'a rien mené au bout ne peut jamais dépasser une partie qui a mené un chantier au bout, quelle que soit sa continuité par ailleurs.
 
 ### `3)` Le test d'intégration
 
 > Le jeu traverse le moteur de production : le vrai parcours, la vraie grille, le vrai registre, la vraie façade.
 
 1. Créer `three-tracks-run.test.ts` sur le modèle de `checkpoints-run.test.ts`. Seules l'horloge et la persistance sont doublées, aucune branche réservée aux tests.
-2. Reprendre les six parties du tableau ci-dessus comme fixtures nommées, et vérifier la bande de `parallele` pour chacune.
+2. Reprendre les neuf parties du tableau ci-dessus comme fixtures nommées, et vérifier la bande de `parallele` pour chacune.
 3. Vérifier que la partie qui perd un chantier n'atteint pas la bande de celle qui n'en perd aucun, à nombre de merges égal.
 4. Vérifier que `parallele` est mesuré à l'issue du parcours, et ne plafonne donc plus le niveau annonçable.
 5. Vérifier qu'un parcours dont la configuration du jeu est hors contrat n'ouvre pas de session et nomme le champ fautif.
@@ -175,7 +179,7 @@ Ce que ce tableau prouve, et qu'il faut préserver en ajustant quoi que ce soit 
 | 1 | Le libellé du jeu n'annonce aucun critère |
 | 1 bis | La suite entière est verte : le test d'intégration de `checkpoints` sait répondre au nouveau type de jeu |
 | 1 bis | Les assertions chiffrées de `checkpoints-run.test.ts` sont inchangées |
-| 2 | Les six parties du tableau rendent les six bandes qu'il annonce, au chiffre près |
+| 2 | Les neuf parties du tableau rendent les neuf bandes qu'il annonce, au chiffre près |
 | 2 | Trois routes de jeu différentes atteignent la bande la plus haute |
 | 2 | Trois merges avec un chantier perdu n'atteignent pas la bande la plus haute |
 | 2 | Une partie qui ne place jamais rien atteint la bande la plus basse |
