@@ -16,13 +16,14 @@
   --color-plane-foreground: var(--plane-foreground);
   --color-plane-rule: var(--plane-rule);
 
-  /* Les six mondes de groupe, pleine force, une teinte par groupe. */
+  /* Les sept mondes de groupe, pleine force, une teinte par groupe. */
   --color-group-1: var(--group-1);
   --color-group-2: var(--group-2);
   --color-group-3: var(--group-3);
   --color-group-4: var(--group-4);
   --color-group-5: var(--group-5);
   --color-group-6: var(--group-6);
+  --color-group-7: var(--group-7);
 
   /* La triade d'état, sur le plan neutre uniquement. Une couleur, un sens. */
   --color-nominal: var(--nominal);
@@ -102,14 +103,17 @@
   --plane-foreground: oklch(0.21 0.012 65);
   --plane-rule: oklch(0.87 0.008 90);
 
-  /* Les six groupes. Le vermillon est tenu à l'écart : jamais un groupe,
-     toujours l'erreur. */
+  /* Les sept groupes. Le vermillon est tenu à l'écart : jamais un groupe,
+     toujours l'erreur. Le septième, magenta, est arrivé avec le groupe des
+     axes officiels : il est posé entre le violet et le vermillon, plus près
+     du violet — un monde ne doit jamais se confondre avec une faute. */
   --group-1: oklch(0.628 0.164 47);
   --group-2: oklch(0.79 0.152 84);
   --group-3: oklch(0.598 0.136 146);
   --group-4: oklch(0.585 0.098 202);
   --group-5: oklch(0.472 0.176 266);
   --group-6: oklch(0.508 0.172 306);
+  --group-7: oklch(0.52 0.168 338);
 
   /* La triade d'état : nominal, vigilance, manqué. */
   --nominal: oklch(0.556 0.132 150);

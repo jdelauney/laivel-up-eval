@@ -24,6 +24,7 @@ const HUES = [
   'bg-group-4',
   'bg-group-5',
   'bg-group-6',
+  'bg-group-7',
 ] as const
 
 export const GroupRail = ({ groups }: { groups: readonly RailGroup[] }) => {
