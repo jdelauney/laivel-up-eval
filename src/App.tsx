@@ -1,9 +1,5 @@
 function App() {
-  return (
-    <>
-       <p>empty</p>
-    </>
-  )
+  return <p>empty</p>
 }
 
 export default App

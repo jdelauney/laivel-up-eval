@@ -1,0 +1,4 @@
+# Git stocke déjà tout en LF ; sans cette règle, core.autocrlf=true livre des
+# CRLF sur Windows et le formateur biome (lineEnding: lf) réclame la réécriture
+# de chaque fichier touché.
+* text=auto eol=lf
