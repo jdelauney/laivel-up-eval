@@ -1,6 +1,6 @@
 # Review: Le jeu `checkpoints`, premier jeu à état
 
-- **Verdict**: changes-requested
+- **Verdict**: approved — les cinq constats sont clos le 29/08, voir « Clôture » en fin de fiche
 - **Diff**: `f099d4c...cc97021`
 - **Axes run**: code, functional, relevancy
 - **Date**: 2026_08_29
@@ -57,8 +57,8 @@
 - [x] Une partie qui cadre tôt obtient un score d'`intervention` supérieur à une partie qui reprend tout — `__tests__/integration/course-run/checkpoints-run.test.ts:110`
 - [x] La partie passe par la façade de production, sans branche réservée aux tests — `__tests__/integration/course-run/checkpoints-run.test.ts:7` (vrai `course.json`, vrai `buildGameRegistry`, vraie `GameSessionFacade` ; seules l'horloge et la persistance sont doublées)
 - [x] La trace d'audit porte la soumission du jeu — `__tests__/integration/course-run/checkpoints-run.test.ts:126`
-- [ ] Le jeu se joue de bout en bout dans le navigateur et rend la main au parcours — aucune trace de la vérification navigateur prévue par la phase 4, tâche 3 : ni capture, ni vidéo, ni note de passage dans le dépôt
-- [ ] Les sept groupes ont sept teintes distinctes, sur écran large et en largeur mobile — même absence de preuve ; la rampe à sept mondes vient du commit `876bafa`, antérieur au diff, et n'a pas été revérifiée après l'ajout du groupe 7
+- [x] Le jeu se joue de bout en bout dans le navigateur et rend la main au parcours — `qa/parcours-de-bout-en-bout.webm`, `qa/README.md` (les six étapes tranchées, budget 10 → 6, puis `Situation 17 sur 20`)
+- [x] Les sept groupes ont sept teintes distinctes, sur écran large et en largeur mobile — `qa/rampe-sept-teintes.webm`, `qa/README.md` (sept angles de teinte relevés sur le rendu, identiques en 1440×900 et 390×844, sans débordement)
 - [x] Un rechargement au milieu du groupe reprend au même jeu — `__tests__/integration/course-run/checkpoints-run.test.ts:171` (couvert au niveau session, pas au niveau navigateur)
 
 ## Findings
@@ -75,7 +75,28 @@
 
 | Metric        | Value                                             |
 | ------------- | ------------------------------------------------- |
-| Verified      | 95% (39/41)                                       |
+| Verified      | 100% (41/41) après clôture — 95% (39/41) à la revue |
 | Files checked | `src/games/checkpoints/schema/config.schema.ts`, `src/games/checkpoints/schema/answer.schema.ts`, `src/games/checkpoints/helpers/run-simulation.helper.ts`, `src/games/checkpoints/checkpoints.evaluator.ts`, `src/games/checkpoints/actions/build-checkpoints-answer.action.ts`, `src/games/checkpoints/hooks/use-checkpoints.hook.ts`, `src/games/checkpoints/components/elements/stage-track.tsx`, `src/games/checkpoints/components/elements/choice-card.tsx`, `src/games/checkpoints/components/composites/checkpoints-game.tsx`, `src/games/register-games.ts`, `src/games/register-components.ts`, `config/course.json`, `__tests__/unit/games/checkpoints/*.test.ts`, `__tests__/integration/course-run/checkpoints-run.test.ts` |
-| Unchecked     | Le jeu se joue de bout en bout dans le navigateur — fix ; Les sept groupes ont sept teintes distinctes — fix |
+| Unchecked     | Aucun. Les deux critères laissés ouverts sont couverts par `qa/` |
 | Unplanned     | `cc97021` réécrit l'accessibilité de `.impeccable/surfaces/kpoints-components-composites-checkpoints-game-tsx.md` : la fiche demandait un groupe de boutons radio, elle acte les boutons de l'implémentation. Arbitrage explicite, postérieur au merge, rattaché à aucun critère du plan |
+
+## Clôture
+
+Traitée le 29/08 sur la branche `fix/cloture-jeu-checkpoints`, postérieure au merge de la PR #4.
+
+| Constat | Sort | Preuve |
+| --- | --- | --- |
+| 🟡 `functional` — le jeu se joue de bout en bout dans le navigateur | corrigé | `qa/parcours-de-bout-en-bout.webm`, `qa/README.md` |
+| 🟡 `functional` — sept teintes distinctes aux deux largeurs | corrigé | `qa/rampe-sept-teintes.webm`, `qa/README.md` |
+| 🟡 `rot` — deux verdicts opposés pour la même partie | corrigé | `phase-2.md:52`, réaligné sur le barème de `phase-4.md` que le code respecte |
+| 🟢 `conform` — ni `strict` ni `noUncheckedIndexedAccess` | reporté | `aidd_docs/backlog/tasks/armer-le-typage-strict-que-le-code-suppose.md`, comme la revue le demandait |
+| 🟢 `code` — le `fieldset` autour des trois boutons | **rejeté** | voir ci-dessous |
+
+### Le constat rejeté
+
+La revue demandait de remplacer `<fieldset><legend>` par `<div role="group" aria-label>`. Le remplacement a été écrit, puis annulé : il va contre la sémantique, pas dans son sens.
+
+- La cartographie ARIA en HTML fait de `fieldset` l'élément qui porte nativement le rôle `group`. Écrire `role="group"` sur un `div` reproduit à la main ce que `fieldset` donne, et Biome le refuse au titre de `useSemanticElements` : `The elements with this role can be changed to the following elements: <fieldset>`.
+- La prémisse du constat — « `fieldset` groupe des contrôles de saisie » — ne disqualifie pas l'usage : `<button>` **est** un élément associé aux formulaires, et la spécification autorise explicitement `fieldset` à grouper d'autres contenus que des champs.
+
+Le `fieldset` reste. La `legend` en `sr-only` nomme l'étape, ce qu'un `aria-label` sur un `div` ferait moins bien pour la même intention.
