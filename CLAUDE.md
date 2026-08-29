@@ -39,6 +39,9 @@ Before planning, writing, or reviewing **any** code, load and follow these proje
 - `.claude/skills/user-component-pattern` — Smart/Dumb (LRS) component structure: business logic in smart containers, pure presentation in dumb components.
 - `.claude/skills/user-code-concepts` — Code concepts
 
+## Prose response output optimizer (always apply before present answer)
+- `.claude/skills/output-optimizer` — Handles compression requests
+
 ## Memory Management
 
 Project docs, memory, specs, and plans live in `aidd_docs/`.
