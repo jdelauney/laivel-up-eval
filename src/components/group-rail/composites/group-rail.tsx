@@ -17,7 +17,15 @@ export type RailGroup = {
   state: 'done' | 'current' | 'pending'
 }
 
-const HUES = [
+/**
+ * Deux listes littérales et non une interpolation : Tailwind ne voit que les
+ * classes écrites en toutes lettres dans la source.
+ *
+ * Un groupe non atteint garde sa teinte, en filet plutôt qu'en fond. La rendre
+ * grise faisait disparaître six mondes sur sept de l'écran, puisqu'un seul
+ * groupe est courant à la fois.
+ */
+const FILLS = [
   'bg-group-1',
   'bg-group-2',
   'bg-group-3',
@@ -27,43 +35,55 @@ const HUES = [
   'bg-group-7',
 ] as const
 
-export const GroupRail = ({ groups }: { groups: readonly RailGroup[] }) => {
-  const largest = Math.max(1, ...groups.map((group) => group.gameCount))
+const EDGES = [
+  'border-group-1',
+  'border-group-2',
+  'border-group-3',
+  'border-group-4',
+  'border-group-5',
+  'border-group-6',
+  'border-group-7',
+] as const
 
-  return (
-    <ol className="flex flex-row gap-1 md:h-full md:min-h-96 md:flex-col md:gap-1.5">
-      {groups.map((group, index) => (
-        <li
-          key={group.id}
-          className="flex min-w-0 flex-1 md:flex-none"
-          style={{ flexBasis: `${(group.gameCount / largest) * 100}%` }}
-        >
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:flex-row md:items-stretch md:gap-3">
-            <div
-              className={`h-2 w-full shrink-0 md:h-full md:w-2.5 ${HUES[index % HUES.length]} ${
-                group.state === 'pending'
-                  ? 'border-2 border-plane-rule border-dashed bg-transparent'
-                  : ''
-              } ${group.state === 'current' ? 'ring-2 ring-plane-foreground ring-offset-1' : ''}`}
-              aria-hidden="true"
-            />
-            <div className="hidden min-w-0 flex-col justify-center py-1 md:flex">
-              <span
-                className={`truncate text-plane-foreground text-xs ${
-                  group.state === 'current'
-                    ? 'font-semibold'
-                    : 'font-medium text-plane-foreground/60'
-                }`}
-              >
-                {group.label}
-              </span>
-              <span className="text-[0.6875rem] text-plane-foreground/50 tabular-nums">
-                {group.gameCount} {group.gameCount > 1 ? 'jeux' : 'jeu'}
-              </span>
-            </div>
+export const GroupRail = ({ groups }: { groups: readonly RailGroup[] }) => (
+  /**
+   * `flex-grow` proportionnel sur une base nulle, et non un `flex-basis` en
+   * pourcentage : sept groupes totalisaient 400 % et la rampe débordait de
+   * l'écran. Ici les onglets se partagent une hauteur bornée, quel qu'en soit
+   * le nombre, et le plancher garde un petit groupe cliquable.
+   */
+  <ol className="flex flex-row gap-1 md:h-[30rem] md:flex-col md:gap-1.5">
+    {groups.map((group, index) => (
+      <li
+        key={group.id}
+        className="flex min-w-0 md:min-h-9"
+        style={{ flexGrow: group.gameCount, flexBasis: 0 }}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:flex-row md:items-stretch md:gap-3">
+          <div
+            className={`h-2 w-full shrink-0 md:h-full md:w-4 ${
+              group.state === 'pending'
+                ? `border-2 border-dashed bg-transparent ${EDGES[index % EDGES.length]}`
+                : FILLS[index % FILLS.length]
+            } ${group.state === 'current' ? 'ring-2 ring-plane-foreground ring-offset-1' : ''}`}
+            aria-hidden="true"
+          />
+          <div className="hidden min-w-0 flex-col justify-center py-1 md:flex">
+            <span
+              className={`truncate text-plane-foreground text-xs ${
+                group.state === 'current'
+                  ? 'font-semibold'
+                  : 'font-medium text-plane-foreground/60'
+              }`}
+            >
+              {group.label}
+            </span>
+            <span className="text-[0.6875rem] text-plane-foreground/50 tabular-nums">
+              {group.gameCount} {group.gameCount > 1 ? 'jeux' : 'jeu'}
+            </span>
           </div>
-        </li>
-      ))}
-    </ol>
-  )
-}
+        </div>
+      </li>
+    ))}
+  </ol>
+)
