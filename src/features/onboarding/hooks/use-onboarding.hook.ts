@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import type { RepositorySlug } from '@/core/contracts/repository-slug.schema'
 import { useSessionFacade } from '@/providers/session-context'
 import type { RailGroup } from '../../../components/group-rail/composites/group-rail'
 import { buildRail } from '../../../components/group-rail/helpers/build-rail.helper'
@@ -20,9 +21,9 @@ export const useOnboarding = () => {
   const rail: RailGroup[] = buildRail(facade.courseShape(), 0)
 
   const start = useCallback(
-    (playerName: string): void => {
-      facade.start(playerName)
-      openCourse(playerName, facade.getProgress())
+    (playerName: string, repository?: RepositorySlug | undefined): void => {
+      facade.start(playerName, repository)
+      openCourse({ playerName, repository }, facade.getProgress())
     },
     [facade, openCourse],
   )
@@ -36,7 +37,13 @@ export const useOnboarding = () => {
     if (!facade.resume()) return false
 
     const progress = facade.getProgress()
-    openCourse(facade.playerName() ?? '', progress)
+    openCourse(
+      {
+        playerName: facade.playerName() ?? '',
+        repository: facade.designatedRepository(),
+      },
+      progress,
+    )
     if (progress.finished) showSummary()
     return true
   }, [facade, openCourse, showSummary])

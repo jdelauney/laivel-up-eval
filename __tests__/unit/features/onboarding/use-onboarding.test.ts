@@ -41,6 +41,35 @@ describe('onboarding', () => {
     expect(facade.hasSession()).toBe(true)
   })
 
+  it('puts the designated repository in the store alongside the name', () => {
+    const facade = buildFacade(new MemoryPersistence())
+    const { result } = renderOnboarding(facade)
+
+    act(() => {
+      result.current.start('Alice', 'alice/atelier')
+    })
+
+    expect(useSessionStore.getState().repository).toBe('alice/atelier')
+    expect(facade.designatedRepository()).toBe('alice/atelier')
+  })
+
+  it('brings the repository back when a stored run is resumed', () => {
+    const persistence = new MemoryPersistence()
+    const played = buildFacade(persistence)
+    played.start('Alice', 'alice/atelier')
+
+    useSessionStore.getState().reset()
+    const { result } = renderOnboarding(buildFacade(persistence))
+
+    expect(result.current.storedRun?.repository).toBe('alice/atelier')
+
+    act(() => {
+      result.current.resume()
+    })
+
+    expect(useSessionStore.getState().repository).toBe('alice/atelier')
+  })
+
   it('reports nothing to resume on an empty store, and stays on onboarding', () => {
     const { result } = renderOnboarding(buildFacade(new MemoryPersistence()))
 
