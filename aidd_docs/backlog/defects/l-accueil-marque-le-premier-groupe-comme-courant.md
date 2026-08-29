@@ -1,6 +1,6 @@
 ---
 type: defect
-status: ready
+status: done
 related_to:
   - aidd_docs/backlog/epics/onboarding-du-joueur.md
 order: 1
@@ -47,3 +47,13 @@ Le seul rôle de la rampe sur cet écran est de donner la forme du parcours avan
 Sur l'accueil, sans partie enregistrée puis avec une partie enregistrée, aucun onglet ne porte l'anneau ni le libellé gras : les sept sont en filet pointillé. Après « Commencer l'évaluation », le groupe 1 passe courant.
 
 Un test couvre les deux états de la rampe, au repos et en parcours. Sans lui, la régression déjà survenue une fois reste ouverte.
+
+## Resolution
+
+Corrigé le 29/08, issue [#9](https://github.com/jdelauney/laivel-up-eval/issues/9), branche `fix/rampe-au-repos-sans-groupe-courant`.
+
+`buildRail` prenait un index nu : un appelant sans position devait quand même désigner un groupe. `currentIndex` accepte désormais `undefined`, qui laisse toute la rampe à venir, et l'accueil passe cette valeur. Le parcours continue de passer sa position réelle, inchangé.
+
+La vérification demandée passe aux trois états : sans partie enregistrée, avec une partie en attente, et après « Commencer l'évaluation ». Les sept onglets sont en filet pointillé, sans fond ni anneau, libellés en poids 500 ; le groupe 1 reprend fond, filet plein et anneau une fois le parcours ouvert.
+
+Trois tests unitaires couvrent les deux états de la rampe, dont un sur le versant parcours pour que la correction n'y touche pas. Les fixtures ont gagné une façade à plusieurs groupes : un parcours à un seul groupe rend la même rampe au repos et en cours, et ne prouve rien.
