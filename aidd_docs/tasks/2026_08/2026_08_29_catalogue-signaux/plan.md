@@ -11,7 +11,7 @@ status: pending
 | --- | --- |
 | **Goal** | Lire un dossier de preuves, en tirer un score et un statut de mesure par axe, sans qu'un seuil vive dans le code |
 | **Source** | `aidd_docs/BRIEF.md` §3, §3.1, §4, §5, §8 · `aidd_docs/TECHNICAL.md` §5 · `E:\IA-PULSE\hackaton\ressources\laivel-up-main` (`levels/aidd.md`, `profiles/`) |
-| **Socle** | Domaine, jeux, infrastructure et `composition-root.ts` en place et verts. `config/` porte `grid.json`, `course.json`, `signature.json` — le catalogue les rejoint |
+| **Socle** | Domaine, jeux, infrastructure, frontend et `composition-root.ts` en place et verts : 123 tests sur 19 fichiers. `config/` porte `grid.json`, `course.json`, `signature.json` — le catalogue les rejoint |
 
 ## Phases
 

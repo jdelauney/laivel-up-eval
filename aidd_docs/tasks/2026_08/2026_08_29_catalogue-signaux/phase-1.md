@@ -6,7 +6,7 @@ status: pending
 
 ## Socle en place
 
-> Le domaine et l'infrastructure sont importés et verts (`typecheck`, `lint`, `test`). Cette phase s'y greffe, elle ne les refait pas.
+> Le domaine, l'infrastructure et le frontend sont importés et verts : `typecheck`, `lint` sur 70 fichiers, 123 tests sur 19 fichiers. Cette phase s'y greffe, elle ne les refait pas.
 
 | Acquis | Fichier | Ce que la phase en réutilise |
 | --- | --- | --- |
@@ -19,13 +19,18 @@ status: pending
 | Couture d'adapter | `src/infrastructure/persistence/local-session-storage.adapter.ts` | Sa dépendance externe (`Storage`) est injectée au constructeur, avec le défaut réel en production. L'adapter dossier de la phase 3 injecte son lecteur de fichiers de la même façon |
 | Déterminisme | `src/infrastructure/clock/fixed.adapter.ts` | `FixedClock` avance d'un pas constant : c'est l'horloge du banc de la phase 4, aucun `Date` direct |
 | Données de configuration | `config/grid.json`, `config/course.json`, `config/signature.json` | La grille officielle et la signature sont sur le disque : les axes que le catalogue peut viser sont déjà connus, ils ne sont plus hypothétiques |
+| Suite de chargement | `__tests__/integration/config-loading/{grid,course,replay-profile}.test.ts` | Le gabarit du refus au chargement : un objet minimal conforme, une mutation qui casse un champ, et l'assertion sur la `ConfigValidationError`. Le catalogue s'y ajoute comme un quatrième fichier, il n'invente pas sa forme |
+| Refus câblé de bout en bout | `__tests__/unit/composition-root.test.ts` | Il couvre déjà grille malformée, dimension fantôme, type de jeu inconnu, et « aucune session ouverte quand la config est refusée ». Le catalogue s'y ajoute, le fichier existe |
+| Double de persistance | `__tests__/fixtures/memory-persistence.ts` | Le port en mémoire partagé par les tests, avec sérialisation réelle. Le modèle pour tout double de port que la phase aurait à écrire |
 
 Écarts relevés à l'import, tranchés :
 
 - `parse-config.helper.ts` vit sous `contracts/helpers/`, pas directement sous `contracts/` : l'arbre ci-dessous est aligné sur le disque.
 - `src/core/store/session.store.ts` doublonnait `src/store/session.store.ts`. Supprimé : `core/` est le domaine pur, l'état UI Zustand vit sous `src/store/`.
 - Les helpers à plat des phases 2 à 4 restent à plat : `helpers/` est réservé au calcul pur partagé (`dimension-band.helper.ts`), tandis qu'`axis-score.ts` et `evidence-precedence.ts` sont des unités de scoring, au même rang que `weighted-mapping.strategy.ts`.
-- `src/providers/` est une zone nouvelle, absente de `TECHNICAL.md` §3 et de la carte du code. Elle ne concerne pas cette phase, mais elle doit y entrer.
+- `src/providers/` et `__tests__/fixtures/` sont deux zones nouvelles, absentes de l'arborescence de `TECHNICAL.md` §3. Elles ne concernent pas cette phase, mais elles doivent y entrer.
+- Les tests de chargement importent par l'alias `@/`, les tests unitaires par chemin relatif. Ne pas mélanger les deux dans un même fichier ; suivre le voisin du dossier.
+- Un dossier `__tests__/unit copy/` gardait 19 fichiers de test hors du glob `include: ['__tests__/{unit,integration}/**']` : ils ne tournaient pas. Fusionné dans `__tests__/unit/`, et leurs imports recalés sur les chemins réels du socle.
 
 ## Architecture projection
 
@@ -45,13 +50,17 @@ status: pending
 │       │       └── parse-config.helper.ts              ✏️ en place avec le socle, étendu au catalogue
 │       └── ports/
 │           └── evidence-source.interface.ts            ✅ le port d'entrée des adapters
-└── __tests__/unit/
-    ├── core/contracts/
-    │   ├── signals-catalog.schema.test.ts              ✅
-    │   ├── evidence-bundle.schema.test.ts              ✅
-    │   └── parse-config.helper.test.ts                 ✅ la validation croisée catalogue × grille
-    └── composition-root.test.ts                        ✅ un catalogue hors contrat n ouvre pas de session
+└── __tests__/
+    ├── unit/
+    │   ├── core/contracts/
+    │   │   ├── signals-catalog.schema.test.ts          ✅ la forme du catalogue
+    │   │   └── evidence-bundle.schema.test.ts          ✅ la forme du faisceau
+    │   └── composition-root.test.ts                    ✏️ un catalogue hors contrat n ouvre pas de session
+    └── integration/config-loading/
+        └── signals.test.ts                             ✅ la validation croisée catalogue × grille
 ```
+
+> La forme d'un schéma se teste en unitaire ; le refus au chargement, croisé avec la grille réelle, va dans `config-loading/` à côté de `grid.test.ts` et `course.test.ts`. C'est le partage que la suite existante applique déjà.
 
 ## User Journey
 

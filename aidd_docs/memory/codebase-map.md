@@ -1,6 +1,6 @@
 # Codebase Map
 
-> Le dépôt porte aujourd'hui `core/`, `games/`, `infrastructure/`, `store/`, `providers/`, `composition-root.ts`, `components/ui`, `lib/`, l'entrée Vite et un test de santé. `features/` reste la carte cible contractualisée dans [`../TECHNICAL.md`](../TECHNICAL.md) §3 : **c'est là qu'un fichier nouveau doit atterrir**.
+> Toutes les zones ci-dessous existent sur le disque. La carte reste contractualisée dans [`../TECHNICAL.md`](../TECHNICAL.md) §3 : **c'est là qu'un fichier nouveau doit atterrir**.
 
 ```mermaid
 flowchart TD
@@ -19,13 +19,13 @@ flowchart TD
 ## Zones
 
 - `src/components/` : UI générique sans état métier. `ui/` tient les primitifs shadcn installés par la CLI — Biome les exclut du lint.
-- `src/features/` : un sous-dossier par fonctionnalité, gabarit interne `components/` · `hooks/` · `actions/` · `schema/`.
+- `src/features/` : un sous-dossier par fonctionnalité, gabarit interne `components/` · `hooks/` · `actions/` · `schema/`. Aujourd'hui `onboarding/`, `group-navigation/`, `scoring-summary/`.
 - `src/games/` : un sous-dossier par jeu, même gabarit plus `helpers/` et l'evaluator à la racine du dossier. **Reste à la racine, pas sous `features/`** : c'est un système de plugins à contrat formel, un contributeur doit voir en cinq secondes où ajouter un jeu.
 - `src/core/` : `entities/`, `contracts/` (schémas Zod, `helpers/` pour la validation), `ports/` (interfaces), `commands/`, `registry/`, `scoring/`, `session/`.
 - `src/infrastructure/` : un sous-dossier par port implémenté — `clock/`, `persistence/`. Un adapter reçoit sa dépendance externe au constructeur, avec le défaut réel en production : c'est la couture qui rend son comportement testable.
 - `src/providers/` : les contextes React qui portent le résultat du câblage jusqu'aux écrans. Aucun composant n'importe la façade directement.
 - `config/` : les quatre JSON data-driven. `grid.json`, `course.json` et `signature.json` sont posés ; `signals.json` arrive avec le catalogue de signaux.
-- `__tests__/` : à la racine, en miroir de `src/`.
+- `__tests__/` : à la racine, en miroir de `src/`. `unit/` pour la forme et le comportement d'une unité, `integration/config-loading/` pour le refus au chargement croisé avec les JSON réels, `fixtures/` pour les doubles de port partagés. Vitest ne lit que `__tests__/{unit,integration}/**/*.test.{ts,tsx}` : un fichier rangé ailleurs ne tourne pas et ne dit rien.
 
 ## Règles de placement
 
