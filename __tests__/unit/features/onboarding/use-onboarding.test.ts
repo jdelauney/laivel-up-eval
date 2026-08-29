@@ -118,7 +118,7 @@ describe('onboarding', () => {
   it('exposes the total of situations and the estimated minutes of the test course', () => {
     const { result } = renderOnboarding(buildFacade(new MemoryPersistence()))
 
-    expect(result.current.totalGames).toBe(1)
+    expect(result.current.totalSituations).toBe(1)
     expect(result.current.estimatedMinutes).toBe(5)
   })
 

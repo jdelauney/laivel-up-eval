@@ -54,7 +54,7 @@ journey
   section Edge case - partie enregistree
     une partie enregistree existe => afficher l accueil => le cadre reste enonce au dessus de la carte de reprise: 1: browser
   section Edge case - arrondi
-    un parcours dont le produit tombe entre deux multiples de cinq => calculer => la valeur rendue est le multiple de cinq le plus proche, jamais zero: 1: system
+    un parcours non vide dont le produit tombe entre deux multiples de cinq => calculer => la valeur rendue est le multiple de cinq le plus proche, jamais zéro pour ce cas: 1: system
   section Teardown
     remettre le store de session a zero => ecran d accueil vierge: 5: system
 ```
@@ -132,7 +132,7 @@ journey
 | 1    | Vingt situations rendent trente minutes                                                                                    |
 | 1    | Un nombre de situations dont le produit tombe entre deux multiples de cinq rend le multiple le plus proche                  |
 | 1    | Un parcours non vide ne rend jamais zéro minute                                                                            |
-| 1    | Un parcours sans situation rend zéro                                                                                       |
+| 1    | Un parcours sans situation rend zéro — branche défensive de la fonction pure, inatteignable en production (`course.schema.ts` impose `min(1)`) |
 | 2    | Le hook rend un total de situations et une durée qui suivent le parcours de la façade injectée                              |
 | 2    | La vue ne contient plus aucun calcul : elle lit `totalGames` et `estimatedMinutes` du hook                                  |
 | 3    | Avant toute saisie, l'accueil affiche la durée indicative, le nombre de groupes et le nombre de situations                  |

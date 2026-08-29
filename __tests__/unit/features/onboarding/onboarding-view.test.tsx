@@ -2,16 +2,31 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersistenceSessionAdapter } from '../../../../src/core/ports/persistence-session-adapter.interface'
+import type { GameSessionFacade } from '../../../../src/core/session/game-session.facade'
 import { OnboardingView } from '../../../../src/features/onboarding/components/sections/onboarding-view'
 import { SessionProvider } from '../../../../src/providers/session-context'
 import { useSessionStore } from '../../../../src/store/session.store'
-import { buildTestFacade } from '../../../fixtures/configuration'
+import {
+  buildTestFacade,
+  buildTestFacadeWithGameCount,
+} from '../../../fixtures/configuration'
 import { MemoryPersistence } from '../../../fixtures/memory-persistence'
+import { SCORING_VOCABULARY } from '../../../fixtures/scoring-vocabulary'
 
 const renderOnboarding = (
   persistence: PersistenceSessionAdapter = new MemoryPersistence(),
 ) => {
   const facade = buildTestFacade(persistence)
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <SessionProvider composition={{ status: 'ready', facade }}>
+      {children}
+    </SessionProvider>
+  )
+
+  return render(<OnboardingView />, { wrapper })
+}
+
+const renderOnboardingWithFacade = (facade: GameSessionFacade) => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SessionProvider composition={{ status: 'ready', facade }}>
       {children}
@@ -33,23 +48,6 @@ const submitForm = () =>
 
 const NAME = /votre nom/i
 const REPOSITORY = /votre dépôt/i
-
-/**
- * Vocabulaire de notation, nommé terme par terme plutôt qu'en motif large :
- * un faux échec se corrige en lisant la liste. La comparaison porte sur des
- * mots entiers, pas des sous-chaînes : « Jugement critique » reste un
- * libellé de groupe légitime.
- */
-const SCORING_VOCABULARY = [
-  'note',
-  'notation',
-  'score',
-  'point',
-  'barème',
-  'coefficient',
-  'critère',
-  'seuil',
-]
 
 const wordsRenderedBy = (container: HTMLElement): string[] =>
   (container.textContent ?? '').toLowerCase().match(/\p{L}+/gu) ?? []
@@ -168,7 +166,7 @@ describe('onboarding view', () => {
 
     expect(groupsTile).toHaveTextContent('1')
     expect(situationsTile).toHaveTextContent('1')
-    expect(screen.getByText('Durée estimée')).toBeInTheDocument()
+    expect(screen.getByText('Estimation')).toBeInTheDocument()
     expect(screen.getByText('5 min')).toBeInTheDocument()
     expect(
       screen.getByText(/Chaque situation enregistre ce que vous faites/),
@@ -176,10 +174,21 @@ describe('onboarding view', () => {
   })
 
   it('follows the course shape of the injected facade, not a fixed duration', () => {
-    renderOnboarding()
+    const shortRun = renderOnboardingWithFacade(buildTestFacadeWithGameCount(2))
+    const shortDuration = screen
+      .getByText('Estimation')
+      .closest('div')?.textContent
+    shortRun.unmount()
 
-    expect(screen.getByText('5 min')).toBeInTheDocument()
-    expect(screen.queryByText('30 min')).not.toBeInTheDocument()
+    const longRun = renderOnboardingWithFacade(buildTestFacadeWithGameCount(40))
+    const longDuration = screen
+      .getByText('Estimation')
+      .closest('div')?.textContent
+    longRun.unmount()
+
+    expect(shortDuration).toContain('5 min')
+    expect(longDuration).toContain('60 min')
+    expect(longDuration).not.toBe(shortDuration)
   })
 
   it('never states a scoring vocabulary word anywhere on the screen', () => {
@@ -190,6 +199,28 @@ describe('onboarding view', () => {
     for (const forbiddenWord of SCORING_VOCABULARY) {
       expect(renderedWords).not.toContain(forbiddenWord)
     }
+  })
+
+  /**
+   * Preuve que le balayage ci-dessus n'est pas vide de sens : un texte qui
+   * porte réellement un terme interdit doit se faire attraper. Sans ce cas,
+   * un balayage cassé et un écran propre se ressemblent tous les deux.
+   */
+  it('catches a scoring vocabulary word when the rendered text states one', () => {
+    const { container } = render(
+      <p>
+        Chaque situation vaut des points, vous serez noté sur des critères.
+      </p>,
+    )
+
+    const renderedWords = wordsRenderedBy(container)
+    const caught = SCORING_VOCABULARY.filter((forbiddenWord) =>
+      renderedWords.includes(forbiddenWord),
+    )
+
+    expect(caught).toEqual(
+      expect.arrayContaining(['points', 'noté', 'critères']),
+    )
   })
 
   /**
@@ -217,7 +248,7 @@ describe('onboarding view', () => {
 
     renderOnboarding(persistence)
 
-    const frameDuration = screen.getByText('Durée estimée')
+    const frameDuration = screen.getByText('Estimation')
     const resumeCard = screen.getByText('Partie en cours')
 
     expect(

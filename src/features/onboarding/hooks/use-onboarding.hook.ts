@@ -20,8 +20,8 @@ export const useOnboarding = () => {
   const [storedRun, setStoredRun] = useState(() => facade.storedRun())
 
   const rail: RailGroup[] = buildRail(facade.courseShape(), 0)
-  const totalGames = rail.reduce((sum, group) => sum + group.gameCount, 0)
-  const estimatedMinutes = estimateCourseMinutes(totalGames)
+  const totalSituations = rail.reduce((sum, group) => sum + group.gameCount, 0)
+  const estimatedMinutes = estimateCourseMinutes(totalSituations)
 
   const start = useCallback(
     (playerName: string, repository?: RepositorySlug | undefined): void => {
@@ -62,7 +62,7 @@ export const useOnboarding = () => {
     discard,
     storedRun,
     rail,
-    totalGames,
+    totalSituations,
     estimatedMinutes,
   }
 }

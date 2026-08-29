@@ -28,7 +28,7 @@ export const OnboardingView = () => {
     discard,
     storedRun,
     rail,
-    totalGames,
+    totalSituations,
     estimatedMinutes,
   } = useOnboarding()
 
@@ -80,17 +80,18 @@ export const OnboardingView = () => {
               Situations
             </dt>
             <dd className="mt-1 font-semibold text-2xl tabular-nums">
-              {totalGames}
+              {totalSituations}
             </dd>
           </div>
           {/*
-           * L'estimation se porte dans l'intitulé, pas dans la valeur : à
-           * quatre colonnes, « Environ 30 min » en corps de chiffre déborde
-           * sa tuile et casse l'alignement de la rangée.
+           * « Durée estimée » passe sur deux lignes à quatre colonnes (103 px
+           * utiles) et fait descendre son chiffre sous les trois autres.
+           * « Estimation » tient sur une seule ligne et dit, dans l'intitulé,
+           * que la valeur n'est pas un chronomètre.
            */}
           <div className="bg-background py-4 pr-4 md:px-4">
             <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
-              Durée estimée
+              Estimation
             </dt>
             <dd className="mt-1 font-semibold text-2xl tabular-nums">
               {estimatedMinutes} min
