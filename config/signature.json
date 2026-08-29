@@ -1,0 +1,68 @@
+{
+  "version": "signature-0.2",
+  "title": "Signature AIDD — la rigueur du flux",
+  "dimensions": [
+    {
+      "id": "verification",
+      "label": "Jugement critique et vérification",
+      "weight": 1.5,
+      "scale": [
+        { "from": 0, "label": "accepte ce que l'IA affirme" },
+        { "from": 0.4, "label": "vérifie après coup" },
+        { "from": 0.7, "label": "vérifie avant d'accepter" },
+        { "from": 1, "label": "vérification outillée, pas manuelle" }
+      ]
+    },
+    {
+      "id": "pilotage-contexte",
+      "label": "Pilotage du contexte et de la délégation",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "prompt sec, sans cadre" },
+        { "from": 0.35, "label": "cadre la demande avant de générer" },
+        { "from": 0.6, "label": "entretient le contexte du projet" },
+        { "from": 1, "label": "contexte transférable à quelqu'un d'autre" }
+      ]
+    },
+    {
+      "id": "resilience",
+      "label": "Résilience face à l'échec de l'IA",
+      "weight": 1,
+      "scale": [
+        { "from": 0, "label": "relance le même prompt" },
+        { "from": 0.5, "label": "change d'approche après l'échec" },
+        { "from": 1, "label": "traite l'échec comme un signal et corrige le cadre" }
+      ]
+    }
+  ],
+  "levels": [
+    {
+      "id": "vibe-coder",
+      "label": "Vibe coder",
+      "order": 1,
+      "conditions": [{ "dimension": "verification", "max": 0.4 }],
+      "nextLevelHint": "Relire chaque diff produit par l'IA avant de l'accepter, et nommer ce qui a été vérifié."
+    },
+    {
+      "id": "aidd-en-route",
+      "label": "AIDD en route",
+      "order": 2,
+      "conditions": [
+        { "dimension": "verification", "min": 0.4 },
+        { "dimension": "pilotage-contexte", "min": 0.35 }
+      ],
+      "nextLevelHint": "Cadrer la demande avant de générer, et traiter un échec de l'IA comme un signal plutôt que relancer le même prompt."
+    },
+    {
+      "id": "aidd-confirme",
+      "label": "AIDD confirmé",
+      "order": 3,
+      "conditions": [
+        { "dimension": "verification", "min": 0.7 },
+        { "dimension": "pilotage-contexte", "min": 0.6 },
+        { "dimension": "resilience", "min": 0.5 }
+      ],
+      "nextLevelHint": "Rendre la pratique transférable : documenter le contexte et les critères d'acceptation pour que quelqu'un d'autre obtienne le même résultat."
+    }
+  ]
+}

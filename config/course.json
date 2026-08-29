@@ -1,0 +1,52 @@
+{
+  "version": "0.2-banc-essai",
+  "groups": [
+    {
+      "id": "groupe-banc-essai",
+      "label": "Banc d'essai du moteur",
+      "order": 1,
+      "games": [
+        {
+          "id": "test-bench-1",
+          "type": "test-bench",
+          "label": "Quelles affirmations tiennent la route ?",
+          "config": {
+            "statement": "Une IA vous propose ces affirmations sur son propre code. Retenez celles qui sont vérifiables.",
+            "propositions": [
+              { "id": "p1", "text": "Les dépendances citées existent et sont à jour.", "expected": true },
+              { "id": "p2", "text": "Le code compile, donc il est correct.", "expected": false },
+              { "id": "p3", "text": "Les cas limites sont couverts par un test.", "expected": true },
+              { "id": "p4", "text": "La réponse est sûre parce qu'elle est détaillée.", "expected": false }
+            ]
+          },
+          "criteria": [
+            {
+              "id": "c1",
+              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "rule": { "type": "all-expected-selected" },
+              "mapping": [
+                { "dimension": "taille", "weight": 3 },
+                { "dimension": "harness", "weight": 3 },
+                { "dimension": "intervention", "weight": 3 },
+                { "dimension": "parallele", "weight": 3 },
+                { "dimension": "verification", "weight": 1 }
+              ]
+            },
+            {
+              "id": "c2",
+              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "rule": { "type": "no-unexpected-selected" },
+              "mapping": [
+                { "dimension": "taille", "weight": 1 },
+                { "dimension": "harness", "weight": 1 },
+                { "dimension": "intervention", "weight": 1 },
+                { "dimension": "parallele", "weight": 1 },
+                { "dimension": "pilotage-contexte", "weight": 1 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
