@@ -38,5 +38,6 @@ Une personne qui ouvre l'outil pour la première fois entre dans le parcours san
 | --- | --- | --- |
 | Les champs se limitent au pseudo et au dépôt Git | décision | Arbitrage du 29/08 |
 | Rien de saisi ici n'entre dans un score | décision | Le déclaratif ne monte jamais un niveau |
-| Le format attendu pour le dépôt, et ce qui se passe s'il est inaccessible | unknown | Se tranche avec l'épic des preuves du dépôt |
+| Le champ accepte une URL GitHub ou la forme `proprietaire/depot`, et normalise vers la seconde | décision | Tranché par `aidd_docs/backlog/spikes/preuves-du-depot-calculables-sans-jeton.md` ; l'API n'accepte pas d'autre forme |
+| Un dépôt privé et un dépôt inexistant sont indiscernables sans jeton | décision | Les deux rendent `404`. L'outil annonce « non lisible », jamais la cause |
 | Dire le plafond dès l'entrée n'incite pas à saisir un dépôt qu'on ne veut pas montrer | assumption | Acceptée ; se vérifie en jouant |

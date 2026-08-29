@@ -44,6 +44,7 @@ function App() {
   const composition = useComposition()
   const screen = useSessionStore((state) => state.screen)
   const progress = useSessionStore((state) => state.progress)
+  const identity = useSessionStore((state) => state.identity)
 
   if (composition.status === 'invalid-config') {
     return (
@@ -61,7 +62,7 @@ function App() {
 
   if (screen === 'summary') {
     return (
-      <AppLayout status="parcours terminé">
+      <AppLayout status="parcours terminé" identity={identity}>
         <SummaryView />
       </AppLayout>
     )
@@ -74,6 +75,7 @@ function App() {
           ? `${progress.submitted}/${progress.total} situations`
           : undefined
       }
+      identity={identity}
     >
       <CourseView />
     </AppLayout>

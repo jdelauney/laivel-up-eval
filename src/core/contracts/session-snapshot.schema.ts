@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { repositorySlugSchema } from './repository-slug.schema'
 
 /**
  * L'état de session persisté est une frontière comme les autres : il sort du
@@ -24,6 +25,13 @@ export const submissionSchema = z.object({
 
 export const sessionSnapshotSchema = z.object({
   playerName: z.string(),
+  /**
+   * Optionnel, et pas par hésitation de modélisation : une partie enregistrée
+   * avant l'arrivée de ce champ n'en porte pas. Le rendre requis ferait échouer
+   * la lecture de son instantané, et la façade ignore silencieusement un
+   * instantané hors contrat — toutes ces parties disparaîtraient.
+   */
+  repository: repositorySlugSchema.optional(),
   groupIndex: z.number().int().min(0),
   gameIndex: z.number().int().min(0),
   submissions: z.array(submissionSchema),

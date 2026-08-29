@@ -214,6 +214,77 @@ describe('game session facade', () => {
     expect(other.getVerdict()).toEqual(first)
   })
 
+  it('reports no designated repository until one is given', () => {
+    expect(facade.designatedRepository()).toBeUndefined()
+  })
+
+  it('opens a session under a repository and finds it again on resume', () => {
+    const persistence = new MemoryPersistence()
+    const played = buildFacade(persistence)
+    played.start('Alice', 'alice/atelier')
+    played.submitAnswer(goodAnswer)
+
+    const resumed = buildFacade(persistence)
+
+    expect(resumed.resume()).toBe(true)
+    expect(resumed.designatedRepository()).toBe('alice/atelier')
+    expect(resumed.playerName()).toBe('Alice')
+  })
+
+  it('previews the repository of a stored run', () => {
+    const persistence = new MemoryPersistence()
+    const played = buildFacade(persistence)
+    played.start('Alice', 'alice/atelier')
+
+    expect(buildFacade(persistence).storedRun()).toEqual({
+      playerName: 'Alice',
+      repository: 'alice/atelier',
+      submitted: 0,
+      total: 1,
+    })
+  })
+
+  it('resumes a run stored before the repository field existed', () => {
+    const persistence = new MemoryPersistence()
+    persistence.write({
+      playerName: 'Alice',
+      groupIndex: 0,
+      gameIndex: 0,
+      submissions: [],
+    })
+
+    const facadeOnOldStore = buildFacade(persistence)
+
+    expect(facadeOnOldStore.resume()).toBe(true)
+    expect(facadeOnOldStore.designatedRepository()).toBeUndefined()
+  })
+
+  it('ignores a stored repository that is not normalised', () => {
+    const persistence = new MemoryPersistence()
+    persistence.write({
+      playerName: 'Alice',
+      repository: 'https://github.com/alice/atelier',
+      groupIndex: 0,
+      gameIndex: 0,
+      submissions: [],
+    })
+
+    const facadeOnBadStore = buildFacade(persistence)
+
+    expect(facadeOnBadStore.storedRun()).toBeUndefined()
+    expect(facadeOnBadStore.resume()).toBe(false)
+  })
+
+  it('scores the same verdict with and without a designated repository', () => {
+    facade.submitAnswer(goodAnswer)
+
+    const withRepository = buildFacade()
+    withRepository.start('Alice', 'alice/atelier')
+    withRepository.submitAnswer(goodAnswer)
+
+    expect(withRepository.getVerdict()).toEqual(facade.getVerdict())
+  })
+
   it('refuses a course declaring a game type absent from the registry', () => {
     const ghostCourse: Course = {
       ...course,

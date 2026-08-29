@@ -39,6 +39,10 @@ Une même personne, avec et sans dépôt, obtient deux verdicts cohérents : le 
 | --- | --- | --- |
 | La lecture est déterministe et sans modèle | décision | Contrainte du jury, rappelée à l'oral |
 | Un axe non mesuré plafonne le niveau et ne vaut pas zéro | décision | C'est la réponse au critère « il assume quand il n'est pas sûr » |
-| Le quota de l'API sans jeton, et la fenêtre d'analyse | unknown | Un jeton reste facultatif et jamais requis |
-| Le dépôt peut être privé, vide, ou ne pas exister | unknown | Se tranche en construisant la lecture |
+| 60 requêtes par heure et par IP sans jeton, soit environ 55 PR par lecture | décision | Mesuré par `aidd_docs/backlog/spikes/preuves-du-depot-calculables-sans-jeton.md`. Le jeton reste facultatif |
+| GraphQL est fermé sans jeton, tout passe par REST au coût d'un appel par PR | décision | Mesuré ; c'est ce terme qui fixe le plafond |
+| Une lecture pleine consomme le budget de l'heure | décision | Deux lectures du même dépôt dans l'heure sont impossibles sans jeton |
+| La fenêtre d'analyse retenue, et le sort d'un dépôt au-delà du plafond | unknown | Décision produit, ouverte |
+| Un dépôt privé et un dépôt inexistant rendent le même `404` | décision | Le rapport dit « non lisible » sans nommer la cause |
+| Le cas du dépôt vide | unknown | `409` documenté sur les commits, non reproduit ; se confirme contre un vrai dépôt vide |
 | Les seuils par cran, transposés des données d'exemple | assumption | Acceptée ; aucune vérification à froid ne les couvre |

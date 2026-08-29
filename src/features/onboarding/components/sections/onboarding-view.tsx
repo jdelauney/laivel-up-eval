@@ -1,11 +1,13 @@
 import { useForm } from '@tanstack/react-form'
 import { GroupRail } from '../../../../components/group-rail/composites/group-rail'
 import { Button } from '../../../../components/ui/button'
-import { Input } from '../../../../components/ui/input'
-import { Label } from '../../../../components/ui/label'
 import { useOnboarding } from '../../hooks/use-onboarding.hook'
-import { onboardingFormSchema } from '../../schema/onboarding-form.schema'
+import {
+  type OnboardingFormInput,
+  onboardingFormSchema,
+} from '../../schema/onboarding-form.schema'
 import { ResumeRun } from '../composites/resume-run'
+import { TextField } from '../elements/text-field'
 
 /**
  * L'accueil, en carnet de vol. La rampe des groupes tient l'axe vertical et
@@ -15,15 +17,25 @@ import { ResumeRun } from '../composites/resume-run'
  * Le contrat énonce le cadre, jamais les critères : un joueur prévenu de ce
  * qu'on note joue un personnage.
  */
+
+/** Le formulaire vide, typé sur l'entrée du schéma et non sur sa sortie. */
+const emptyForm: OnboardingFormInput = { playerName: '', repository: '' }
+
 export const OnboardingView = () => {
   const { start, resume, discard, storedRun, rail } = useOnboarding()
   const totalGames = rail.reduce((sum, group) => sum + group.gameCount, 0)
 
   const form = useForm({
-    defaultValues: { playerName: '' },
+    defaultValues: emptyForm,
     validators: { onChange: onboardingFormSchema },
+    /**
+     * TanStack Form ne rend que l'entrée brute : le dépôt repasse par le
+     * schéma pour ressortir normalisé, sans quoi l'URL collée partirait telle
+     * quelle jusque dans la session persistée.
+     */
     onSubmit: ({ value }) => {
-      start(value.playerName.trim())
+      const { playerName, repository } = onboardingFormSchema.parse(value)
+      start(playerName, repository)
     },
   })
 
@@ -75,6 +87,7 @@ export const OnboardingView = () => {
         {storedRun ? (
           <ResumeRun
             playerName={storedRun.playerName}
+            repository={storedRun.repository}
             submitted={storedRun.submitted}
             total={storedRun.total}
             onResume={resume}
@@ -83,7 +96,7 @@ export const OnboardingView = () => {
         ) : null}
 
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault()
             void form.handleSubmit()
@@ -91,34 +104,45 @@ export const OnboardingView = () => {
         >
           <form.Field name="playerName">
             {(field) => (
-              <div className="flex max-w-sm flex-col gap-2">
-                <Label
-                  htmlFor={field.name}
-                  className="text-plane-foreground/60 text-xs uppercase tracking-[0.12em]"
-                >
-                  {storedRun ? 'Ou démarrer sous un autre nom' : 'Votre nom'}
-                </Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  autoComplete="off"
-                  aria-invalid={
-                    !field.state.meta.isValid && field.state.meta.isTouched
-                  }
-                />
-                {!field.state.meta.isValid && field.state.meta.isTouched ? (
-                  <p className="font-medium text-missed text-sm">
-                    {field.state.meta.errors
-                      .map((error) =>
-                        typeof error === 'string' ? error : error?.message,
-                      )
-                      .join(', ')}
-                  </p>
-                ) : null}
-              </div>
+              <TextField
+                name={field.name}
+                label={
+                  storedRun ? 'Ou démarrer sous un autre nom' : 'Votre nom'
+                }
+                value={field.state.value}
+                invalid={
+                  !field.state.meta.isValid && field.state.meta.isTouched
+                }
+                errors={field.state.meta.errors}
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="repository">
+            {(field) => (
+              <TextField
+                name={field.name}
+                label="Votre dépôt (facultatif)"
+                value={field.state.value}
+                invalid={
+                  !field.state.meta.isValid && field.state.meta.isTouched
+                }
+                errors={field.state.meta.errors}
+                placeholder="proprietaire/depot"
+                help={
+                  <>
+                    L'URL GitHub complète ou la forme{' '}
+                    <code className="bg-plane px-1 text-plane-foreground">
+                      proprietaire/depot
+                    </code>
+                    . Rien n'est vérifié à cet instant.
+                  </>
+                }
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+              />
             )}
           </form.Field>
 

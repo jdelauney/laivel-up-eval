@@ -1,3 +1,4 @@
+import type { RepositorySlug } from '@/core/contracts/repository-slug.schema'
 import { Button } from '../../../../components/ui/button'
 
 /**
@@ -8,12 +9,14 @@ import { Button } from '../../../../components/ui/button'
  */
 export const ResumeRun = ({
   playerName,
+  repository,
   submitted,
   total,
   onResume,
   onDiscard,
 }: {
   playerName: string
+  repository?: RepositorySlug | undefined
   submitted: number
   total: number
   onResume: () => void
@@ -25,6 +28,12 @@ export const ResumeRun = ({
     </p>
     <p className="mt-2 text-plane-foreground">
       <span className="font-semibold">{playerName}</span>
+      {repository ? (
+        <>
+          <span className="text-plane-foreground/60"> · </span>
+          <span className="text-plane-foreground/80">{repository}</span>
+        </>
+      ) : null}
       <span className="text-plane-foreground/60"> · </span>
       <span className="tabular-nums">
         {submitted} jeu{submitted > 1 ? 'x' : ''} sur {total}

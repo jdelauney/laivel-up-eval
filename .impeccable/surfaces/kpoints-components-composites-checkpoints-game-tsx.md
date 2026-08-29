@@ -106,7 +106,7 @@ Une seule exception : l'entrée d'une ligne au journal, en fondu court, parce qu
 
 ## Accessibilité
 
-- Les trois choix forment un vrai groupe de boutons radio, atteignables au clavier, avec un nom accessible portant l'étape et le coût.
+- Les trois choix sont trois **boutons**, atteignables au clavier, chacun portant un nom accessible qui nomme l'étape et le coût. La fiche demandait d'abord un groupe radio ; l'implémentation a choisi des boutons, et elle a raison : un clic engage et fait avancer, sans validation séparée. Un `radiogroup` sans bouton de soumission serait un abus de rôle. Ne pas revenir en arrière là-dessus.
 - La frise est décorative pour le lecteur d'écran ; la position vient de la ligne 1, annoncée en région `status`.
 - Le changement de budget est annoncé poliment, jamais en assertif : ce n'est pas une alerte.
 - Aucun état ne repose sur la couleur seule, budget négatif compris — il porte aussi le signe et le poids.

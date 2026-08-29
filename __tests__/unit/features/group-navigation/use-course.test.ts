@@ -26,7 +26,12 @@ describe('course navigation', () => {
   it('describes the rail with the current group marked', () => {
     const facade = buildFacade()
     facade.start('Alice')
-    useSessionStore.getState().openCourse('Alice', facade.getProgress())
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
 
     const { result } = renderCourse(facade)
 
@@ -36,7 +41,12 @@ describe('course navigation', () => {
   it('submits the answer and advances the position', () => {
     const facade = buildFacade()
     facade.start('Alice')
-    useSessionStore.getState().openCourse('Alice', facade.getProgress())
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
 
     const { result } = renderCourse(facade)
 
@@ -51,7 +61,12 @@ describe('course navigation', () => {
   it('switches to the summary when the course ends, without deciding it itself', () => {
     const facade = buildFacade()
     facade.start('Alice')
-    useSessionStore.getState().openCourse('Alice', facade.getProgress())
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
 
     const { result } = renderCourse(facade)
 
@@ -66,7 +81,12 @@ describe('course navigation', () => {
   it('refuses an answer outside the game contract and leaves the position alone', () => {
     const facade = buildFacade()
     facade.start('Alice')
-    useSessionStore.getState().openCourse('Alice', facade.getProgress())
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
 
     const { result } = renderCourse(facade)
 
