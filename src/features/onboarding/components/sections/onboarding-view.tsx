@@ -7,6 +7,7 @@ import {
   onboardingFormSchema,
 } from '../../schema/onboarding-form.schema'
 import { ResumeRun } from '../composites/resume-run'
+import { MissingRepositoryNotice } from '../elements/missing-repository-notice'
 import { TextField } from '../elements/text-field'
 
 /**
@@ -161,27 +162,32 @@ export const OnboardingView = () => {
 
           <form.Field name="repository">
             {(field) => (
-              <TextField
-                name={field.name}
-                label="Votre dépôt (facultatif)"
-                value={field.state.value}
-                invalid={
-                  !field.state.meta.isValid && field.state.meta.isTouched
-                }
-                errors={field.state.meta.errors}
-                placeholder="proprietaire/depot"
-                help={
-                  <>
-                    L'URL GitHub complète ou la forme{' '}
-                    <code className="bg-plane px-1 text-plane-foreground">
-                      proprietaire/depot
-                    </code>
-                    . Rien n'est vérifié à cet instant.
-                  </>
-                }
-                onChange={field.handleChange}
-                onBlur={field.handleBlur}
-              />
+              <div className="flex max-w-sm flex-col gap-2">
+                <TextField
+                  name={field.name}
+                  label="Votre dépôt (facultatif)"
+                  value={field.state.value}
+                  invalid={
+                    !field.state.meta.isValid && field.state.meta.isTouched
+                  }
+                  errors={field.state.meta.errors}
+                  placeholder="proprietaire/depot"
+                  help={
+                    <>
+                      L'URL GitHub complète ou la forme{' '}
+                      <code className="bg-plane px-1 text-plane-foreground">
+                        proprietaire/depot
+                      </code>
+                      . Rien n'est vérifié à cet instant.
+                    </>
+                  }
+                  onChange={field.handleChange}
+                  onBlur={field.handleBlur}
+                />
+                {field.state.value.trim() === '' ? (
+                  <MissingRepositoryNotice />
+                ) : null}
+              </div>
             )}
           </form.Field>
 
