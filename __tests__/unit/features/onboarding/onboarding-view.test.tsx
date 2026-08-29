@@ -173,6 +173,20 @@ describe('onboarding view', () => {
     ).toBeInTheDocument()
   })
 
+  /**
+   * Le primo-arrivant est le seul lecteur de ce cadre, et c'est justement
+   * celui à qui la carte de reprise ne s'affiche pas. Sans cette ligne, la
+   * durée annoncée se lit comme un bloc insécable.
+   */
+  it('says the run can be interrupted, to someone who has never played', () => {
+    renderOnboarding()
+
+    expect(screen.queryByText('Partie en cours')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Une partie interrompue se reprend dans ce navigateur.'),
+    ).toBeInTheDocument()
+  })
+
   it('follows the course shape of the injected facade, not a fixed duration', () => {
     const shortRun = renderOnboardingWithFacade(buildTestFacadeWithGameCount(2))
     const shortDuration = screen

@@ -12,12 +12,12 @@ status: done
 .
 ├── src/features/onboarding/
 │   ├── helpers/estimate-course-minutes.helper.ts       ✅ situations → minutes, le seul endroit qui porte le budget et l'arrondi
-│   ├── hooks/use-onboarding.hook.ts                    ✏️ expose `totalGames` et `estimatedMinutes`, le calcul quitte la vue
+│   ├── hooks/use-onboarding.hook.ts                    ✏️ expose `totalSituations` et `estimatedMinutes`, le calcul quitte la vue
 │   └── components/sections/onboarding-view.tsx         ✏️ la tuile Durée rejoint le bandeau, le total vient du hook
 └── __tests__/unit/features/onboarding/
     ├── estimate-course-minutes.test.ts                 ✅ le calcul et son arrondi, hors rendu
     ├── use-onboarding.test.ts                          ✏️ le hook rend les deux grandeurs du parcours de test
-    └── onboarding-view.test.tsx                        ✏️ le cadre énoncé, le vocabulaire de notation absent, le ton
+    └── onboarding-view.test.tsx                        ✏️ le cadre énoncé, le vocabulaire de notation absent, la reprise dite
 ```
 
 ## User Journey
@@ -103,8 +103,8 @@ journey
 > La vue ne calcule plus rien ; elle affiche ce que la couche smart lui donne.
 
 1. Dans `use-onboarding.hook.ts`, sommer les `gameCount` de la rampe pour obtenir le total des situations.
-2. Passer ce total au helper et exposer `totalGames` et `estimatedMinutes` dans le retour du hook.
-3. Retirer de `onboarding-view.tsx` le calcul inline de `totalGames` et lire les deux valeurs du hook.
+2. Passer ce total au helper et exposer `totalSituations` et `estimatedMinutes` dans le retour du hook.
+3. Retirer de `onboarding-view.tsx` le calcul inline de `totalSituations` et lire les deux valeurs du hook.
 
 ### `3)` La tuile Durée au bandeau
 
@@ -112,8 +112,9 @@ journey
 
 1. Ajouter une quatrième tuile Durée au bandeau, entre Situations et Données.
 2. Formuler la valeur pour qu'elle se lise comme indicative et non comme un chronomètre, en phrase courte et sans encouragement.
-3. Faire passer la grille à deux colonnes sur petit écran et quatre au-delà, pour que quatre libellés ne se cassent pas sur mobile.
+3. Faire passer la grille à deux colonnes sur petit écran et quatre à partir de `lg`, et non de `md` : entre 768 et 825 px, une colonne sur quatre ne laisse que 71 px utiles, où les libellés débordent et la valeur se casse en deux.
 4. Reprendre le traitement des tuiles existantes — jetons `plane-*`, filets, chiffres en chasse tabulaire — sans introduire de couleur nouvelle.
+5. Dire sous le bandeau qu'une partie interrompue se reprend. Sans cette ligne, la durée annoncée fait passer le parcours pour un bloc insécable, et la carte de reprise ne s'affiche qu'à qui a déjà joué — jamais au primo-arrivant, seul lecteur du cadre.
 
 ### `4)` Les trois acceptations, prouvées
 
@@ -134,9 +135,10 @@ journey
 | 1    | Un parcours non vide ne rend jamais zéro minute                                                                            |
 | 1    | Un parcours sans situation rend zéro — branche défensive de la fonction pure, inatteignable en production (`course.schema.ts` impose `min(1)`) |
 | 2    | Le hook rend un total de situations et une durée qui suivent le parcours de la façade injectée                              |
-| 2    | La vue ne contient plus aucun calcul : elle lit `totalGames` et `estimatedMinutes` du hook                                  |
+| 2    | La vue ne contient plus aucun calcul : elle lit `totalSituations` et `estimatedMinutes` du hook                                  |
 | 3    | Avant toute saisie, l'accueil affiche la durée indicative, le nombre de groupes et le nombre de situations                  |
-| 3    | Le bandeau tient sur quatre tuiles sans casser ses libellés sur petit écran                                                 |
+| 3    | De 360 à 1920 px, chaque intitulé et chaque valeur du bandeau tient sur une ligne sans déborder sa tuile, et les valeurs d'une même rangée partagent leur ligne de base |
+| 3    | Une personne qui n'a jamais joué lit, sous la durée, qu'une partie interrompue se reprend                                    |
 | 4    | L'accueil affiche la phrase disant que la mesure porte sur ce qui est fait et non sur ce qui est déclaré                     |
 | 4    | Aucun terme de la liste de notation n'apparaît dans le texte rendu par l'accueil                                           |
 | 4    | Le cadre reste énoncé quand une partie enregistrée est présente                                                            |
