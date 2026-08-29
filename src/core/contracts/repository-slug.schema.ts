@@ -37,6 +37,14 @@ const stripDecorations = (path: string): string =>
   path.replace(/\/+$/, '').replace(/\.git$/i, '')
 
 /**
+ * La requête et l'ancre ne désignent rien du dépôt : GitHub lui-même met
+ * `?tab=readme-ov-file` dans la barre d'adresse quand on ouvre un dépôt depuis
+ * une page de profil. Le chemin, lui, reste jugé entier — `/pull/3` désigne
+ * autre chose que le dépôt et doit toujours être refusé.
+ */
+const stripQuery = (path: string): string => path.split(/[?#]/)[0]
+
+/**
  * Rend le slug, ou `undefined` quand rien n'a été saisi. Une forme non
  * reconnue ressort telle quelle : c'est `isSlug` qui la refuse ensuite, pour
  * que la normalisation n'ait pas à porter deux responsabilités.
@@ -46,7 +54,9 @@ const normalize = (raw: string): string | undefined => {
   if (trimmed === '') return undefined
 
   const url = GITHUB_URL.exec(trimmed)
-  return stripDecorations(url === null ? trimmed : url[1])
+  return url === null
+    ? stripDecorations(trimmed)
+    : stripDecorations(stripQuery(url[1]))
 }
 
 /** La forme de référence, celle que le domaine stocke et relit. */

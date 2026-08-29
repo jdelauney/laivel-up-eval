@@ -52,6 +52,9 @@ describe('repository input', () => {
       'https://github.com/proprietaire/depot.git',
       'github.com/proprietaire/depot',
       '  https://github.com/proprietaire/depot  ',
+      'https://github.com/proprietaire/depot?tab=readme-ov-file',
+      'https://github.com/proprietaire/depot/?tab=readme-ov-file',
+      'https://github.com/proprietaire/depot#readme',
     ]
 
     for (const form of forms) {
@@ -67,6 +70,17 @@ describe('repository input', () => {
       repositoryInputSchema.safeParse(
         'https://github.com/proprietaire/depot/tree/main',
       ).success,
+    ).toBe(false)
+    expect(
+      repositoryInputSchema.safeParse(
+        'https://github.com/proprietaire/depot/pull/3?files=1',
+      ).success,
+    ).toBe(false)
+  })
+
+  it('refuses a query on the slug form, where it means nothing', () => {
+    expect(
+      repositoryInputSchema.safeParse('proprietaire/depot?tab=x').success,
     ).toBe(false)
   })
 
