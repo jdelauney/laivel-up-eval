@@ -93,7 +93,7 @@ describe('course loading', () => {
   it('keeps the game config opaque to the engine', () => {
     const course = parseCourse(projectCourse)
 
-    expect(course.groups[0].games[0].config).toHaveProperty('propositions')
+    expect(course.groups[0].games[0].config).toHaveProperty('snippets')
   })
 
   it('rejects a mapping weight written as text, naming the faulty field path', () => {

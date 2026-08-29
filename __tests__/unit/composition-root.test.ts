@@ -20,22 +20,38 @@ describe('composition root', () => {
   })
 
   it('wires a facade without a signature, the level being complete on its own', () => {
+    /**
+     * Sans signature, un jeu dont tous les critères ne visent que des
+     * dimensions de la signature (comme `g1-1`, confidence-bet, qui ne vise
+     * que `verification`) ne contribue plus rien au niveau officiel : il
+     * disparaît du parcours plutôt que de laisser un critère sans mapping,
+     * ce que le schéma refuse (`mapping.min(1)`).
+     */
+    const gridDimensionIds = new Set(
+      projectGrid.dimensions.map((dimension) => dimension.id),
+    )
+    const groups = projectCourse.groups
+      .map((group) => ({
+        ...group,
+        games: group.games
+          .map((game) => ({
+            ...game,
+            criteria: game.criteria
+              .map((criterion) => ({
+                ...criterion,
+                mapping: criterion.mapping.filter((mapping) =>
+                  gridDimensionIds.has(mapping.dimension),
+                ),
+              }))
+              .filter((criterion) => criterion.mapping.length > 0),
+          }))
+          .filter((game) => game.criteria.length > 0),
+      }))
+      .filter((group) => group.games.length > 0)
+
     const composition = composeFrom(projectGrid, {
       ...projectCourse,
-      groups: projectCourse.groups.map((group) => ({
-        ...group,
-        games: group.games.map((game) => ({
-          ...game,
-          criteria: game.criteria.map((criterion) => ({
-            ...criterion,
-            mapping: criterion.mapping.filter((mapping) =>
-              projectGrid.dimensions.some(
-                (dimension) => dimension.id === mapping.dimension,
-              ),
-            ),
-          })),
-        })),
-      })),
+      groups,
     })
 
     expect(composition.status).toBe('ready')

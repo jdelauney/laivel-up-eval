@@ -1,6 +1,9 @@
 import { CheckpointsEvaluator } from '@/games/checkpoints/checkpoints.evaluator'
 import { checkpointsAnswerSchema } from '@/games/checkpoints/schema/answer.schema'
 import { checkpointsConfigSchema } from '@/games/checkpoints/schema/config.schema'
+import { ConfidenceBetEvaluator } from '@/games/confidence-bet/confidence-bet.evaluator'
+import { confidenceBetAnswerSchema } from '@/games/confidence-bet/schema/answer.schema'
+import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { testBenchAnswerSchema } from '@/games/test-bench/schema/answer.schema'
 import { TestBenchEvaluator } from '@/games/test-bench/test-bench.evaluator'
 import { threeTracksAnswerSchema } from '@/games/three-tracks/schema/answer.schema'
@@ -33,6 +36,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new ThreeTracksEvaluator(),
     configSchema: threeTracksConfigSchema,
     answerSchema: threeTracksAnswerSchema,
+  })
+
+  registry.register('confidence-bet', {
+    evaluator: new ConfidenceBetEvaluator(),
+    configSchema: confidenceBetConfigSchema,
+    answerSchema: confidenceBetAnswerSchema,
   })
 
   return registry
