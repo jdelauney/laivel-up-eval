@@ -109,7 +109,16 @@ journey
 > Un élément muet, texte fixe, sans propriété.
 
 1. `src/features/onboarding/components/elements/missing-repository-notice.tsx` : un `<p>` sans composition ni propriété — un élément, pas un composite.
-2. Texte fixe : entrer sans dépôt est un usage prévu, le parcours se joue en entier ; sans dépôt à lire, ce que le joueur fait du travail de l'IA et le nombre de chantiers qu'il mène de front ne reposeront que sur ce seul parcours.
+2. Texte fixe (réparation passe 3, borné au présent sur consigne du chef de
+   projet) : « Entrer sans dépôt est un usage prévu : le parcours se joue en
+   entier. Aucun dépôt n'est lu pour l'instant : ce que vous faites du
+   travail de l'IA comme le nombre de chantiers que vous menez de front se
+   mesurent ici, dépôt ou pas. » La première phrase (l'usage prévu) reste
+   inchangée ; la seconde ne sous-entend plus qu'un dépôt saisi changerait le
+   verdict — rien dans `src/core/scoring/`,
+   `evaluation-result.entity.ts` ni `src/features/scoring-summary/` ne lit
+   `repository`, ce que `designatedRepository()` documente déjà sur la
+   façade.
 3. Ne pas recopier les libellés de `config/grid.json` : décision produit, un joueur prévenu de ce qui est noté joue un personnage.
 4. Ne pas promettre de plafond ni de moment de lecture : aucun mécanisme de plafond n'existe dans le code, et aucune Story livrée ne tient la lecture du dépôt.
 5. Interdits d'écriture : les vingt formes de `__tests__/fixtures/scoring-vocabulary.ts`, tout impératif adressé au joueur, toute formule qui présente l'absence comme un manquement.
@@ -128,17 +137,20 @@ journey
 
 > Les comportements qui portent, chacun le sien.
 
-1. Dans `onboarding-view.test.tsx` : l'annonce est visible à l'ouverture et nomme les deux axes en mots ordinaires (« du travail de l'IA », « chantiers que vous menez de front ») ; elle disparaît dès qu'un dépôt est saisi ; elle revient si le champ est vidé ; des espaces seuls ne la font pas disparaître ; une forme refusée ne la ramène pas.
+1. Dans `onboarding-view.test.tsx` : l'annonce est visible à l'ouverture, nomme les deux axes en mots ordinaires (« du travail de l'IA », « chantiers que vous menez de front ») et affirme la clause d'honnêteté « Aucun dépôt n'est lu pour l'instant » (`is visible at opening, names both axes in ordinary words, and says no repository is read yet`) ; elle disparaît dès qu'un dépôt est saisi ; elle revient si le champ est vidé ; des espaces seuls ne la font pas disparaître ; une forme refusée ne la ramène pas.
 2. Le balayage du vocabulaire de notation déjà en place (`never states a scoring vocabulary word anywhere on the screen`) couvre l'écran annonce affichée ; aucun test dédié dupliqué n'est ajouté à côté pour ce vocabulaire-là.
 3. Réparation revue (passe 2, F1) : un balayage dédié (`never restates a scoring grid dimension label anywhere on the screen`), suivi de son test de contrôle qui prouve qu'il attrape réellement un libellé, garde la décision de ne pas recopier `grid.dimensions[].label` — `grid` lu depuis `__tests__/fixtures/configuration.ts`, jamais recopié en dur.
+4. Réparation revue (passe 3, mineur du challenge) : l'extraction du texte rendu (`(container.textContent ?? '').toLowerCase()`) est un helper unique, `renderedTextOf`, appelé à la fois par le garde des libellés et par son test de contrôle — le contrôle ne réimplémente plus la comparaison en ligne, il exerce le même chemin que le garde.
 
 ## Test acceptance criteria
 
 | Task | Acceptance criteria |
 | ---- | -------------------- |
 | 1 | Le texte rendu dit qu'entrer sans dépôt est un usage prévu, que le parcours se joue en entier, et ne recopie aucun libellé de `config/grid.json` ni aucune promesse de plafond. |
+| 1 | Le texte dit, au présent, qu'aucun dépôt n'est lu pour l'instant, et ne sous-entend aucun effet du dépôt sur le verdict. |
 | 1 | Le texte ne contient aucune des vingt formes de `__tests__/fixtures/scoring-vocabulary.ts`. |
 | 2 | À l'ouverture de l'accueil, sans partie enregistrée, l'annonce est visible. |
 | 2 | Saisir `alice/atelier` dans le champ dépôt la fait disparaître ; vider le champ la fait revenir ; n'y taper que des espaces la laisse visible. |
 | 2 | Saisir une forme refusée laisse l'annonce absente, et le message du champ reste le seul refus affiché. |
+| 3 | Le test de contrôle du garde des libellés (`catches a scoring grid dimension label…`) exerce la même extraction que le garde, via `renderedTextOf`. |
 | 3 | `npm run lint`, `npm run typecheck` et `npm run test` passent. |
