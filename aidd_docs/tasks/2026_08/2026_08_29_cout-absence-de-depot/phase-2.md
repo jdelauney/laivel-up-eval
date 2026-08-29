@@ -128,8 +128,9 @@ journey
 
 > Les comportements qui portent, chacun le sien.
 
-1. Dans `onboarding-view.test.tsx` : l'annonce est visible à l'ouverture ; elle disparaît dès qu'un dépôt est saisi ; elle revient si le champ est vidé ; des espaces seuls ne la font pas disparaître ; une forme refusée ne la ramène pas.
-2. Le balayage du vocabulaire de notation déjà en place (`never states a scoring vocabulary word anywhere on the screen`) couvre l'écran annonce affichée ; aucun test dédié dupliqué n'est ajouté à côté.
+1. Dans `onboarding-view.test.tsx` : l'annonce est visible à l'ouverture et nomme les deux axes en mots ordinaires (« du travail de l'IA », « chantiers que vous menez de front ») ; elle disparaît dès qu'un dépôt est saisi ; elle revient si le champ est vidé ; des espaces seuls ne la font pas disparaître ; une forme refusée ne la ramène pas.
+2. Le balayage du vocabulaire de notation déjà en place (`never states a scoring vocabulary word anywhere on the screen`) couvre l'écran annonce affichée ; aucun test dédié dupliqué n'est ajouté à côté pour ce vocabulaire-là.
+3. Réparation revue (passe 2, F1) : un balayage dédié (`never restates a scoring grid dimension label anywhere on the screen`), suivi de son test de contrôle qui prouve qu'il attrape réellement un libellé, garde la décision de ne pas recopier `grid.dimensions[].label` — `grid` lu depuis `__tests__/fixtures/configuration.ts`, jamais recopié en dur.
 
 ## Test acceptance criteria
 

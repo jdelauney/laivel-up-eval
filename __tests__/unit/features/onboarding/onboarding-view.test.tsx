@@ -9,6 +9,7 @@ import { useSessionStore } from '../../../../src/store/session.store'
 import {
   buildTestFacade,
   buildTestFacadeWithGameCount,
+  grid,
 } from '../../../fixtures/configuration'
 import { MemoryPersistence } from '../../../fixtures/memory-persistence'
 import { SCORING_VOCABULARY } from '../../../fixtures/scoring-vocabulary'
@@ -255,6 +256,31 @@ describe('onboarding view', () => {
     }
   })
 
+  it('never restates a scoring grid dimension label anywhere on the screen', () => {
+    const { container } = renderOnboarding()
+
+    const renderedText = (container.textContent ?? '').toLowerCase()
+
+    for (const dimension of grid.dimensions) {
+      expect(renderedText).not.toContain(dimension.label.toLowerCase())
+    }
+  })
+
+  /**
+   * Preuve que le balayage ci-dessus n'est pas vide de sens : un texte qui
+   * porte réellement un libellé du référentiel doit se faire attraper. Sans
+   * ce cas, un balayage cassé et un écran propre se ressemblent tous les
+   * deux.
+   */
+  it('catches a scoring grid dimension label when the rendered text states one', () => {
+    const [firstDimension] = grid.dimensions
+    const { container } = render(<p>{firstDimension.label}</p>)
+
+    const renderedText = (container.textContent ?? '').toLowerCase()
+
+    expect(renderedText).toContain(firstDimension.label.toLowerCase())
+  })
+
   it('keeps the frame stated above the resume card of a stored run', () => {
     const persistence = new MemoryPersistence()
     const played = buildTestFacade(persistence)
@@ -274,10 +300,14 @@ describe('onboarding view', () => {
   describe('missing repository notice', () => {
     const NOTICE = /Entrer sans dépôt est un usage prévu/
 
-    it('is visible at opening', () => {
+    it('is visible at opening, and names both axes in ordinary words', () => {
       renderOnboarding()
 
-      expect(screen.getByText(NOTICE)).toBeInTheDocument()
+      const notice = screen.getByText(NOTICE)
+
+      expect(notice).toBeInTheDocument()
+      expect(notice).toHaveTextContent(/du travail de l'IA/)
+      expect(notice).toHaveTextContent(/chantiers que vous menez de front/)
     })
 
     it('disappears once a repository is typed, and returns once the field is cleared', () => {

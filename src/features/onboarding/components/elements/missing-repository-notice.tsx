@@ -18,6 +18,6 @@ export const MissingRepositoryNotice = () => (
   <p className="border-plane-rule border-l pl-4 text-plane-foreground/70 text-sm">
     Entrer sans dépôt est un usage prévu&nbsp;: le parcours se joue en entier.
     Sans dépôt à lire, ce que vous faites du travail de l'IA et le nombre de
-    chantiers que vous menez de front ne reposeront que sur ce seul parcours.
+    chantiers que vous menez de front reposeront sur ce seul parcours.
   </p>
 )
