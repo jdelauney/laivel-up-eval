@@ -1,6 +1,6 @@
 ---
 objective: "Le joueur se nomme et désigne un dépôt facultatif sous une forme normalisée, sans qu'aucun réseau soit sollicité, et la saisie reste lisible du premier écran au verdict."
-status: in-progress
+status: implemented
 ---
 
 # Plan: La saisie d'identité et de dépôt à l'entrée du parcours
