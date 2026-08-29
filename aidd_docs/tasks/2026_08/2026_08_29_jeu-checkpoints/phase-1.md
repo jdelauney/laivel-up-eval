@@ -66,7 +66,9 @@ journey
 1. Créer `config/schema/config.schema.ts` : une liste de six étapes ordonnées, chacune portant son identifiant, son libellé joueur en français, la sortie de l'IA à trancher, et le coût de chacun des trois choix.
 2. Une étape peut porter un défaut : son identifiant, et le facteur par lequel son coût est multiplié s'il n'est pas traité à sa source.
 3. Le budget de départ est déclaré dans la configuration, jamais en dur.
-4. Refuser au chargement une configuration sans étape, un coût négatif, ou un facteur inférieur à un.
+4. Un défaut déclare l'étape où il éclate s'il n'est pas traité à sa source.
+5. Refuser au chargement une configuration sans étape, un coût négatif, ou un facteur inférieur à un.
+6. Le schéma doit accueillir le barème arrêté en [`phase-4.md`](./phase-4.md) sans transformation.
 
 ### `2)` Le schéma de réponse
 

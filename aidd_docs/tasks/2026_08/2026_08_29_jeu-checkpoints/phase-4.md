@@ -57,9 +57,42 @@ journey
 > Le parcours dit quel jeu instancier ; le registre fournit le reste.
 
 1. Ajouter dans `config/course.json` un septième groupe portant les axes du référentiel, avec son `order`.
-2. Y déclarer le jeu de type `checkpoints`, son libellé joueur en français, et sa configuration : six étapes, leurs sorties, leurs coûts, leurs défauts.
-3. Déclarer les trois critères, chacun avec sa question en français, son type de règle et ses paramètres.
+2. Y déclarer le jeu de type `checkpoints`, son libellé joueur en français, et sa configuration selon le barème ci-dessous.
+3. Déclarer les trois critères, chacun avec sa question en français, son type de règle et ses paramètres. Le seuil du garde-fou est la moitié des étapes laissées passer.
 4. Mapper les trois critères sur la dimension `intervention`, avec des poids qui font peser le garde-fou moins que les deux critères de mesure.
+
+#### Le barème
+
+La tâche jouée : ajouter la facturation récurrente à un produit existant. Assez banale pour que personne ne bute sur le domaine. **Budget de départ : 10.**
+
+| # | Étape | Sortie | Laisser | Corriger | Re-cadrer | Défaut | Éclate à | Facteur |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | cadrage | prose | 0 | 2 | 3 | oui | revue | ×3 |
+| 2 | plan | prose | 0 | 2 | 3 | oui | tests | ×3 |
+| 3 | génération | prose + code | 0 | 3 | 4 | non | — | — |
+| 4 | revue | prose + code | 0 | 4 | 5 | non | — | — |
+| 5 | tests | prose + code | 0 | 5 | 6 | non | — | — |
+| 6 | merge | prose + code | 0 | 6 | 7 | non | — | — |
+
+Le coût d'une reprise monte avec l'étape : c'est la vérité du métier, et le jeu doit la faire ressentir plutôt que l'énoncer. Les deux seuls défauts sont en amont, dans la prose ; le code des étapes 3 à 6 est propre et sert de leurre.
+
+Ce que le barème produit, et qui doit rester vrai après tout réglage :
+
+| Façon de jouer | Dépense | Budget final | Critères |
+| --- | --- | --- | --- |
+| Corrige au cadrage et au plan, puis laisse courir | 2 + 2 | 6 | 3 sur 3 |
+| Ne touche à rien | 6 + 6 qui éclatent | −2 | 2 sur 3 |
+| Corrige à chaque étape | 2+2+3+4+5+6 | −12 | 0 sur 3 |
+
+Le bon jeu est le seul qui finit positif. Les deux mauvais partent en dette, ce qui donne son emploi au chiffre vermillon.
+
+#### Le contenu éditorial
+
+Six sorties d'IA à écrire, en français, sur la facturation récurrente.
+
+1. **cadrage** — l'IA reformule la tâche. Le défaut est une ambiguïté laissée dans la reformulation : ce qu'elle ne dit pas sur la proration, la devise, ou le renouvellement un 31.
+2. **plan** — l'IA propose son découpage. Le défaut est un pan non couvert, annoncé comme couvert.
+3. à 6. — prose plus extrait. Aucun défaut. Le code doit être **plausible et correct** : un joueur qui le scrute ne doit rien y trouver, et c'est le sujet du jeu.
 
 ### `2)` Le test d'intégration
 
