@@ -40,11 +40,11 @@ describe('app layout header', () => {
   })
 
   /**
-   * jsdom ne met rien en page : la tenue sur une seule bande ne s'observe pas,
-   * seule sa mécanique se vérifie — l'identité se tronque, l'avancement garde
-   * sa boîte et ne se fait donc pas pousser hors de l'écran.
+   * La tenue de l'en-tête sur une seule bande avec un pseudo long ne s'observe
+   * pas sous jsdom, qui ne met rien en page. Elle appartient au QA navigateur ;
+   * l'assiéger sur des noms de classes Tailwind ne prouvait que le mécanisme.
    */
-  it('truncates a long identity rather than pushing the progress out', () => {
+  it('shows a long identity without losing the progress', () => {
     render(
       <AppLayout
         status="2/12 situations"
@@ -57,9 +57,7 @@ describe('app layout header', () => {
       </AppLayout>,
     )
 
-    expect(screen.getByText('A'.repeat(40)).closest('p')).toHaveClass(
-      'truncate',
-    )
-    expect(screen.getByText('2/12 situations')).toHaveClass('shrink-0')
+    expect(screen.getByText('A'.repeat(40))).toBeInTheDocument()
+    expect(screen.getByText('2/12 situations')).toBeInTheDocument()
   })
 })

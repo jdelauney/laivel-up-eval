@@ -22,8 +22,11 @@ export type PlayerIdentity = {
 
 type SessionUiState = {
   screen: Screen
-  playerName: string
-  repository: RepositorySlug | undefined
+  /**
+   * Absente tant que rien n'a été saisi. Un pseudo vide dirait la même chose
+   * une seconde fois, et laisserait deux façons d'écrire « personne ».
+   */
+  identity: PlayerIdentity | undefined
   progress: Progress | undefined
   openCourse: (identity: PlayerIdentity, progress: Progress) => void
   setProgress: (progress: Progress) => void
@@ -33,18 +36,12 @@ type SessionUiState = {
 
 export const useSessionStore = create<SessionUiState>((set) => ({
   screen: 'onboarding',
-  playerName: '',
-  repository: undefined,
+  identity: undefined,
   progress: undefined,
-  openCourse: ({ playerName, repository }, progress) =>
-    set({ screen: 'course', playerName, repository, progress }),
+  openCourse: (identity, progress) =>
+    set({ screen: 'course', identity, progress }),
   setProgress: (progress) => set({ progress }),
   showSummary: () => set({ screen: 'summary' }),
   reset: () =>
-    set({
-      screen: 'onboarding',
-      playerName: '',
-      repository: undefined,
-      progress: undefined,
-    }),
+    set({ screen: 'onboarding', identity: undefined, progress: undefined }),
 }))

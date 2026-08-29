@@ -1,3 +1,4 @@
+import type { RepositorySlug } from '@/core/contracts/repository-slug.schema'
 import { Button } from '../../../../components/ui/button'
 
 /**
@@ -15,7 +16,7 @@ export const ResumeRun = ({
   onDiscard,
 }: {
   playerName: string
-  repository?: string | undefined
+  repository?: RepositorySlug | undefined
   submitted: number
   total: number
   onResume: () => void

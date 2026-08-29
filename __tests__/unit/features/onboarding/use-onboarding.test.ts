@@ -36,7 +36,7 @@ describe('onboarding', () => {
 
     const state = useSessionStore.getState()
     expect(state.screen).toBe('course')
-    expect(state.playerName).toBe('Alice')
+    expect(state.identity?.playerName).toBe('Alice')
     expect(state.progress?.game?.id).toBe('test-bench-1')
     expect(facade.hasSession()).toBe(true)
   })
@@ -49,7 +49,9 @@ describe('onboarding', () => {
       result.current.start('Alice', 'alice/atelier')
     })
 
-    expect(useSessionStore.getState().repository).toBe('alice/atelier')
+    expect(useSessionStore.getState().identity?.repository).toBe(
+      'alice/atelier',
+    )
     expect(facade.designatedRepository()).toBe('alice/atelier')
   })
 
@@ -67,7 +69,9 @@ describe('onboarding', () => {
       result.current.resume()
     })
 
-    expect(useSessionStore.getState().repository).toBe('alice/atelier')
+    expect(useSessionStore.getState().identity?.repository).toBe(
+      'alice/atelier',
+    )
   })
 
   it('reports nothing to resume on an empty store, and stays on onboarding', () => {
@@ -160,7 +164,7 @@ describe('onboarding', () => {
     const state = useSessionStore.getState()
     expect(resumed).toBe(true)
     expect(state.screen).toBe('course')
-    expect(state.playerName).toBe('Alice')
+    expect(state.identity?.playerName).toBe('Alice')
     expect(state.progress?.submitted).toBe(1)
   })
 })

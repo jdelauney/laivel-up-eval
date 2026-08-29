@@ -65,8 +65,10 @@ describe('onboarding view', () => {
     await waitFor(() => {
       expect(useSessionStore.getState().screen).toBe('course')
     })
-    expect(useSessionStore.getState().repository).toBe('alice/atelier')
-    expect(useSessionStore.getState().playerName).toBe('Alice')
+    expect(useSessionStore.getState().identity).toEqual({
+      playerName: 'Alice',
+      repository: 'alice/atelier',
+    })
   })
 
   it('opens the course with no repository when the field is left empty', async () => {
@@ -78,7 +80,7 @@ describe('onboarding view', () => {
     await waitFor(() => {
       expect(useSessionStore.getState().screen).toBe('course')
     })
-    expect(useSessionStore.getState().repository).toBeUndefined()
+    expect(useSessionStore.getState().identity?.repository).toBeUndefined()
     expect(screen.queryByText(/Indiquez le dépôt/)).not.toBeInTheDocument()
   })
 

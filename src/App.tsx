@@ -44,11 +44,7 @@ function App() {
   const composition = useComposition()
   const screen = useSessionStore((state) => state.screen)
   const progress = useSessionStore((state) => state.progress)
-  const playerName = useSessionStore((state) => state.playerName)
-  const repository = useSessionStore((state) => state.repository)
-
-  /** Tant que rien n'est saisi, il n'y a rien à rappeler dans le bandeau. */
-  const identity = playerName === '' ? undefined : { playerName, repository }
+  const identity = useSessionStore((state) => state.identity)
 
   if (composition.status === 'invalid-config') {
     return (

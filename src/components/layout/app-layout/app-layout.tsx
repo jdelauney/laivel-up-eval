@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { RepositorySlug } from '@/core/contracts/repository-slug.schema'
 
 /**
  * Deux plans physiques. Le fond est le monde du groupe, la carte de relevé est
@@ -10,7 +11,7 @@ import type { ReactNode } from 'react'
 
 export type HeaderIdentity = {
   playerName: string
-  repository?: string | undefined
+  repository?: RepositorySlug | undefined
 }
 
 /**
