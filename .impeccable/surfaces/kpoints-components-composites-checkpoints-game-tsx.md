@@ -7,7 +7,19 @@ related_targets: ["src/components/group-rail/composites/group-rail.tsx"]
 
 # Le jeu `checkpoints` — et la rampe à sept mondes
 
-Premier jeu à état du parcours. Cette fiche est le gabarit dont hériteront `three-tracks`, `task-board`, `scope-break` et `repo-kit` : ce qui est décidé ici est décidé cinq fois.
+Premier jeu à état du parcours.
+
+**Chaque jeu a sa propre surface, et cette fiche ne vaut que pour celle-ci.** `three-tracks` répartit une attention sur quatre pistes, `task-board` est un tableau à trois modes de délégation, `scope-break` un regroupement par glisser-déposer, `repo-kit` une boutique suivie de vagues. Aucun ne se compose comme une frise de six étapes, et chacun demandera sa propre passe.
+
+Ce qui se transmet d'un jeu à l'autre, et qui est décidé ici pour la première fois :
+
+- La partie vit dans le hook du jeu ; la réponse soumise est la trace du déroulé.
+- Le coût d'un geste est annoncé, sa conséquence ne l'est jamais.
+- Un état est une quantité — remplissage, taille, filet — jamais une couleur seule, jamais une opacité.
+- Un relevé qui s'allonge derrière la décision courante ne doit jamais pousser cette décision hors de l'écran.
+- L'avancée est un changement discret. Aucune animation, aucun retour de satisfaction.
+
+Ce qui ne se transmet pas : la composition, les régions, les plages, et tout ce qui suit.
 
 ## Périmètre et mode
 
