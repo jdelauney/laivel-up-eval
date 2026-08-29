@@ -5,10 +5,11 @@ const STORAGE_KEY = 'laivel-eval.session'
 /**
  * La session vit dans le navigateur du joueur, elle ne part nulle part.
  *
- * Le stockage est injecté plutôt que lu en dur : jsdom n'expose pas
- * `window.localStorage`, et une couture vaut mieux qu'un comportement de
- * persistance non testé. En production, le défaut est bien celui du
- * navigateur.
+ * Le stockage est injecté plutôt que lu en dur, et sans valeur par défaut :
+ * un défaut lisant `globalThis` rendrait `undefined` inexprimable — l'argument
+ * déclencherait le défaut au lieu de dire « pas de stockage » — et le
+ * comportement dépendrait alors du runtime. C'est `composition-root.ts` qui
+ * désigne le stockage réel, comme pour toute autre dépendance concrète.
  *
  * Une donnée illisible rend `undefined` plutôt que de lever : un stockage
  * abîmé ramène au démarrage, il ne bloque pas une partie.
@@ -16,7 +17,7 @@ const STORAGE_KEY = 'laivel-eval.session'
 export class LocalSessionStorageAdapter implements PersistenceSessionAdapter {
   private readonly storage: Storage | undefined
 
-  constructor(storage: Storage | undefined = globalThis.localStorage) {
+  constructor(storage: Storage | undefined) {
     this.storage = storage
   }
 

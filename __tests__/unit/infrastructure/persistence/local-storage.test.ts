@@ -1,11 +1,12 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocalSessionStorageAdapter } from '../../../../src/infrastructure/persistence/local-session-storage.adapter'
 
 const STORAGE_KEY = 'laivel-eval.session'
 
 /**
- * jsdom n'expose pas `window.localStorage` : le stockage est injecté, et ce
- * double implémente le contrat `Storage` du navigateur.
+ * Le stockage est injecté, et ce double implémente le contrat `Storage` du
+ * navigateur. Selon la version de Node, `globalThis.localStorage` est celui de
+ * jsdom ou n'existe pas : l'adapter ne doit dépendre ni de l'un ni de l'autre.
  */
 class FakeStorage implements Storage {
   private readonly entries = new Map<string, string>()
@@ -44,6 +45,10 @@ describe('local storage persistence', () => {
     storage = new FakeStorage()
   })
 
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('reads back what it wrote', () => {
     const adapter = new LocalSessionStorageAdapter(storage)
     adapter.write({ playerName: 'Alice', groupIndex: 0 })
@@ -78,9 +83,18 @@ describe('local storage persistence', () => {
   })
 
   it('stays inert when no storage is available at all', () => {
+    /**
+     * Un `globalThis.localStorage` bien vivant est posé exprès : si l'adapter
+     * retombait dessus, il écrirait et relirait la session, et les deux
+     * assertions tomberaient. C'est ce qui distinguait le CI du poste local,
+     * une version de Node exposant ce global et l'autre non.
+     */
+    vi.stubGlobal('localStorage', new FakeStorage())
+
     const adapter = new LocalSessionStorageAdapter(undefined)
 
     expect(() => adapter.write({ playerName: 'Alice' })).not.toThrow()
     expect(adapter.read()).toBeUndefined()
+    expect(globalThis.localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 })
