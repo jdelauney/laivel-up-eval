@@ -1,7 +1,5 @@
 # Codebase Map
 
-> Toutes les zones ci-dessous existent sur le disque. La carte reste contractualisée dans [`../TECHNICAL.md`](../TECHNICAL.md) §3 : **c'est là qu'un fichier nouveau doit atterrir**.
-
 ```mermaid
 flowchart TD
   src --> components["components/ · UI générique, sans état métier"]
@@ -9,23 +7,23 @@ flowchart TD
   src --> games["games/ · système de plugins"]
   src --> core["core/ · domaine pur"]
   src --> infra["infrastructure/ · implémentations des ports"]
+  src --> providers["providers/ · le passage du câblage à React"]
   src --> store["store/ · état UI Zustand"]
-  src --> providers["providers/ · contextes React"]
   src --> root["composition-root.ts · câblage DI"]
-  config["config/ · grille, signature, parcours, profils"] --> core
-  tests["__tests__/ · unit · integration · e2e"] --> src
+  config["config/ · grid, course, signature"] --> root
+  tests["__tests__/ · unit · integration · fixtures"] --> src
 ```
 
 ## Zones
 
 - `src/components/` : UI générique sans état métier. `ui/` tient les primitifs shadcn installés par la CLI — Biome les exclut du lint.
-- `src/features/` : un sous-dossier par fonctionnalité, gabarit interne `components/` · `hooks/` · `actions/` · `schema/`. Aujourd'hui `onboarding/`, `group-navigation/`, `scoring-summary/`.
-- `src/games/` : un sous-dossier par jeu, même gabarit plus `helpers/` et l'evaluator à la racine du dossier. **Reste à la racine, pas sous `features/`** : c'est un système de plugins à contrat formel, un contributeur doit voir en cinq secondes où ajouter un jeu.
-- `src/core/` : `entities/`, `contracts/` (schémas Zod, `helpers/` pour la validation), `ports/` (interfaces), `commands/`, `registry/`, `scoring/`, `session/`.
-- `src/infrastructure/` : un sous-dossier par port implémenté — `clock/`, `persistence/`. Un adapter reçoit sa dépendance externe au constructeur, **sans valeur par défaut** : un défaut lisant `globalThis` rend l'absence inexprimable, puisque passer `undefined` déclenche le défaut, et le comportement se met alors à dépendre du runtime. C'est `composition-root.ts` qui désigne la dépendance réelle.
-- `src/providers/` : les contextes React qui portent le résultat du câblage jusqu'aux écrans. Aucun composant n'importe la façade directement.
-- `config/` : les quatre JSON data-driven. `grid.json`, `course.json` et `signature.json` sont posés ; `signals.json` arrive avec le catalogue de signaux.
-- `__tests__/` : à la racine, en miroir de `src/`. `unit/` pour la forme et le comportement d'une unité, `integration/config-loading/` pour le refus au chargement croisé avec les JSON réels, `fixtures/` pour les doubles de port partagés. Vitest ne lit que `__tests__/{unit,integration}/**/*.test.{ts,tsx}` : un fichier rangé ailleurs ne tourne pas et ne dit rien.
+- `src/features/` : `onboarding/`, `group-navigation/`, `scoring-summary/`. Gabarit interne `components/` · `hooks/` · `actions/` · `schema/`, seuls les niveaux utilisés sont créés.
+- `src/games/` : un sous-dossier par jeu, plus les deux fichiers de câblage `register-games.ts` (evaluator, schémas) et `register-components.ts` (le composant), et `types/game-component.ts`. **Reste à la racine, pas sous `features/`** : c'est un système de plugins à contrat formel, un contributeur doit voir en cinq secondes où ajouter un jeu.
+- `src/core/` : `entities/`, `contracts/` (schémas Zod et `helpers/parse-config.helper.ts`), `ports/` (interfaces), `commands/`, `registry/` (`game-registry.ts` seul), `scoring/` (stratégie de pondération et helpers de bande et de résolution de niveau), `session/` (façade et `run-replay.helper.ts`).
+- `src/infrastructure/` : un sous-dossier par port implémenté — `clock/` (`system`, `fixed`), `persistence/`.
+- `src/providers/` : `session-context.tsx`, le seul chemin par lequel un composant atteint la façade.
+- `config/` : `grid.json`, `course.json`, `signature.json`. Aucun profil de rejeu sur le disque.
+- `__tests__/` : à la racine, en miroir de `src/`, plus `fixtures/` pour les doubles partagés.
 
 ## Règles de placement
 
@@ -34,9 +32,11 @@ flowchart TD
 
 ## Découpage atomique inversé
 
-On cherche par **nom** ; le niveau atomique vient après, **à l'intérieur** du dossier nommé — `components/dialog/{elements,composites,sections}/`, jamais trois dossiers atomiques à la racine de `components/`. Un composant simple ne crée que les niveaux réellement utilisés.
+On cherche par **nom** ; le niveau atomique vient après, **à l'intérieur** du dossier nommé — `components/group-rail/composites/`, jamais un dossier atomique à la racine de `components/`. Un composant simple ne crée que les niveaux réellement utilisés.
 
 `elements` (dumb atomiques) → `composites` (dumb composés) → `sections` (smart, connectés au store ou à la façade). La logique ne vit jamais dans un element ou un composite.
+
+Une exception en place : `components/layout/app-layout/app-layout.tsx` est posé sans niveau atomique. Le composant n'a ni état ni frère, et la coquille de page ne se décline pas.
 
 ## Chaîne logique / composants
 
@@ -48,5 +48,6 @@ Un helper est partageable entre l'action jouée et l'evaluator au scoring — un
 
 ## Points d'entrée
 
-- `src/main.tsx` monte `App` dans `#root`. `index.html` est le template Vite.
-- `src/composition-root.ts` est le seul endroit où tout se câble. Il rend `ready` ou `invalid-config` : une configuration hors contrat n'ouvre pas de session, elle remonte le champ fautif à l'écran. `main.tsx` passe ce résultat à `SessionProvider`.
+- `src/main.tsx` monte `App` sous `SessionProvider`, dans `#root`.
+- `src/composition-root.ts` est le seul endroit où tout se câble. `composeApp()` prend les JSON réels, `composeFrom()` prend les données en paramètre.
+- `src/App.tsx` aiguille les écrans depuis `session.store`, et rend l'écran de refus quand la configuration est hors contrat.

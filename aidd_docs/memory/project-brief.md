@@ -10,6 +10,7 @@
 - Le jury lance l'outil sur ses machines, sans clés d'API. **Le niveau se calcule donc sans modèle distant** : toute la chaîne signaux → axes → niveau → progression est déterministe, seuils lus dans du JSON.
 - Deux exécutions sur le même faisceau de preuves rendent le même niveau. C'est ce qui rend le verdict opposable, et c'est le premier critère de notation.
 - L'outil s'utilise, il ne s'exécute pas sur un dossier : l'entrée produit est une personne qui fait le parcours, pas un chemin passé en argument.
+- **Les évaluateurs ne testeront pas l'application avec des profils prédéfinis.** Ils font le parcours eux-mêmes. Aucun dossier de profil n'est une voie d'entrée, ni une modalité d'évaluation du rendu.
 
 ## Langage du domaine
 
@@ -26,14 +27,23 @@
 | Banc de calibration | Les quatre profils fournis rejoués dans le moteur de production et comparés à leur niveau attendu |
 | Mode replay | Réponses pré-enregistrées injectées dans le même pipeline que le jeu interactif |
 
-## Fonctionnalités socle
+## Ce qui tourne aujourd'hui
 
-- Onboarding : présentation, dépôt GitHub facultatif, assistant IA narratif désactivé par défaut.
-- Parcours d'évaluation : groupes de mises en situation, critères OUI/NON appliqués au résultat simulé.
-- Ingestion de dépôt : lecture tolérante à ce qui manque, avec le rapport du trouvé et du non-trouvé.
-- Moteur d'évaluation déterministe : signaux → crans → niveau par la règle du minimum.
-- Rapport : verdict, preuves sourcées, confiance par axe, plan de progression. Export JSON et Markdown.
-- Assistant IA narratif, optionnel : reçoit la trace, rédige le texte. Ne calcule rien, ne déplace rien.
+- Onboarding, avec reprise d'une session stockée.
+- Parcours groupe → jeu, progression visible, un seul jeu écrit (`test-bench`, le gabarit).
+- Moteur d'évaluation déterministe : critères → dimensions → niveau par la règle du minimum, plus la signature séparée.
+- Résumé à l'écran : verdict, dimensions et bandes.
+- Refus de configuration : une grille ou un parcours hors contrat n'ouvre pas de session et nomme le champ fautif.
+- Trace d'audit des réponses soumises, rendue par la façade.
+
+## Ce qui reste à construire
+
+- L'ingestion d'un dépôt et le catalogue de signaux qui l'exploite.
+- Le statut de mesure par axe, et le plafonnement qu'il entraîne.
+- Le plan de progression par axe.
+- L'export JSON et Markdown.
+- L'assistant IA narratif, optionnel, qui ne calcule rien et ne déplace rien.
+- Le banc de calibration sur les quatre profils fournis.
 
 ## Ce que le référentiel met hors périmètre
 
