@@ -5,7 +5,10 @@ import type { GameSessionFacade } from '../../../../src/core/session/game-sessio
 import { useCourse } from '../../../../src/features/group-navigation/hooks/use-course.hook'
 import { SessionProvider } from '../../../../src/providers/session-context'
 import { useSessionStore } from '../../../../src/store/session.store'
-import { buildTestFacade } from '../../../fixtures/configuration'
+import {
+  buildTestFacade,
+  buildTestFacadeWithGroups,
+} from '../../../fixtures/configuration'
 
 const buildFacade = () => buildTestFacade()
 
@@ -36,6 +39,29 @@ describe('course navigation', () => {
     const { result } = renderCourse(facade)
 
     expect(result.current.rail.map((group) => group.state)).toEqual(['current'])
+  })
+
+  /**
+   * Le pendant de la rampe au repos : une fois la partie ouverte, un groupe
+   * porte bien la position, et les suivants restent à venir.
+   */
+  it('marks the group in progress and leaves the ones behind it', () => {
+    const facade = buildTestFacadeWithGroups([2, 2, 1])
+    facade.start('Alice')
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
+
+    const { result } = renderCourse(facade)
+
+    expect(result.current.rail.map((group) => group.state)).toEqual([
+      'current',
+      'pending',
+      'pending',
+    ])
   })
 
   it('submits the answer and advances the position', () => {

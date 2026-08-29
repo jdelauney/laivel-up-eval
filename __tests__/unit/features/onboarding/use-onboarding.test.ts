@@ -6,7 +6,10 @@ import type { GameSessionFacade } from '../../../../src/core/session/game-sessio
 import { useOnboarding } from '../../../../src/features/onboarding/hooks/use-onboarding.hook'
 import { SessionProvider } from '../../../../src/providers/session-context'
 import { useSessionStore } from '../../../../src/store/session.store'
-import { buildTestFacade } from '../../../fixtures/configuration'
+import {
+  buildTestFacade,
+  buildTestFacadeWithGroups,
+} from '../../../fixtures/configuration'
 import { MemoryPersistence } from '../../../fixtures/memory-persistence'
 
 const buildFacade = (persistence: PersistenceSessionAdapter) =>
@@ -110,8 +113,40 @@ describe('onboarding', () => {
         id: 'groupe-banc-essai',
         label: "Banc d'essai du moteur",
         gameCount: 1,
-        state: 'current',
+        state: 'pending',
       },
+    ])
+  })
+
+  /**
+   * Au repos la rampe donne la forme du parcours, jamais une position dedans.
+   * Un seul groupe marqué courant fait lire une partie déjà commencée à qui
+   * n'a pas encore saisi son nom.
+   */
+  it('leaves every group pending on the rail, before the run starts', () => {
+    const { result } = renderOnboarding(buildTestFacadeWithGroups([3, 2, 1]))
+
+    expect(result.current.rail.map((group) => group.state)).toEqual([
+      'pending',
+      'pending',
+      'pending',
+    ])
+  })
+
+  it('still leaves every group pending when a stored run is waiting', () => {
+    const persistence = new MemoryPersistence()
+    const stored = buildTestFacadeWithGroups([3, 2, 1], persistence)
+    stored.start('Alice')
+
+    const { result } = renderOnboarding(
+      buildTestFacadeWithGroups([3, 2, 1], persistence),
+    )
+
+    expect(result.current.storedRun).toBeDefined()
+    expect(result.current.rail.map((group) => group.state)).toEqual([
+      'pending',
+      'pending',
+      'pending',
     ])
   })
 

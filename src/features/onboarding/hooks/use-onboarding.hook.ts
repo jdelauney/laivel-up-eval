@@ -19,7 +19,12 @@ export const useOnboarding = () => {
   const showSummary = useSessionStore((state) => state.showSummary)
   const [storedRun, setStoredRun] = useState(() => facade.storedRun())
 
-  const rail: RailGroup[] = buildRail(facade.courseShape(), 0)
+  /**
+   * Aucune position à montrer : l'accueil donne la forme du parcours, pas
+   * l'avancée dedans. Une partie enregistrée ne change rien — tant qu'elle
+   * n'est pas reprise, le joueur n'est nulle part.
+   */
+  const rail: RailGroup[] = buildRail(facade.courseShape(), undefined)
   const totalSituations = rail.reduce((sum, group) => sum + group.gameCount, 0)
   const estimatedMinutes = estimateCourseMinutes(totalSituations)
 

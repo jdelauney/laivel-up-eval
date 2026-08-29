@@ -211,3 +211,37 @@ export const buildTestFacadeWithGameCount = (
     signature: shaped.signature,
   })
 }
+
+/**
+ * Une façade à plusieurs groupes, pour ce que la rampe est seule à porter :
+ * l'état d'un groupe par rapport aux autres. Un parcours à un seul groupe rend
+ * la même liste au repos et en cours, et ne distingue donc rien.
+ */
+export const buildTestFacadeWithGroups = (
+  groupSizes: readonly number[],
+  persistence: PersistenceSessionAdapter = new MemoryPersistence(),
+): GameSessionFacade => {
+  const shapedCourse = {
+    version: '0.2-banc-essai',
+    groups: groupSizes.map((gameCount, groupIndex) => ({
+      id: `groupe-${groupIndex + 1}`,
+      label: `Groupe ${groupIndex + 1}`,
+      order: groupIndex + 1,
+      games: Array.from({ length: gameCount }, (_, gameIndex) =>
+        buildShapedGame(`test-bench-${groupIndex + 1}-${gameIndex + 1}`),
+      ),
+    })),
+  }
+
+  const shaped = parseConfiguration(projectGrid, shapedCourse, projectSignature)
+
+  return new GameSessionFacade({
+    registry: buildGameRegistry(),
+    scoring: new WeightedMappingStrategy(),
+    persistence,
+    clock: new FixedClock(),
+    grid: shaped.grid,
+    course: shaped.course,
+    signature: shaped.signature,
+  })
+}
