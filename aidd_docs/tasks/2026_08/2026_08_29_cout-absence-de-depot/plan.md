@@ -1,6 +1,6 @@
 ---
 objective: "L'accueil dit, tant que le champ dépôt est vide, quels axes le verdict ne pourra pas asseoir sur un historique, sans jamais reprocher cette absence."
-status: in-progress
+status: implemented
 ---
 
 # Plan: Comprendre le coût de l'absence de dépôt

@@ -270,4 +270,62 @@ describe('onboarding view', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
+
+  describe('missing repository notice', () => {
+    const NOTICE = /Entrer sans dépôt est un usage prévu/
+
+    it('is visible at opening and names both axes', () => {
+      renderOnboarding()
+
+      expect(screen.getByText(NOTICE)).toBeInTheDocument()
+      expect(
+        screen.getByText(/Reprise humaine du travail de l'IA/),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/Chantiers menés en parallèle/),
+      ).toBeInTheDocument()
+    })
+
+    it('disappears once a repository is typed, and returns once the field is cleared', () => {
+      renderOnboarding()
+
+      fill(REPOSITORY, 'alice/atelier')
+      expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+
+      fill(REPOSITORY, '')
+      expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    })
+
+    it('stays visible when only spaces are typed, since no repository is designated', () => {
+      renderOnboarding()
+
+      fill(REPOSITORY, '   ')
+
+      expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    })
+
+    it('stays absent on a refused form, leaving the field its own message alone', async () => {
+      renderOnboarding()
+
+      fill(REPOSITORY, 'mon super dépôt')
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Indiquez le dépôt sous la forme/),
+        ).toBeVisible()
+      })
+      expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+    })
+
+    it('never states a scoring vocabulary word while it is shown', () => {
+      const { container } = renderOnboarding()
+
+      expect(screen.getByText(NOTICE)).toBeInTheDocument()
+
+      const renderedWords = wordsRenderedBy(container)
+      for (const forbiddenWord of SCORING_VOCABULARY) {
+        expect(renderedWords).not.toContain(forbiddenWord)
+      }
+    })
+  })
 })

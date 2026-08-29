@@ -6,6 +6,7 @@ import {
   type OnboardingFormInput,
   onboardingFormSchema,
 } from '../../schema/onboarding-form.schema'
+import { MissingRepositoryNotice } from '../composites/missing-repository-notice'
 import { ResumeRun } from '../composites/resume-run'
 import { TextField } from '../elements/text-field'
 
@@ -30,6 +31,7 @@ export const OnboardingView = () => {
     rail,
     totalSituations,
     estimatedMinutes,
+    repositoryProvenAxes,
   } = useOnboarding()
 
   const form = useForm({
@@ -161,27 +163,32 @@ export const OnboardingView = () => {
 
           <form.Field name="repository">
             {(field) => (
-              <TextField
-                name={field.name}
-                label="Votre dépôt (facultatif)"
-                value={field.state.value}
-                invalid={
-                  !field.state.meta.isValid && field.state.meta.isTouched
-                }
-                errors={field.state.meta.errors}
-                placeholder="proprietaire/depot"
-                help={
-                  <>
-                    L'URL GitHub complète ou la forme{' '}
-                    <code className="bg-plane px-1 text-plane-foreground">
-                      proprietaire/depot
-                    </code>
-                    . Rien n'est vérifié à cet instant.
-                  </>
-                }
-                onChange={field.handleChange}
-                onBlur={field.handleBlur}
-              />
+              <>
+                <TextField
+                  name={field.name}
+                  label="Votre dépôt (facultatif)"
+                  value={field.state.value}
+                  invalid={
+                    !field.state.meta.isValid && field.state.meta.isTouched
+                  }
+                  errors={field.state.meta.errors}
+                  placeholder="proprietaire/depot"
+                  help={
+                    <>
+                      L'URL GitHub complète ou la forme{' '}
+                      <code className="bg-plane px-1 text-plane-foreground">
+                        proprietaire/depot
+                      </code>
+                      . Rien n'est vérifié à cet instant.
+                    </>
+                  }
+                  onChange={field.handleChange}
+                  onBlur={field.handleBlur}
+                />
+                {field.state.value.trim() === '' ? (
+                  <MissingRepositoryNotice axes={repositoryProvenAxes} />
+                ) : null}
+              </>
             )}
           </form.Field>
 
