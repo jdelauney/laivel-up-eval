@@ -22,6 +22,7 @@ Constaté le 29/08 en voulant faire tourner le garde-fou E2E sur le lot « cadre
 
 - Inclus : la configuration Playwright, le serveur de développement lancé par la configuration, et un spec unique couvrant accueil → une situation → résumé.
 - Inclus : cantonner la découverte des specs à leur dossier, faute de quoi Playwright ramasse les suites Vitest et celles des plugins installés.
+- Candidat au second spec, une fois l'amorce en place : le bandeau de l'accueil balayé de 360 à 1920 px, en assérant par tuile que l'intitulé et la valeur tiennent chacun sur une ligne, qu'aucun des deux ne déborde (`scrollWidth <= clientWidth`), et que les valeurs d'une même rangée partagent leur ligne de base. Trois corrections successives de ce bandeau ont validé une métrique trop courte avant d'attraper le défaut ; jsdom ne calcule aucune boîte et ne peut pas tenir ce garde.
 - Exclu : la couverture E2E des vingt situations. Le happy path suffit à ce que la mémoire projet annonce.
 - Exclu : toute exécution en CI, non demandée à ce stade.
 
