@@ -44,6 +44,11 @@ function App() {
   const composition = useComposition()
   const screen = useSessionStore((state) => state.screen)
   const progress = useSessionStore((state) => state.progress)
+  const playerName = useSessionStore((state) => state.playerName)
+  const repository = useSessionStore((state) => state.repository)
+
+  /** Tant que rien n'est saisi, il n'y a rien à rappeler dans le bandeau. */
+  const identity = playerName === '' ? undefined : { playerName, repository }
 
   if (composition.status === 'invalid-config') {
     return (
@@ -61,7 +66,7 @@ function App() {
 
   if (screen === 'summary') {
     return (
-      <AppLayout status="parcours terminé">
+      <AppLayout status="parcours terminé" identity={identity}>
         <SummaryView />
       </AppLayout>
     )
@@ -74,6 +79,7 @@ function App() {
           ? `${progress.submitted}/${progress.total} situations`
           : undefined
       }
+      identity={identity}
     >
       <CourseView />
     </AppLayout>
