@@ -113,7 +113,12 @@ export const applyChoice = (
     stageIndex: state.stageIndex + 1,
     /** Le budget n'est jamais borné : le dépassement se lit, il n'arrête rien. */
     budget: state.budget - cost - burstCost,
-    pendingDefects: carried.filter((defect) => defect.burstsAt !== stage.id),
+    /**
+     * Un défaut laissé passer reste dans le livrable : son éclatement en
+     * prélève le prix, il ne le répare pas. Seule une reprise à la source, ou
+     * un re-cadrage qui reprend l'amont, le retire.
+     */
+    pendingDefects: carried,
     decisions: [...state.decisions, { stageId: stage.id, choice, cost }],
     bursts: [
       ...state.bursts,

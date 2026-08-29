@@ -76,6 +76,15 @@ describe('checkpoints simulation', () => {
     expect(state.budget).toBe(-2)
   })
 
+  it('leaves a defect that burst in the deliverable: the cost is not a fix', () => {
+    const state = play(buildConfig(), LET_IT_RIDE)
+
+    expect(state.pendingDefects.map((defect) => defect.id)).toEqual([
+      'ambiguite',
+      'pan-non-couvert',
+    ])
+  })
+
   it('charges a defect fixed at its source once, without multiplying it', () => {
     const state = play(buildConfig(), withChoiceAt(0, 'corriger'))
 

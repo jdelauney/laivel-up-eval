@@ -1,3 +1,4 @@
+import { CheckpointsGame } from './checkpoints/components/composites/checkpoints-game'
 import { TestBenchGame } from './test-bench/components/composites/test-bench-game'
 import type { GameComponent } from './types/game-component'
 
@@ -12,6 +13,7 @@ import type { GameComponent } from './types/game-component'
  */
 const components: Record<string, GameComponent> = {
   'test-bench': TestBenchGame,
+  checkpoints: CheckpointsGame,
 }
 
 export const resolveGameComponent = (
