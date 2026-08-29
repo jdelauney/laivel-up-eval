@@ -1,6 +1,6 @@
 ---
 objective: "L'accueil énonce la durée indicative, le déroulé par groupes et le fait que la mesure porte sur ce qu'on fait, sans énoncer nulle part un critère de notation."
-status: implemented
+status: reviewed
 ---
 
 # Plan: Le cadre énoncé avant la première situation
