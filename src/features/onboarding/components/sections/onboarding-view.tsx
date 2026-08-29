@@ -22,8 +22,15 @@ import { TextField } from '../elements/text-field'
 const emptyForm: OnboardingFormInput = { playerName: '', repository: '' }
 
 export const OnboardingView = () => {
-  const { start, resume, discard, storedRun, rail } = useOnboarding()
-  const totalGames = rail.reduce((sum, group) => sum + group.gameCount, 0)
+  const {
+    start,
+    resume,
+    discard,
+    storedRun,
+    rail,
+    totalSituations,
+    estimatedMinutes,
+  } = useOnboarding()
 
   const form = useForm({
     defaultValues: emptyForm,
@@ -59,30 +66,62 @@ export const OnboardingView = () => {
           </p>
         </header>
 
-        <dl className="grid grid-cols-3 gap-px border-plane-rule border-y bg-plane-rule">
-          <div className="bg-background py-4 pr-4">
-            <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
-              Groupes
-            </dt>
-            <dd className="mt-1 font-semibold text-2xl tabular-nums">
-              {rail.length}
-            </dd>
-          </div>
-          <div className="bg-background px-4 py-4">
-            <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
-              Situations
-            </dt>
-            <dd className="mt-1 font-semibold text-2xl tabular-nums">
-              {totalGames}
-            </dd>
-          </div>
-          <div className="bg-background py-4 pl-4">
-            <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
-              Données
-            </dt>
-            <dd className="mt-1 font-semibold text-2xl">Locales</dd>
-          </div>
-        </dl>
+        <div className="flex flex-col gap-3">
+          {/*
+           * Quatre colonnes à partir de `lg` et non de `md` : entre 768 et
+           * 825 px, une colonne ne laisse que 71 px utiles. « SITUATIONS » et
+           * « ESTIMATION » y débordent leur boîte et « 30 min » y passe sur
+           * deux lignes. Deux colonnes tiennent jusque-là.
+           */}
+          <dl className="grid grid-cols-2 gap-px border-plane-rule border-y bg-plane-rule lg:grid-cols-4">
+            <div className="bg-background py-4 pr-4">
+              <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
+                Groupes
+              </dt>
+              <dd className="mt-1 font-semibold text-2xl tabular-nums">
+                {rail.length}
+              </dd>
+            </div>
+            <div className="bg-background py-4 pl-4 lg:px-4">
+              <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
+                Situations
+              </dt>
+              <dd className="mt-1 font-semibold text-2xl tabular-nums">
+                {totalSituations}
+              </dd>
+            </div>
+            {/*
+             * « Durée estimée » passe sur deux lignes à quatre colonnes (103 px
+             * utiles) et fait descendre son chiffre sous les trois autres.
+             * « Estimation » tient sur une seule ligne et dit, dans l'intitulé,
+             * que la valeur n'est pas un chronomètre.
+             */}
+            <div className="bg-background py-4 pr-4 lg:px-4">
+              <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
+                Estimation
+              </dt>
+              <dd className="mt-1 font-semibold text-2xl tabular-nums">
+                {estimatedMinutes} min
+              </dd>
+            </div>
+            <div className="bg-background py-4 pl-4">
+              <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
+                Données
+              </dt>
+              <dd className="mt-1 font-semibold text-2xl">Locales</dd>
+            </div>
+          </dl>
+
+          {/*
+           * La durée annoncée sans cette ligne fait passer le parcours pour
+           * un bloc insécable. La reprise existe et elle est testée, mais la
+           * carte de reprise ne s'affiche qu'à qui a déjà joué : le primo-
+           * arrivant, seul lecteur de ce cadre, ne la verrait jamais.
+           */}
+          <p className="text-plane-foreground/60 text-sm">
+            Une partie interrompue se reprend dans ce navigateur.
+          </p>
+        </div>
 
         {storedRun ? (
           <ResumeRun

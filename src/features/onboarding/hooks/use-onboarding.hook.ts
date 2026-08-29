@@ -4,6 +4,7 @@ import { useSessionFacade } from '@/providers/session-context'
 import type { RailGroup } from '../../../components/group-rail/composites/group-rail'
 import { buildRail } from '../../../components/group-rail/helpers/build-rail.helper'
 import { useSessionStore } from '../../../store/session.store'
+import { estimateCourseMinutes } from '../helpers/estimate-course-minutes.helper'
 
 /**
  * Démarre une session neuve, reprend celle qui existe, ou l'efface. Le hook ne
@@ -19,6 +20,8 @@ export const useOnboarding = () => {
   const [storedRun, setStoredRun] = useState(() => facade.storedRun())
 
   const rail: RailGroup[] = buildRail(facade.courseShape(), 0)
+  const totalSituations = rail.reduce((sum, group) => sum + group.gameCount, 0)
+  const estimatedMinutes = estimateCourseMinutes(totalSituations)
 
   const start = useCallback(
     (playerName: string, repository?: RepositorySlug | undefined): void => {
@@ -53,5 +56,13 @@ export const useOnboarding = () => {
     setStoredRun(undefined)
   }, [facade])
 
-  return { start, resume, discard, storedRun, rail }
+  return {
+    start,
+    resume,
+    discard,
+    storedRun,
+    rail,
+    totalSituations,
+    estimatedMinutes,
+  }
 }

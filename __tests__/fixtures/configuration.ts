@@ -145,3 +145,69 @@ export const buildTestFacade = (
     course,
     signature,
   })
+
+const buildShapedGame = (id: string) => ({
+  id,
+  type: 'test-bench',
+  label: `Jeu ${id}`,
+  config: {
+    statement:
+      'Une IA vous propose ces affirmations sur son propre code. Retenez celles qui sont vérifiables.',
+    propositions: [
+      {
+        id: 'p1',
+        text: 'Les dépendances citées existent et sont à jour.',
+        expected: true,
+      },
+      {
+        id: 'p2',
+        text: 'Le code compile, donc il est correct.',
+        expected: false,
+      },
+    ],
+  },
+  criteria: [
+    {
+      id: `${id}-c1`,
+      question: 'Toutes les propositions vérifiables ont-elles été retenues ?',
+      rule: { type: 'all-expected-selected' },
+      mapping: [{ dimension: 'harness', weight: 1 }],
+    },
+  ],
+})
+
+/**
+ * Une façade dont le nombre de situations se choisit à l'appel, pour prouver
+ * qu'une grandeur dérivée du parcours (durée, total) suit sa forme plutôt
+ * qu'une valeur figée dans l'écran.
+ */
+export const buildTestFacadeWithGameCount = (
+  gameCount: number,
+  persistence: PersistenceSessionAdapter = new MemoryPersistence(),
+): GameSessionFacade => {
+  const shapedCourse = {
+    version: '0.2-banc-essai',
+    groups: [
+      {
+        id: 'groupe-banc-essai',
+        label: "Banc d'essai du moteur",
+        order: 1,
+        games: Array.from({ length: gameCount }, (_, index) =>
+          buildShapedGame(`test-bench-${index + 1}`),
+        ),
+      },
+    ],
+  }
+
+  const shaped = parseConfiguration(projectGrid, shapedCourse, projectSignature)
+
+  return new GameSessionFacade({
+    registry: buildGameRegistry(),
+    scoring: new WeightedMappingStrategy(),
+    persistence,
+    clock: new FixedClock(),
+    grid: shaped.grid,
+    course: shaped.course,
+    signature: shaped.signature,
+  })
+}

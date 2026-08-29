@@ -7,6 +7,7 @@ import {
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
+import { SCORING_VOCABULARY } from '../../fixtures/scoring-vocabulary'
 
 const minimalCourse = () => ({
   version: '1.0',
@@ -123,6 +124,22 @@ describe('course loading', () => {
       'groups[0].games[0].criteria[0].mapping[0].dimension',
     )
     expect(error.message).toContain('ghost-dimension')
+  })
+
+  /**
+   * L'accueil ne rend que le libellé des groupes, jamais celui des jeux : ce
+   * sont ces sept libellés du vrai parcours qui doivent passer le même garde
+   * que l'écran, `onboarding-view.test.tsx`, applique à sa fixture.
+   */
+  it('never names a scoring vocabulary word in a group label of the real course', () => {
+    const course = parseCourse(projectCourse)
+    const labelWords = course.groups.flatMap(
+      (group) => group.label.toLowerCase().match(/\p{L}+/gu) ?? [],
+    )
+
+    for (const forbiddenWord of SCORING_VOCABULARY) {
+      expect(labelWords).not.toContain(forbiddenWord)
+    }
   })
 
   it('accepts the project grid, course and signature together', () => {
