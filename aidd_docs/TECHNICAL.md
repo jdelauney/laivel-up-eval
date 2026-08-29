@@ -43,10 +43,10 @@ Méthode de travail : framework [AI-Driven Dev](https://github.com/ai-driven-dev
 | Pattern | Où | Rôle |
 |---|---|---|
 | **Strategy** | `game-evaluator.interface.ts`, `scoring-strategy.interface.ts` | Chaque jeu implémente `evaluate(answer, config): CriterionResult[]`. Le moteur ne connaît jamais le détail d'un jeu. |
-| **Registry** | `core/registry/register-games.ts` (domaine) + `games/register-components.ts` (interface) | `register(type, { evaluator, configSchema, answerSchema })` côté domaine ; le composant est enregistré côté interface, parce que `core/` n'importe pas React. Ajouter un jeu = 1 dossier + 1 bloc dans chacun de ces deux fichiers, résolus par le même `type`. |
-| **Command** | `submit-answer.command.ts`, `history.command.ts` | Chaque réponse soumise = un Command empilé dans l'historique → trace d'audit unique servant à l'export JSON **et** au payload de l'assistant IA. |
-| **Facade** | `game-session.facade.ts` | Seul point d'entrée de l'UI : `submitAnswer()`, `nextGame()`, `getGroupScore()`, `generateSummary()`, `exportResults()`, `resetSession()`. Cache registry, evaluators, scoring, persistence. |
-| **Adapter** | `infrastructure/persistence/`, `infrastructure/ai-assistant/`, `infrastructure/clock/` | Implémentations swappables des ports : LocalStorage aujourd'hui, Anthropic/OpenAI interchangeables (le participant peut avoir l'une ou l'autre clé), horloge système en partie jouée et horloge figée en rejeu. |
+| **Registry** | `games/register-games.ts` (domaine) + `games/register-components.ts` (interface) | `register(type, { evaluator, configSchema, answerSchema })` côté domaine ; le composant est enregistré à part, parce que `core/` n'importe pas React. `core/registry/` ne porte que `game-registry.ts`, la structure ; les deux fichiers de câblage vivent dans `games/`, à côté de ce qu'ils câblent. Ajouter un jeu = 1 dossier + 1 bloc dans chacun de ces deux fichiers, résolus par le même `type`. |
+| **Command** | `submit-answer.command.ts`, `history.command.ts` | Chaque réponse soumise = un Command empilé dans l'historique → trace d'audit unique, rendue par `auditTrail()`, servant à l'export JSON **et** au payload de l'assistant IA. |
+| **Facade** | `game-session.facade.ts` | Seul point d'entrée de l'UI : `start()`, `submitAnswer()`, `nextGame()`, `getProgress()`, `getVerdict()`, `auditTrail()`, `storedRun()`, `resume()`, `resetSession()`. Cache registry, evaluators, scoring, persistence, horloge. L'export reste à écrire. |
+| **Adapter** | `infrastructure/persistence/`, `infrastructure/clock/` | Implémentations swappables des ports : LocalStorage et horloge système en partie jouée, horloge figée en rejeu. `infrastructure/ai-assistant/` (Anthropic/OpenAI interchangeables, le participant peut avoir l'une ou l'autre clé) est prévu, pas écrit. |
 
 ### 2.4 Injection de dépendances
 
@@ -54,13 +54,31 @@ Pas de conteneur DI (trop lourd pour le format hackathon). **Composition root** 
 
 ```typescript
 // composition-root.ts — LE seul endroit où tout se câble
-const persistence = new LocalStorageAdapter();
-const aiAdapter = new AnthropicAdapter(getApiKeyFromOnboarding());
-const registry = buildGameRegistry(); // register-games.ts
-export const sessionFacade = new GameSessionFacade(registry, persistence, aiAdapter);
+export const composeFrom = (rawGrid, rawCourse, rawSignature) => {
+  try {
+    const { grid, course, signature } = parseConfiguration(rawGrid, rawCourse, rawSignature);
+    return {
+      status: 'ready',
+      facade: new GameSessionFacade({
+        registry: buildGameRegistry(),          // games/register-games.ts
+        scoring: new WeightedMappingStrategy(),
+        persistence: new LocalSessionStorageAdapter(globalThis.localStorage),
+        clock: new SystemClock(),
+        grid, course, signature,
+      }),
+    };
+  } catch (error) {
+    // une configuration hors contrat n'ouvre pas de session : elle nomme le champ fautif
+  }
+};
 ```
 
-Injection par constructeur partout ; l'instance du Facade est exposée à React via un `React.Context`. Le domaine ne dépend que d'interfaces (DIP), jamais d'implémentations concrètes.
+Injection par constructeur partout, par **objet de dépendances** et non par arguments positionnels : la façade en prend sept, et un ordre positionnel se casserait au premier ajout. L'instance du Facade est exposée à React via un `React.Context` (`providers/session-context.tsx`) ; aucun composant ne l'importe directement. Le domaine ne dépend que d'interfaces (DIP), jamais d'implémentations concrètes.
+
+Deux règles que le câblage porte, et qui ont un coût si on les oublie :
+
+- **Le câblage prend ses données en paramètre.** `composeFrom()` existe à côté de `composeApp()` pour que la branche de refus soit exerçable sans dépendre des fichiers réels. C'est le chemin du jour J si la grille officielle arrive mal formée.
+- **Un adapter ne prend aucune dépendance externe par défaut.** `LocalSessionStorageAdapter` reçoit son `Storage` ici, sans valeur de repli : un défaut lisant un global rendrait l'absence inexprimable et ferait dépendre l'adapter du runtime.
 
 ---
 
@@ -97,15 +115,14 @@ src/
 │   ├── hooks/
 │   │   ├── use-timer.hook.ts
 │   │   └── use-local-storage-state.hook.ts
+│   ├── group-rail/
+│   │   ├── composites/
+│   │   │   └── group-rail.tsx
+│   │   └── helpers/
+│   │       └── build-rail.helper.ts
 │   └── layout/
-│       ├── app-layout/
-│       │   └── sections/
-│       │       └── app-layout.tsx
-│       └── group-nav/
-│           ├── elements/
-│           │   └── group-nav-item.tsx
-│           └── composites/
-│               └── group-nav.tsx
+│       └── app-layout/
+│           └── app-layout.tsx                     # sans niveau atomique : ni état, ni frère
 │
 ├── features/                                      # 1 sous-dossier par fonctionnalité
 │   ├── onboarding/
@@ -154,29 +171,37 @@ src/
 │   │   ├── grid.schema.ts
 │   │   ├── course.schema.ts
 │   │   ├── replay-profile.schema.ts
-│   │   ├── player-profile.schema.ts
-│   │   ├── results-export.schema.ts
-│   │   └── parse-config.helper.ts                 # valide au chargement, nomme le champ fautif
+│   │   ├── session-snapshot.schema.ts             # le contrat de ce qui est persisté
+│   │   └── helpers/
+│   │       └── parse-config.helper.ts             # valide au chargement, nomme le champ fautif
 │   ├── ports/
 │   │   ├── game-evaluator.interface.ts
-│   │   ├── persistence-adapter.interface.ts
-│   │   ├── ai-assistant-adapter.interface.ts
+│   │   ├── persistence-session-adapter.interface.ts
+│   │   ├── clock.interface.ts
 │   │   └── scoring-strategy.interface.ts
 │   ├── commands/
 │   │   ├── submit-answer.command.ts
 │   │   └── history.command.ts
 │   ├── registry/
-│   │   ├── game-registry.ts
-│   │   └── register-games.ts                      # câblage explicite, pas de barrel
+│   │   └── game-registry.ts                       # la structure seule, pas le câblage
+│   ├── scoring/
+│   │   ├── weighted-mapping.strategy.ts           # critères → dimensions, par poids
+│   │   └── helpers/
+│   │       ├── dimension-band.helper.ts           # score → bande de l'échelle
+│   │       └── level-resolver.helper.ts           # règle du minimum, order décroissant
 │   └── session/
-│       └── game-session.facade.ts                 # inclut exportResults() + resetSession()
+│       ├── game-session.facade.ts
+│       └── run-replay.helper.ts                   # un profil pré-enregistré par la façade de prod
 │
 ├── infrastructure/                                # 1 sous-dossier par port implémenté
 │   ├── persistence/
-│   │   └── local-storage.adapter.ts
-│   └── ai-assistant/
-│       ├── anthropic.adapter.ts
-│       └── openai.adapter.ts
+│   │   └── local-session-storage.adapter.ts
+│   └── clock/
+│       ├── system.adapter.ts                      # partie jouée
+│       └── fixed.adapter.ts                       # rejeu et banc, trace reproductible
+│
+├── providers/
+│   └── session-context.tsx                        # le seul chemin de la façade vers React
 │
 ├── store/
 │   └── session.store.ts                           # Zustand — état pur, délègue au Facade
@@ -184,16 +209,22 @@ src/
 └── composition-root.ts                            # câblage DI, instancie et injecte tout
 
 __tests__/                                          # racine projet, à côté de src/
+├── fixtures/                                      # doubles partagés (MemoryPersistence)
 ├── unit/                                          # Vitest — groupé par périmètre
+│   ├── composition-root.test.ts                   # dont la branche de refus de configuration
 │   ├── core/
 │   │   ├── entities/
 │   │   ├── commands/
+│   │   ├── registry/
+│   │   ├── scoring/
 │   │   └── session/
+│   ├── infrastructure/
+│   │   └── persistence/
 │   ├── games/
-│   │   ├── blind-auction/                         # evaluator + helpers + actions
-│   │   └── error-hunt/
+│   │   └── test-bench/                            # evaluator + helpers + actions
 │   └── features/
 │       ├── onboarding/
+│       ├── group-navigation/
 │       └── scoring-summary/
 ├── integration/                                   # Vitest — pipeline complet sans UI
 │   ├── replay/                                    # profils fictifs → niveau attendu (harnais « ça tombe juste »)
@@ -202,6 +233,8 @@ __tests__/                                          # racine projet, à côté d
     ├── onboarding/
     └── full-course/
 ```
+
+> Ce qui est écrit à ce jour : `core/` en entier, `infrastructure/{persistence,clock}/`, `providers/`, `store/`, le composition root, les trois features et le jeu `test-bench`. Restent à écrire `infrastructure/ai-assistant/`, l'export, les autres jeux, et `__tests__/{integration/replay,e2e}/`. Les dossiers ci-dessus qui n'existent pas encore disent **où** poser le code, pas ce qui est là.
 
 ### Stratégie de test
 
@@ -224,9 +257,9 @@ __tests__/                                          # racine projet, à côté d
 
 On cherche par **nom**, le niveau atomique vient après, **à l'intérieur** du dossier nommé :
 
-- `components/dialog/` contient `elements/`, `composites/`, `sections/` — pas trois dossiers atomiques à la racine de `components/`.
+- `components/group-rail/` contient son `composites/` et son `helpers/` — pas des dossiers atomiques à la racine de `components/`.
 - `features/onboarding/components/` contient `elements/`, `composites/`, `sections/` — pas à la racine de la feature.
-- Un composant simple ne crée que les niveaux réellement utilisés (pas de dossiers vides par principe).
+- Un composant simple ne crée que les niveaux réellement utilisés (pas de dossiers vides par principe). `components/layout/app-layout/app-layout.tsx` va jusqu'au bout de cette règle et n'en crée aucun : la coquille de page n'a ni état ni frère à côté de qui se ranger.
 - Niveaux : `elements` (dumb atomiques) → `composites` (dumb composés) → `sections` (containers/smart, connectés au store ou au Facade). Découpage smart/dumb strict : la logique ne vit jamais dans un element ou un composite.
 
 ### Séparation logique / composants (par feature et par jeu)
@@ -282,8 +315,10 @@ config/
 ├── grid.json          # le référentiel officiel : dimensions + niveaux + seuils
 ├── signature.json     # même format, lecture complémentaire, ne décide aucun niveau
 ├── course.json        # groupes → jeux → critères → mapping vers grille ET signature
-└── profiles/          # profils fictifs (mode replay)
+└── profiles/          # profils fictifs (mode replay) — pas encore sur le disque
 ```
+
+Les trois premiers sont en place. `run-replay.helper.ts` est écrit et testé, mais sur des profils construits en mémoire : tant que `profiles/` est vide, le mode replay n'a pas de données.
 
 **Langue :** les clés sont en anglais comme le reste du code ; les valeurs affichées au joueur (`label`, `title`, `question`, `nextLevelHint`, énoncés) restent en français.
 
@@ -442,7 +477,7 @@ Les trois formats sont validés au chargement par les schémas Zod de `core/cont
 
 ## 7. Garde-fous (week-end 28–31 août)
 
-1. **Gabarit d'abord** : le premier jeu codé (`blind-auction`, l'enchère à l'aveugle) est validé de bout en bout (JSON → UI → evaluator → score → replay) le vendredi soir, **avant** de dupliquer sur les autres groupes.
+1. **Gabarit d'abord** : le premier jeu codé est validé de bout en bout (JSON → UI → evaluator → score → replay) **avant** de dupliquer sur les autres groupes. C'est `test-bench` qui tient ce rôle ; `blind-auction` sert d'exemple dans ce document, il n'est pas écrit.
 2. **PR par jeu** : le format week-end permet la granularité fine — ~19 PR (socle + 18 jeux + docs), historique lisible pour le jury.
 3. **Grille officielle absorbée avant l'ouverture** : publiée le 19/08, transposée dans `grid.json` et les mappings recalés avant le 28 — le format d'accueil se valide à froid, pas sous pression.
 4. **`components/` global gelé** après le socle du vendredi : toute la charge « par jeu » est confinée dans `games/<jeu>/`.
