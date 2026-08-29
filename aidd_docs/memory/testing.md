@@ -4,13 +4,13 @@
 
 - **Unit** (Vitest) : le domaine, le câblage et les écrans. Entities, commands, registry, scoring, façade, hooks de feature, evaluators et actions de jeu, adapters d'infrastructure. C'est là que le ratio valeur/temps est maximal.
 - **Integration** (Vitest) : la validation des JSON au chargement — grille, parcours, profil de rejeu — avec les cas malformés. Le mode replay a son harnais (`run-replay.helper.ts`) mais **aucun profil sur le disque** : tant que `config/` n'en porte pas, cette part de la suite tourne sur des profils construits en mémoire.
-- **E2E** (Playwright) : volontairement minimal, un happy path onboarding → un jeu → résumé, suffisant pour la vidéo de démo.
+- **E2E** (Playwright) : **prévu, pas encore amorcé**. `@playwright/test` est en dépendance et `npm run test:e2e` existe, mais aucune configuration ni aucun spec n'est committé — la commande n'est donc pas un garde-fou. La cible reste un happy path onboarding → un jeu → résumé, suffisant pour la vidéo de démo. Suivi par `aidd_docs/backlog/tasks/amorcer-la-suite-playwright-declaree.md`.
 
 ## Outils
 
 - Vitest en environnement jsdom, setup dans `vitest.setup.ts`.
 - Testing Library React et les matchers `jest-dom`.
-- Playwright pour le navigateur, **exclu du run Vitest** par la config Vite.
+- Playwright pour le navigateur, **exclu du run Vitest** par la config Vite. L'inverse n'est pas encore vrai : sans configuration Playwright, la commande e2e ramasse les suites Vitest.
 
 ## Conventions
 
