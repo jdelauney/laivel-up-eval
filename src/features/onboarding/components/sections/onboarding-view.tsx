@@ -22,8 +22,15 @@ import { TextField } from '../elements/text-field'
 const emptyForm: OnboardingFormInput = { playerName: '', repository: '' }
 
 export const OnboardingView = () => {
-  const { start, resume, discard, storedRun, rail } = useOnboarding()
-  const totalGames = rail.reduce((sum, group) => sum + group.gameCount, 0)
+  const {
+    start,
+    resume,
+    discard,
+    storedRun,
+    rail,
+    totalGames,
+    estimatedMinutes,
+  } = useOnboarding()
 
   const form = useForm({
     defaultValues: emptyForm,
@@ -59,7 +66,7 @@ export const OnboardingView = () => {
           </p>
         </header>
 
-        <dl className="grid grid-cols-3 gap-px border-plane-rule border-y bg-plane-rule">
+        <dl className="grid grid-cols-2 gap-px border-plane-rule border-y bg-plane-rule md:grid-cols-4">
           <div className="bg-background py-4 pr-4">
             <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
               Groupes
@@ -68,12 +75,25 @@ export const OnboardingView = () => {
               {rail.length}
             </dd>
           </div>
-          <div className="bg-background px-4 py-4">
+          <div className="bg-background py-4 pl-4 md:px-4">
             <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
               Situations
             </dt>
             <dd className="mt-1 font-semibold text-2xl tabular-nums">
               {totalGames}
+            </dd>
+          </div>
+          {/*
+           * L'estimation se porte dans l'intitulé, pas dans la valeur : à
+           * quatre colonnes, « Environ 30 min » en corps de chiffre déborde
+           * sa tuile et casse l'alignement de la rangée.
+           */}
+          <div className="bg-background py-4 pr-4 md:px-4">
+            <dt className="text-plane-foreground/50 text-xs uppercase tracking-[0.12em]">
+              Durée estimée
+            </dt>
+            <dd className="mt-1 font-semibold text-2xl tabular-nums">
+              {estimatedMinutes} min
             </dd>
           </div>
           <div className="bg-background py-4 pl-4">

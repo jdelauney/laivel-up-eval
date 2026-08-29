@@ -34,6 +34,26 @@ const submitForm = () =>
 const NAME = /votre nom/i
 const REPOSITORY = /votre dépôt/i
 
+/**
+ * Vocabulaire de notation, nommé terme par terme plutôt qu'en motif large :
+ * un faux échec se corrige en lisant la liste. La comparaison porte sur des
+ * mots entiers, pas des sous-chaînes : « Jugement critique » reste un
+ * libellé de groupe légitime.
+ */
+const SCORING_VOCABULARY = [
+  'note',
+  'notation',
+  'score',
+  'point',
+  'barème',
+  'coefficient',
+  'critère',
+  'seuil',
+]
+
+const wordsRenderedBy = (container: HTMLElement): string[] =>
+  (container.textContent ?? '').toLowerCase().match(/\p{L}+/gu) ?? []
+
 describe('onboarding view', () => {
   beforeEach(() => {
     useSessionStore.getState().reset()
@@ -138,5 +158,71 @@ describe('onboarding view', () => {
 
     expect(screen.getByText('Partie en cours')).toBeInTheDocument()
     expect(screen.getByText('alice/atelier')).toBeInTheDocument()
+  })
+
+  it('states the frame before any input: duration, groups and situations', () => {
+    renderOnboarding()
+
+    const groupsTile = screen.getByText('Groupes').closest('div')
+    const situationsTile = screen.getByText('Situations').closest('div')
+
+    expect(groupsTile).toHaveTextContent('1')
+    expect(situationsTile).toHaveTextContent('1')
+    expect(screen.getByText('Durée estimée')).toBeInTheDocument()
+    expect(screen.getByText('5 min')).toBeInTheDocument()
+    expect(
+      screen.getByText(/Chaque situation enregistre ce que vous faites/),
+    ).toBeInTheDocument()
+  })
+
+  it('follows the course shape of the injected facade, not a fixed duration', () => {
+    renderOnboarding()
+
+    expect(screen.getByText('5 min')).toBeInTheDocument()
+    expect(screen.queryByText('30 min')).not.toBeInTheDocument()
+  })
+
+  it('never states a scoring vocabulary word anywhere on the screen', () => {
+    const { container } = renderOnboarding()
+
+    const renderedWords = wordsRenderedBy(container)
+
+    for (const forbiddenWord of SCORING_VOCABULARY) {
+      expect(renderedWords).not.toContain(forbiddenWord)
+    }
+  })
+
+  /**
+   * La carte de reprise fait partie de l'accueil : elle porte du texte que le
+   * premier balayage ne voit pas, faute de partie enregistrée.
+   */
+  it('never states a scoring vocabulary word next to a stored run either', () => {
+    const persistence = new MemoryPersistence()
+    const played = buildTestFacade(persistence)
+    played.start('Alice', 'alice/atelier')
+
+    const { container } = renderOnboarding(persistence)
+    const renderedWords = wordsRenderedBy(container)
+
+    expect(screen.getByText('Partie en cours')).toBeInTheDocument()
+    for (const forbiddenWord of SCORING_VOCABULARY) {
+      expect(renderedWords).not.toContain(forbiddenWord)
+    }
+  })
+
+  it('keeps the frame stated above the resume card of a stored run', () => {
+    const persistence = new MemoryPersistence()
+    const played = buildTestFacade(persistence)
+    played.start('Alice')
+
+    renderOnboarding(persistence)
+
+    const frameDuration = screen.getByText('Durée estimée')
+    const resumeCard = screen.getByText('Partie en cours')
+
+    expect(
+      frameDuration.compareDocumentPosition(resumeCard) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 })
