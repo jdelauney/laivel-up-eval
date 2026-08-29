@@ -1008,52 +1008,134 @@
       "games": [
         {
           "id": "g7-1",
-          "type": "test-bench",
-          "label": "Quand reprenez-vous la main ?",
+          "type": "checkpoints",
+          "label": "La facturation récurrente, de bout en bout",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "budget": 10,
+            "stages": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "cadrage",
+                "label": "Cadrage",
+                "output": {
+                  "prose": "Vous voulez ajouter la facturation récurrente au produit. Je retiens : un abonnement mensuel et un abonnement annuel, un prélèvement automatique à l'échéance, et une page où le client change de formule ou résilie. Les factures gardent leur format actuel et le catalogue de prix ne bouge pas. Je pars là-dessus."
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 2,
+                  "re-cadrer": 3
+                },
+                "defect": {
+                  "id": "cadrage-ambigu",
+                  "burstsAt": "revue",
+                  "factor": 3
+                }
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "plan",
+                "label": "Plan",
+                "output": {
+                  "prose": "Je découpe en quatre lots : le modèle d'abonnement et ses états, le branchement du prestataire de paiement, la page de gestion côté client, puis les relances après un prélèvement refusé. Les trois premiers lots couvrent l'intégralité du cycle de vie d'un abonnement, de la souscription à la fin. Le quatrième se pose ensuite, sans dépendance sur les autres."
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 2,
+                  "re-cadrer": 3
+                },
+                "defect": {
+                  "id": "plan-incomplet",
+                  "burstsAt": "tests",
+                  "factor": 3
+                }
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "generation",
+                "label": "Génération",
+                "output": {
+                  "prose": "J'ai écrit le modèle d'abonnement et sa machine à états. Une transition non déclarée lève au lieu d'être corrigée en silence.",
+                  "code": "type SubscriptionStatus = 'active' | 'past_due' | 'canceled'\n\nconst TRANSITIONS: Record<\n  SubscriptionStatus,\n  readonly SubscriptionStatus[]\n> = {\n  active: ['past_due', 'canceled'],\n  past_due: ['active', 'canceled'],\n  canceled: [],\n}\n\nexport const transition = (\n  from: SubscriptionStatus,\n  to: SubscriptionStatus,\n): SubscriptionStatus => {\n  if (!TRANSITIONS[from].includes(to)) {\n    throw new Error(`transition ${from} vers ${to} interdite`)\n  }\n  return to\n}"
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 3,
+                  "re-cadrer": 4
+                }
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "revue",
+                "label": "Revue",
+                "output": {
+                  "prose": "Je me suis relu. Les dates sont manipulées en UTC, aucun montant ne passe par un flottant, et un prélèvement rejoué deux fois ne débite qu'une fois.",
+                  "code": "export const isAlreadyCharged = (\n  invoiceId: string,\n  charges: readonly { invoiceId: string }[],\n): boolean => charges.some((charge) => charge.invoiceId === invoiceId)\n\nexport const chargeOnce = (\n  invoiceId: string,\n  charges: readonly { invoiceId: string }[],\n): readonly { invoiceId: string }[] =>\n  isAlreadyCharged(invoiceId, charges) ? charges : [...charges, { invoiceId }]"
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 4,
+                  "re-cadrer": 5
+                }
+              },
+              {
+                "id": "tests",
+                "label": "Tests",
+                "output": {
+                  "prose": "J'ai couvert la souscription, le renouvellement, la résiliation et le refus d'une transition interdite.",
+                  "code": "it('reactive un abonnement impaye apres son paiement', () => {\n  expect(transition('past_due', 'active')).toBe('active')\n})\n\nit('refuse une transition non declaree', () => {\n  expect(() => transition('canceled', 'active')).toThrow()\n})\n\nit('ne debite pas deux fois la meme facture', () => {\n  const charges = chargeOnce('inv_1', [{ invoiceId: 'inv_1' }])\n\n  expect(charges).toHaveLength(1)\n})"
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 5,
+                  "re-cadrer": 6
+                }
+              },
+              {
+                "id": "merge",
+                "label": "Merge",
+                "output": {
+                  "prose": "La branche est à jour sur la principale, la migration est réversible et le journal de version est écrit.",
+                  "code": "-- 20260829_add_subscriptions.sql\nALTER TABLE subscriptions\n  ADD COLUMN status text NOT NULL DEFAULT 'active',\n  ADD COLUMN renewed_at timestamptz NULL;\n\n-- down\nALTER TABLE subscriptions\n  DROP COLUMN renewed_at,\n  DROP COLUMN status;"
+                },
+                "costs": {
+                  "laisser-passer": 0,
+                  "corriger": 6,
+                  "re-cadrer": 7
+                }
               }
             ]
           },
           "criteria": [
             {
               "id": "g7-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La reprise la plus lourde a-t-elle eu lieu avant la génération ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "heaviest-recovery-before",
+                "stage": "generation"
               },
               "mapping": [
                 {
                   "dimension": "intervention",
-                  "weight": 2
+                  "weight": 3
                 }
               ]
             },
             {
               "id": "g7-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Aucune reprise n'a-t-elle eu lieu après l'étape de revue ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "no-recovery-after",
+                "stage": "revue"
+              },
+              "mapping": [
+                {
+                  "dimension": "intervention",
+                  "weight": 3
+                }
+              ]
+            },
+            {
+              "id": "g7-1-c3",
+              "question": "L'IA a-t-elle produit l'essentiel du livrable ?",
+              "rule": {
+                "type": "ai-produced-most-of-deliverable",
+                "threshold": 0.5
               },
               "mapping": [
                 {
