@@ -12,6 +12,8 @@ import {
   checkpointsConfigSchema,
 } from '@/games/checkpoints/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
+import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
+import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
 import { FixedClock } from '@/infrastructure/clock/fixed.adapter'
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
@@ -60,7 +62,22 @@ const buildFacade = (
   })
 }
 
+/**
+ * Ce parcours traverse tout le référentiel, y compris le groupe `three-tracks`
+ * ajouté en phase 4 : une réponse conforme à son contrat est nécessaire pour
+ * que la partie continue jusqu'au bout, même si ce test ne mesure que
+ * `intervention`. N'importe quelle partie valide convient — ici, sept tours
+ * sans la moindre allocation, la plus simple qui satisfasse
+ * `parseThreeTracksTrace`.
+ */
 const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
+  if (game.type === 'three-tracks') {
+    const config = threeTracksConfigSchema.parse(game.config)
+    return buildThreeTracksAnswer(
+      config,
+      Array.from({ length: config.turns }, () => ({})),
+    )
+  }
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),

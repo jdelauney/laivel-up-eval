@@ -1148,39 +1148,48 @@
         },
         {
           "id": "g7-2",
-          "type": "test-bench",
-          "label": "Combien de chantiers tenez-vous ?",
+          "type": "three-tracks",
+          "label": "Où passez-vous votre attention ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "turns": 7,
+            "attentionPerTurn": 3,
+            "maxPerTrack": 2,
+            "driftAfter": 2,
+            "diesAfter": 4,
+            "tracks": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "migration",
+                "label": "La migration de la base",
+                "brief": "Le schéma passe en deux temps, sans coupure de service.",
+                "work": 4
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "panier",
+                "label": "La refonte du panier",
+                "brief": "Le tunnel d'achat change de modèle de données en cours de route.",
+                "work": 5
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "api-v2",
+                "label": "L'API publique v2",
+                "brief": "Trois clients externes consomment la v1 et n'en bougeront pas.",
+                "work": 5
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "affichage",
+                "label": "Le temps de premier affichage",
+                "brief": "Quatre secondes à l'ouverture, la cause n'est pas identifiée.",
+                "work": 6
               }
             ]
           },
           "criteria": [
             {
               "id": "g7-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Au moins un chantier a-t-il été mené jusqu'au merge ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "merged-at-least",
+                "threshold": 1
               },
               "mapping": [
                 {
@@ -1191,9 +1200,37 @@
             },
             {
               "id": "g7-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Trois chantiers ou plus ont-ils été menés jusqu'au merge ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "merged-at-least",
+                "threshold": 3
+              },
+              "mapping": [
+                {
+                  "dimension": "parallele",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "id": "g7-2-c3",
+              "question": "La médiane de chantiers vivants par tour atteint-elle trois ?",
+              "rule": {
+                "type": "median-live-tracks-at-least",
+                "threshold": 3
+              },
+              "mapping": [
+                {
+                  "dimension": "parallele",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "id": "g7-2-c4",
+              "question": "Aucun chantier n'a-t-il été ouvert puis abandonné ?",
+              "rule": {
+                "type": "no-abandoned-track"
               },
               "mapping": [
                 {

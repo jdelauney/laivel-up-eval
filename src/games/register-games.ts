@@ -3,6 +3,9 @@ import { checkpointsAnswerSchema } from '@/games/checkpoints/schema/answer.schem
 import { checkpointsConfigSchema } from '@/games/checkpoints/schema/config.schema'
 import { testBenchAnswerSchema } from '@/games/test-bench/schema/answer.schema'
 import { TestBenchEvaluator } from '@/games/test-bench/test-bench.evaluator'
+import { threeTracksAnswerSchema } from '@/games/three-tracks/schema/answer.schema'
+import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
+import { ThreeTracksEvaluator } from '@/games/three-tracks/three-tracks.evaluator'
 import { GameRegistry } from '../core/registry/game-registry'
 import { testBenchConfigSchema } from './test-bench/schema/config.schema'
 
@@ -24,6 +27,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new CheckpointsEvaluator(),
     configSchema: checkpointsConfigSchema,
     answerSchema: checkpointsAnswerSchema,
+  })
+
+  registry.register('three-tracks', {
+    evaluator: new ThreeTracksEvaluator(),
+    configSchema: threeTracksConfigSchema,
+    answerSchema: threeTracksAnswerSchema,
   })
 
   return registry
