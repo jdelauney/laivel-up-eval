@@ -1,35 +1,22 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import projectCourse from '../../../../config/course.json'
-import projectGrid from '../../../../config/grid.json'
-import projectSignature from '../../../../config/signature.json'
 import type { Course } from '../../../../src/core/contracts/course.schema'
-import { parseConfiguration } from '../../../../src/core/contracts/helpers/parse-config.helper'
 import type { PersistenceSessionAdapter } from '../../../../src/core/ports/persistence-session-adapter.interface'
 import { UnknownGameTypeError } from '../../../../src/core/registry/game-registry'
 import { WeightedMappingStrategy } from '../../../../src/core/scoring/weighted-mapping.strategy'
 import { GameSessionFacade } from '../../../../src/core/session/game-session.facade'
 import { buildGameRegistry } from '../../../../src/games/register-games'
 import { FixedClock } from '../../../../src/infrastructure/clock/fixed.adapter'
+import {
+  buildTestFacade,
+  course,
+  grid,
+  signature,
+} from '../../../fixtures/configuration'
 import { MemoryPersistence } from '../../../fixtures/memory-persistence'
-
-const { grid, course, signature } = parseConfiguration(
-  projectGrid,
-  projectCourse,
-  projectSignature,
-)
 
 const buildFacade = (
   persistence: PersistenceSessionAdapter = new MemoryPersistence(),
-) =>
-  new GameSessionFacade({
-    registry: buildGameRegistry(),
-    scoring: new WeightedMappingStrategy(),
-    persistence: persistence,
-    clock: new FixedClock(),
-    grid,
-    course: course,
-    signature,
-  })
+) => buildTestFacade(persistence)
 
 const goodAnswer = { selected: ['p1', 'p3'] }
 const badAnswer = { selected: ['p2', 'p4'] }

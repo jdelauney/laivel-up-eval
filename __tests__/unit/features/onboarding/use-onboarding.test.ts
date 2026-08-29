@@ -1,36 +1,16 @@
 import { act, renderHook } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import projectCourse from '../../../../config/course.json'
-import projectGrid from '../../../../config/grid.json'
-import projectSignature from '../../../../config/signature.json'
-import { parseConfiguration } from '../../../../src/core/contracts/helpers/parse-config.helper'
 import type { PersistenceSessionAdapter } from '../../../../src/core/ports/persistence-session-adapter.interface'
-import { WeightedMappingStrategy } from '../../../../src/core/scoring/weighted-mapping.strategy'
-import { GameSessionFacade } from '../../../../src/core/session/game-session.facade'
+import type { GameSessionFacade } from '../../../../src/core/session/game-session.facade'
 import { useOnboarding } from '../../../../src/features/onboarding/hooks/use-onboarding.hook'
-import { buildGameRegistry } from '../../../../src/games/register-games'
-import { FixedClock } from '../../../../src/infrastructure/clock/fixed.adapter'
 import { SessionProvider } from '../../../../src/providers/session-context'
 import { useSessionStore } from '../../../../src/store/session.store'
+import { buildTestFacade } from '../../../fixtures/configuration'
 import { MemoryPersistence } from '../../../fixtures/memory-persistence'
 
-const { grid, course, signature } = parseConfiguration(
-  projectGrid,
-  projectCourse,
-  projectSignature,
-)
-
 const buildFacade = (persistence: PersistenceSessionAdapter) =>
-  new GameSessionFacade({
-    registry: buildGameRegistry(),
-    scoring: new WeightedMappingStrategy(),
-    persistence: persistence,
-    clock: new FixedClock(),
-    grid,
-    course: course,
-    signature,
-  })
+  buildTestFacade(persistence)
 
 const renderOnboarding = (facade: GameSessionFacade) =>
   renderHook(() => useOnboarding(), {

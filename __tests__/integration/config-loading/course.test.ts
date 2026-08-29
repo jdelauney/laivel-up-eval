@@ -46,16 +46,47 @@ const expectRejection = (run: () => unknown): ConfigValidationError => {
 }
 
 describe('course loading', () => {
+  /**
+   * Ce test garde le vrai parcours, donc il n'affirme que ce qui reste vrai
+   * quand on ajoute un jeu : la forme, jamais le contenu du jour. Les
+   * comptes et les identifiants appartiennent aux tests unitaires, qui
+   * travaillent sur la fixture.
+   */
   it('accepts the project course and exposes its groups, games and criteria', () => {
     const course = parseCourse(projectCourse)
-    const group = course.groups[0]
 
-    expect(group.games).toHaveLength(1)
-    expect(group.games[0].type).toBe('test-bench')
-    expect(group.games[0].criteria.map((criterion) => criterion.id)).toEqual([
-      'c1',
-      'c2',
-    ])
+    expect(course.groups.length).toBeGreaterThan(0)
+
+    for (const group of course.groups) {
+      expect(group.games.length).toBeGreaterThan(0)
+
+      for (const game of group.games) {
+        expect(game.type).not.toBe('')
+        expect(game.criteria.length).toBeGreaterThan(0)
+
+        for (const criterion of game.criteria) {
+          expect(criterion.mapping.length).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
+
+  it('orders the groups without a gap or a duplicate', () => {
+    const course = parseCourse(projectCourse)
+    const orders = course.groups.map((group) => group.order)
+
+    expect(orders).toEqual(
+      Array.from({ length: course.groups.length }, (_, index) => index + 1),
+    )
+  })
+
+  it('gives every game an identifier of its own', () => {
+    const course = parseCourse(projectCourse)
+    const ids = course.groups.flatMap((group) =>
+      group.games.map((game) => game.id),
+    )
+
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('keeps the game config opaque to the engine', () => {
