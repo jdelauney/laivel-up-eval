@@ -26,6 +26,12 @@ jobs:
       - run: npm ci
         if: github.event.action != 'closed'
 
+      - run: npm run lint
+        if: github.event.action != 'closed'
+
+      - run: npm run typecheck
+        if: github.event.action != 'closed'
+
       - run: npm run test -- --run
         if: github.event.action != 'closed'
 
