@@ -48,8 +48,8 @@ Deux critères, tous deux sur la seule dimension `verification` de la signature.
 
 | Critère | Satisfait quand |
 | --- | --- |
-| `g1-3-c1` — la fausse affirmation est identifiée | La désignation **finale** vise la menteuse dans au moins 3 manches sur 4 |
-| `g1-3-c2` — le choix reste stable | Le joueur a eu au moins une **occasion de capituler**, et n'en a saisi aucune |
+| `g1-3-c1` — la fausse affirmation est identifiée | La **première** désignation vise la menteuse dans au moins 3 manches sur 4 |
+| `g1-3-c2` — le choix reste stable | Le joueur a eu au moins **deux occasions de capituler**, et n'en a saisi aucune |
 
 **Une capitulation est un abandon du juste, pas un changement d'avis.** Corriger une désignation fausse — vers la menteuse ou vers une autre erreur — ne coûte jamais la stabilité. Ce qui la coûte est d'avoir tenu la vérité puis de l'avoir lâchée sous l'aplomb.
 
@@ -59,7 +59,23 @@ Deux critères, tous deux sur la seule dimension `verification` de la signature.
 
 Une **occasion de capituler** est une manche qui réunit les deux conditions : la première désignation visait la menteuse, et l'assistant a pointé ailleurs. C'est le seul cas où l'aplomb s'exerce contre une lecture juste, donc le seul où tenir démontre quelque chose.
 
-**Un joueur sans aucune occasion rate `g1-3-c2`.** Il ne le satisfait pas par vacuité : c'est la jurisprudence de `kinds-found-including` chez `g1-2`, où un critère sans matière à mesurer noterait sans mesurer. Conséquence assumée : `g1-3-c2` n'est pas atteignable sans avoir lu juste au moins une fois. Il ne mesure pas la connaissance — c'est le rôle de `g1-3-c1` — mais il ne s'obtient plus en s'en passant.
+**Un joueur sans occasion rate `g1-3-c2`.** Il ne le satisfait pas par vacuité : c'est la jurisprudence de `kinds-found-including` chez `g1-2`, où un critère sans matière à mesurer noterait sans mesurer.
+
+### Deux occasions, et non une seule
+
+**Second arbitrage du 30/08, après le challenge du candidat.** Le seuil était à une occasion. Passé en force brute sur les 256 parties possibles d'un joueur qui désigne au hasard et ne bouge jamais, ce seuil laissait passer **57,8 %** d'entre elles. Une seule occasion sur quatre tirages à un contre quatre n'est pas une épreuve, c'est une formalité pour qui reste immobile — et l'immobilité n'est pas de la vérification. L'échelle de `verification` va de « accepte ce que l'IA affirme » à « vérification outillée » ; ne pas bouger n'y a aucune place, et ce critère pèse la moitié du jeu.
+
+À deux occasions, le même joueur au hasard tombe à **15,6 %**, et un lecteur qui démasque trois manches sur quatre en garde assez pour satisfaire le critère sans marge acrobatique. Le corpus en offre trois à un lecteur parfait : le seuil prend deux de ces trois, il ne les exige pas toutes.
+
+Ce que ce seuil ne corrige pas, et qu'il faut dire : un joueur chanceux passe encore une fois sur six. Un jeu à quatre choix ne distingue pas deviner juste de lire juste, et aucun réglage de seuil ne le fera — seul un corpus plus long y parviendrait. `verification` est nourrie par cinq situations, et c'est à ce niveau-là que le bruit d'une situation se dilue.
+
+### Pourquoi `g1-3-c1` se lit sur la première désignation
+
+**Même arbitrage, même jour.** Le critère se lisait sur la désignation finale. Cette lecture inversait le verdict pour le profil même que ce jeu existe pour attraper : un lecteur parfait — quatre menteuses désignées d'entrée — qui se laisse retourner deux fois sortait avec « la fausse affirmation n'a pas été identifiée ». Il l'avait identifiée quatre fois sur quatre. Le jeu lui reprochait une ignorance qu'il n'avait pas, et taisait la faiblesse qu'il avait.
+
+Lire `c1` sur la première désignation sépare proprement les deux critères : **`c1` mesure ce que le joueur a lu, `c2` ce qu'il en a fait sous pression.** Aucun des deux ne mord sur l'autre, et le second geste n'influence plus l'identification — ce qui rend `c1` insensible à toute politique de réponse à l'objection, donc plus résistant à la triche que la lecture finale, que « toujours suivre » pouvait infléchir.
+
+Le coût, assumé : un joueur qui lit mal puis se corrige vers la menteuse ne touche plus le crédit d'identification. C'est voulu. Dans la manche à objection fondée, se corriger revient à suivre l'assistant qui vient de donner la réponse — créditer ce geste comme une lecture reviendrait à payer l'obéissance au prix du discernement.
 
 ## Ce que ce jeu mesure, et ce qu'il ne mesure pas
 
