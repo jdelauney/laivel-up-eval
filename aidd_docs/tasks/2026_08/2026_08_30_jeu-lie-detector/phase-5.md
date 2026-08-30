@@ -16,9 +16,11 @@ status: done
 ├── src/games/lie-detector/
 │   ├── hooks/use-lie-detector.hook.ts                                   ✏️ si la passe a besoin d une lecture de plus
 │   └── components/
-│       ├── elements/                                                    ✏️ affirmation, objection
+│       ├── elements/
+│       │   └── claim-card.tsx                                          ✏️ resserrée sous sm, desktop inchangé
 │       └── composites/
-│           └── lie-detector-game.tsx                                    ✏️ la consigne se replie dès la deuxième manche
+│           ├── lie-detector-game.tsx                                    ✏️ la consigne se replie dès la deuxième manche
+│           └── round-sheet.tsx                                          ✏️ en-tête et verrou resserrés sous sm
 └── __tests__/unit/games/lie-detector/
     ├── lie-detector-game.test.tsx                                       ✏️ les tests qui verrouillent
     └── use-lie-detector.test.ts                                         ✏️
@@ -115,15 +117,23 @@ journey
 2. `lie-detector-game.tsx` : la consigne reste en entier à la première manche, se replie derrière un `<details>` natif dès la deuxième — jamais retirée du DOM, dépliable d'un tap.
 3. Remesurer sur `390×844` et joindre la preuve à `qa/`.
 
+### `6)` Le second correctif : mesure au vrai sommet du document, puis carte resserrée
+
+1. La revue conteste la mesure « après correctif » de la tâche 5 : les captures ne portaient plus le chrome du parcours (bannière, rampe, en-tête de situation), visible sur les captures `r1`. Vérifié : `getBoundingClientRect().top` avait été lu après une séquence de clics sur des boutons hors cadre, que Playwright fait défiler dans la zone cliquable avant de cliquer — défilement jamais réinitialisé par la suite, l'application étant une SPA. Remesuré à `window.scrollTo(0, 0)` explicite : la revue avait raison, la quatrième carte et le verrou de `r2` restaient hors cadre (459/604/748/892, verrou à 1035, sur 844).
+2. `claim-card.tsx`, `round-sheet.tsx` : la carte d'affirmation, l'en-tête de la feuille et le bandeau de verrou se resserrent sous `sm` (padding, espacement, interlignage), desktop inchangé (vérifié, aucune régression visuelle).
+3. Remesurer à `scrollY = 0` vérifié, joindre la preuve à `qa/`, corriger les mesures de la tâche 5 et du point 3 (`qa/README.md`) qui portaient la même contamination.
+
 ## Test acceptance criteria
 
 | Task | Acceptance criteria |
 | --- | --- |
 | 1 | La fiche de surface existe et nomme la stratégie retenue pour ce jeu |
-| 2 | Les quatre affirmations d'une manche se comparent sans défilement au premier temps — tient au format desktop (mesuré) ; au format mobile, tient à `r2`, `r3`, `r4` depuis la tâche 5, `r1` reste l'exception assumée où la consigne complète est due (mesuré, cf. `qa/README.md`) |
+| 2 | Les quatre affirmations d'une manche se comparent sans défilement au premier temps — tient au format desktop (mesuré) ; au format mobile, tient à `r2`, `r3`, `r4` depuis la tâche 6, mesuré à `scrollY = 0` vérifié, `r1` reste l'exception assumée où la consigne complète est due |
 | 2 | Une objection fondée et une objection creuse sont rendues avec exactement la même structure et le même ton |
 | 3 | Un test échoue si la présentation de l'objection dépend de sa nature |
 | 3 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
 | 4 | La tournée aux deux gabarits est déposée dans `qa/` |
-| 5 | Sur `390×844`, à la deuxième manche et aux suivantes, les quatre affirmations et le verrou de désignation tiennent dans le cadre sans défilement — mesuré |
+| 5 | Sur `390×844`, à la deuxième manche et aux suivantes, les quatre affirmations et le verrou de désignation tiennent dans le cadre sans défilement — **mesure initiale invalidée par contamination de défilement, cf. tâche 6** |
 | 5 | `npm run lint`, `npm run typecheck` et `npm run test` passent, aucune régression |
+| 6 | Sur `390×844`, à `scrollY = 0` vérifié explicitement, `r2`/`r3`/`r4` tiennent les quatre affirmations et le verrou sous 844 — mesuré (marge 9px sur `r2`) |
+| 6 | `npm run lint`, `npm run typecheck` et `npm run test` passent, aucune régression |

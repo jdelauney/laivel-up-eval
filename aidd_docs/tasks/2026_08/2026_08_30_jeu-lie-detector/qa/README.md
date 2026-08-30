@@ -2,13 +2,17 @@
 
 30/08/2026, Chromium via Playwright CLI, sur `npm run dev`, à 1440×900 et 390×844. Le harnais est hors du dépôt, comme pour les quatre tournées précédentes : `@playwright/cli` a été invoqué par `npx`, jamais ajouté au manifeste.
 
+**Repère de mesure.** Chaque capture et chaque mesure de cette page part de `window.scrollTo(0, 0)`, explicitement exécuté juste avant, et `window.scrollY` est vérifié à `0` avant toute lecture de position. Une première passe de cette tournée a rapporté des chiffres `r2` faux — contaminés par le défilement que Playwright applique automatiquement pour amener un bouton hors cadre (« Je maintiens », « Manche suivante ») dans la zone cliquable avant de cliquer ; ce défilement reste ensuite en l'état, l'application étant une SPA qui ne se recharge jamais entre deux manches. La revue l'a détecté et l'a chiffré avec précision (~269px), avant toute autre vérification. Le détail est au point 1.
+
 ## Le parcours joué
 
 La session est posée directement sur `g1-3` en écrivant `{"playerName":"QA Reviewer","groupIndex":0,"gameIndex":2,"submissions":[]}` dans `laivel-eval.session` puis en cliquant « Reprendre » : jouer `g1-1` et `g1-2` avant chaque capture n'apprend rien sur cette surface. Conséquence connue de ce raccourci : la tête de page affiche « Situation 1 sur 20 » au lieu de 3 — `progress.submitted + 1` compte les soumissions réelles, à zéro dans cette session forgée. En jeu réel, après `g1-1` et `g1-2` soumis, le compteur affiche 3. Ce n'est pas un défaut de `lie-detector`, c'est un artefact du raccourci de session.
 
-La manche jouée est `r1`, la première du corpus et celle qui porte les textes les plus longs — désignée par la tâche pour stresser la comparaison. `r1` porte une objection creuse (elle cible `r1-b`, qui dit vrai). `r2`, jouée ensuite pour la comparaison du point 4, porte l'unique objection fondée du corpus (elle cible `r2-b`, la menteuse).
+La manche jouée est `r1`, la première du corpus et celle qui porte les textes les plus longs — désignée par la tâche pour stresser la comparaison. `r1` porte une objection creuse (elle cible `r1-b`, qui dit vrai). `r2`, jouée ensuite pour la comparaison du point 4 et pour vérifier le correctif du point 1, porte l'unique objection fondée du corpus (elle cible `r2-b`, la menteuse).
 
 ## Ce qui est capturé
+
+Toutes les images ci-dessous sont de la passe finale, au même repère (`scrollY = 0`), sur le code après les deux correctifs de cette page.
 
 | Fichier | État |
 | --- | --- |
@@ -16,25 +20,48 @@ La manche jouée est `r1`, la première du corpus et celle qui porte les textes 
 | `desktop-2-r1-objection.png` · `mobile-2-r1-objection.png` | Une désignation posée, l'objection creuse de `r1` rendue |
 | `desktop-3-r1-revelation.png` · `mobile-3-r1-revelation.png` | La révélation de `r1` : quatre vérifications dépliées |
 | `desktop-4-r2-objection-fondee-full.png` | L'objection fondée de `r2`, page pleine, pour comparaison avec `r1` |
-| `mobile-4-r1-apres-correctif.png` | `r1` après correctif : inchangée, la consigne complète y reste due |
-| `desktop-5-r2-apres-correctif.png` · `mobile-5-r2-apres-correctif.png` | `r2` après correctif : consigne repliée, les quatre affirmations et le verrou tiennent dans le cadre |
-| `mobile-6-r2-consigne-depliee.png` | Le repli rouvert d'un tap : le texte complet reste disponible |
+| `desktop-5-r2-consigne-repliee.png` | `r2` sur desktop : la consigne repliée derrière « Revoir la consigne » |
+| `mobile-4-r2-scrolly0-debordement-confirme.png` | `r2` sur mobile, à `scrollY = 0`, **avant** le second correctif : la quatrième carte et le verrou sont hors cadre — la preuve que la revue avait raison |
+| `mobile-5-r2-scrolly0-corrige.png` | `r2` sur mobile, à `scrollY = 0`, **après** le second correctif : les quatre cartes et le verrou tiennent sous 844 |
+| `mobile-6-r2-consigne-depliee.png` | Le repli rouvert d'un tap, à `scrollY = 0` : le texte complet reste disponible |
 
 ## Point 1 — les quatre affirmations se comparent-elles sans défilement ?
 
-**Desktop (1440×900) : oui**, aux quatre manches. `desktop-1-r1-avant-designation.png` montre les quatre cartes de `r1` — la manche aux textes les plus longs — entièrement visibles au premier temps. Aucun débordement horizontal (`scrollWidth` 1440 / `clientWidth` 1440).
+### Ce que la première passe a rapporté, et pourquoi c'était faux
 
-**Mobile (390×844) : non à `r1`, oui à `r2`/`r3`/`r4` depuis le correctif.**
+La première mesure de `r2` « après correctif » donnait les quatre cartes entre 191px et 768px, sous 844 — un succès en apparence. La revue a contesté ce chiffre : les captures `r2` ne portaient plus le chrome du parcours (bannière, rampe de groupe, « Situation 1 sur 20 », titre) visible sur les captures `r1`, alors que `course-view.tsx:16` est une grille nue, sans `overflow` ni conteneur de défilement propre au jeu — ce chrome vit dans le même flux de document, présent à `scrollY = 0` à toutes les manches.
 
-Mesure d'origine (avant correctif) : la première carte de `r1` commençait à `top: 648px` sur un viewport de 844 — la quatrième à 1080, hors cadre. Cause identifiée : la consigne du jeu (`statement`) se réaffichait en entier à chaque manche, alors qu'elle ne change jamais — 205px à elle seule (mesuré : `top: 285` → `bottom: 490`), sur les 648 avant la première carte.
+Vérifié : la mesure `r2` avait été prise après une séquence de clics (désigner → « Je maintiens » → « Manche suivante ») dont les deux derniers boutons sont hors cadre. Playwright fait défiler la page jusqu'au bouton avant de cliquer dessus (comportement par défaut, pas une action explicite de ma part) ; ce défilement — mesuré à `window.scrollY = 268` juste avant la mesure contestée — n'est jamais réinitialisé, l'application ne rechargeant jamais la page entre deux manches. Les coordonnées `getBoundingClientRect().top` que j'avais prises sont relatives au viewport **courant**, pas au document : sous ce défilement de 268px, elles sous-estimaient la position réelle de chaque carte d'exactement ce montant.
 
-**Correctif.** `lie-detector-game.tsx` introduit un composant `Statement` : à la première manche, la consigne reste affichée en entier, inchangée — c'est là qu'elle doit être lue une fois. À partir de la deuxième, elle se replie derrière un `<details>` natif intitulé « Revoir la consigne », jamais retirée du DOM, dépliable d'un tap, jamais introuvable. Le verrou de la désignation (« Un clic verrouille votre désignation ») ne vit pas dans ce bloc : il reste porté par `RoundSheet`, annoncé à chaque manche, correctif ou non.
+Remises dans le repère réel (`scrollY = 0`, chrome inclus) : les quatre cartes de `r2` tombaient à 459 / 604 / 748 / 892, le verrou à 1035 — la quatrième carte et le verrou hors cadre de 844. **La revue avait raison, chiffres bruts confirmés à l'unité près de son estimation (~269px).** Capture : `mobile-4-r2-scrolly0-debordement-confirme.png`.
 
-Mesure après correctif, `r2` sur mobile (`mobile-5-r2-apres-correctif.png`) : les quatre cartes commencent respectivement à `top` 191, 336, 480 et 624 — la quatrième se termine avant 844, et le verrou de désignation est visible en dessous. **Les quatre affirmations et le coût du geste tiennent dans le cadre, sans défilement, comparables sans aller-retour.** `mobile-6-r2-consigne-depliee.png` prouve que le repli fonctionne et rend le texte complet.
+### Le premier correctif (consigne repliée) restait donc insuffisant sur mobile
 
-`r1` reste mesurée à `top: 648px`, inchangée (`mobile-4-r1-apres-correctif.png`) : c'est l'exception assumée, la seule manche où la consigne complète est due avant de jouer. Trois manches sur quatre — `r2`, `r3`, `r4` — satisfont désormais l'objectif mesurable sur 390×844 ; la première reste au-dessus, bornée à une lecture qui ne se répète jamais.
+Il retirait 205px de consigne répétée, mais le chrome du parcours (285px : bannière + rampe + « Situation X sur Y » + titre) et le contenu propre au jeu sous ce chrome (consigne repliée, numéro de manche, en-tête de la feuille, quatre cartes, verrou) ne tenaient toujours pas sous 844 une fois mesurés depuis le vrai sommet du document.
 
-Revalidé : `npm run lint` (181 fichiers, aucun problème), `npm run typecheck` (muet), `npm run test` (65 fichiers, 564 tests, aucune régression).
+### Le second correctif : la carte d'affirmation resserrée sur mobile
+
+Le chrome du parcours n'appartient pas à ce jeu — `course-view.tsx` n'a pas été touché. Ce qui lui appartient, la feuille de manche et sa carte, a été resserré, uniquement sous `sm` (640px), desktop inchangé à l'octet près (vérifié : cartes desktop toujours entre 484 et 817 sur 900, aucune régression) :
+
+- `claim-card.tsx` : `p-4` → `p-2`, `gap-4` → `gap-1`, `mt-3` → `mt-1` sur la ligne d'état, `leading-relaxed` → `leading-snug` sur le texte de l'affirmation — toujours `sm:p-4 sm:gap-4 sm:mt-3 sm:leading-relaxed` au-delà de 640px.
+- `round-sheet.tsx` : l'en-tête de la feuille (`py-3` → `py-2`) et le bandeau de verrou (`py-2.5` → `py-1.5`) suivent le même schéma responsive.
+- `lie-detector-game.tsx` : l'espacement vertical entre les blocs du jeu (`gap-6` → `gap-3`) suit le même schéma.
+
+### Mesure finale, `r2`, mobile, `scrollY = 0`
+
+| Élément | `top` | `bottom` |
+| --- | --- | --- |
+| Carte 1 | 417 | 514 |
+| Carte 2 | 515 | 611 |
+| Carte 3 | 612 | 709 |
+| Carte 4 | 710 | 807 |
+| Verrou de désignation | 807 | 835 |
+
+Budget : 844px. Le verrou se termine à 835 — **9px de marge, sans défilement, à `scrollY = 0` vérifié.** Aucun débordement horizontal (`scrollWidth` 390 / `clientWidth` 390). Capture : `mobile-5-r2-scrolly0-corrige.png`. `r3` et `r4` n'ont pas été mesurées individuellement : leurs affirmations sont de longueur comparable ou inférieure à `r2` (corpus vérifié en phase 4, aucune n'approche celle de `r1`), donc à l'intérieur du même budget.
+
+`r1`, mesurée dans le même repère : cartes à 606 / 703 / 801 / 899, verrou à 996–1024 — toujours hors cadre, l'exception assumée et documentée où la consigne complète reste due (voir plus bas). Le resserrement de la carte lui profite aussi (606 contre 648 avant, -42px), mais ne suffit pas à compenser la consigne intégrale : ce n'est pas son rôle, cette manche n'est pas dans le périmètre de l'objectif mesurable.
+
+Revalidé après le second correctif : `npm run lint` (181 fichiers, aucun problème), `npm run typecheck` (muet), `npm run test` (65 fichiers, 564 tests, aucune régression).
 
 ## Point 2 — le passage désigner → objection → révélation
 
@@ -42,9 +69,12 @@ Se sent comme une réponse qui arrive, pas comme un écran qui se recharge. `obj
 
 ## Point 3 — l'action de passage reste-t-elle atteignable sans défiler à la révélation ?
 
-**Non, aux deux gabarits, mesuré — et ce n'est pas propre à ce jeu non plus.** À la révélation de `r1` (la manche la plus longue), desktop : `document.documentElement.scrollHeight` passe à 1283 contre un `clientHeight` de 900 — 383px de dépassement, le bouton « Manche suivante » hors du cadre visible dans `desktop-3-r1-revelation.png`. Mobile : le bouton est mesuré à `top: 1029px` contre un `clientHeight` de 844 — 185px hors cadre.
+**Non, aux deux gabarits, mesuré à `scrollY = 0` — et ce n'est pas propre à ce jeu.** À la révélation de `r1` (la manche la plus longue) :
 
-Le même schéma existe déjà, non corrigé, dans `defect-hunt-game.tsx:90-114` : la liste `revelations.map(...)` se déplie intégralement avant le bouton « Situation suivante », sans mécanisme de rattrapage, et sa propre tournée QA ne l'a pas relevé comme défaut. Aucun écran du produit ne porte de bloc d'action fixé ou collant — en introduire un pour ce seul jeu serait une décision de motif d'interface nouvelle, pas une correction ponctuelle, et sortirait du mandat de cette tournée. Déposé ici avec les mesures exactes plutôt que corrigé à l'aveugle.
+- Desktop : `document.documentElement.scrollHeight` = 1283 contre un `clientHeight` de 900 — 383px de dépassement. Cette mesure ne dépend pas de la position de défilement (`scrollHeight` porte sur le document entier), donc non affectée par l'erreur ci-dessus.
+- Mobile, remesuré à `scrollY = 0` après les deux correctifs (le chiffre initial de 185px était lui aussi contaminé par le même défilement résiduel que le point 1, dans le même sens — sous-estimé) : le bouton « Manche suivante » est à `top: 1441px`, `scrollHeight` 1521 contre un `clientHeight` de 844 — **597px de dépassement**, pas 185.
+
+Le même schéma existe déjà, non corrigé, dans `defect-hunt-game.tsx:90-114` : la liste `revelations.map(...)` se déplie intégralement avant le bouton « Situation suivante », sans mécanisme de rattrapage, et sa propre tournée QA ne l'a pas relevé comme défaut. Décision du chef de produit : défaut transverse aux deux jeux, suivi séparément (`aidd_docs/backlog/defects/la-revelation-pousse-l-action-hors-de-l-ecran.md`), non traité dans cette tournée.
 
 ## Point 4 — rien ne laisse deviner qu'une objection est fondée ou creuse
 
@@ -58,9 +88,8 @@ Non rejoué en simulation de touches, mais vérifié structurellement : l'ordre 
 
 ## Verdict
 
-**Un défaut corrigé, un déposé sans correction, tranchés séparément par le chef de produit après la première passe de cette tournée.**
+**Deux correctifs pour le point 1** (consigne repliée dès la deuxième manche, puis carte d'affirmation resserrée sur mobile) **après qu'une première mesure erronée a été contestée par la revue et confirmée fausse une fois vérifiée à `scrollY = 0`.** `r2`, `r3`, `r4` tiennent désormais les quatre affirmations et le verrou de désignation sous 844px sans défilement, marge de 9px vérifiée sur `r2` ; `r1` reste l'exception assumée où la consigne complète est due.
 
-- **Point 1 (comparaison des quatre affirmations sur mobile) : corrigé.** Propre à `lie-detector` — sa consigne se répétait en entier à chaque manche quand ses voisins n'en pâtissent pas de la même façon sur ce critère d'acceptation nommé de ce jeu (`phase-5.md`). `lie-detector-game.tsx` replie la consigne dès la deuxième manche derrière un `<details>` natif ; `r2`, `r3`, `r4` tiennent désormais sans défilement à 390×844, `r1` reste l'exception assumée où la lecture complète est due. Revalidé (lint, typecheck, 564 tests) et remesuré ci-dessus.
-- **Point 3 (action de passage sous la ligne de flottaison à la révélation) : non corrigé, par décision.** La structure est identique, non corrigée, dans `defect-hunt-game.tsx:90-114` : un défaut transverse aux deux jeux, pas propre à celui-ci, suit son propre traitement hors de cette tournée.
+**Point 3, non corrigé, par décision** : défaut identique dans `defect-hunt`, transverse, suivi séparément — remesuré à `scrollY = 0` cette fois (597px de dépassement mobile, pas les 185 rapportés en premier lieu, l'écart venant de la même contamination de défilement, sans en changer la conclusion : ce point reste hors cadre, aux deux gabarits).
 
 Point 2 (le battement des trois temps) et point 4 (l'objection ne se trahit pas) : confirmés conformes, rien à corriger. Aucun débordement horizontal aux deux gabarits, à aucun des temps de la manche.
