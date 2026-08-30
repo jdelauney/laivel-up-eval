@@ -7,6 +7,9 @@ import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.
 import { DefectHuntEvaluator } from '@/games/defect-hunt/defect-hunt.evaluator'
 import { defectHuntAnswerSchema } from '@/games/defect-hunt/schema/answer.schema'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { LieDetectorEvaluator } from '@/games/lie-detector/lie-detector.evaluator'
+import { lieDetectorAnswerSchema } from '@/games/lie-detector/schema/answer.schema'
+import { lieDetectorConfigSchema } from '@/games/lie-detector/schema/config.schema'
 import { testBenchAnswerSchema } from '@/games/test-bench/schema/answer.schema'
 import { TestBenchEvaluator } from '@/games/test-bench/test-bench.evaluator'
 import { threeTracksAnswerSchema } from '@/games/three-tracks/schema/answer.schema'
@@ -51,6 +54,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new DefectHuntEvaluator(),
     configSchema: defectHuntConfigSchema,
     answerSchema: defectHuntAnswerSchema,
+  })
+
+  registry.register('lie-detector', {
+    evaluator: new LieDetectorEvaluator(),
+    configSchema: lieDetectorConfigSchema,
+    answerSchema: lieDetectorAnswerSchema,
   })
 
   return registry

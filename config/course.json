@@ -231,45 +231,158 @@
         },
         {
           "id": "g1-3",
-          "type": "test-bench",
+          "type": "lie-detector",
           "label": "Laquelle de ces affirmations ment ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Chaque manche vous soumet quatre affirmations sur un même sujet : une seule ment. Désignez celle qui ment — votre désignation se verrouille au clic. L'assistant vous donnera ensuite son avis, et vous pourrez alors désigner autrement, une fois.",
+            "rounds": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "r1",
+                "prompt": "Vous demandez à un assistant ce que change un fichier de contexte versionné dans le dépôt. Il répond ceci.",
+                "claims": [
+                  {
+                    "id": "r1-a",
+                    "text": "Un fichier de contexte versionné profite à toute personne qui utilise l'assistant sur ce dépôt, pas seulement à celle qui l'a écrit.",
+                    "lying": false,
+                    "verification": "Il est lu depuis le dépôt : quiconque le clone l'obtient, sans avoir rien à reconfigurer."
+                  },
+                  {
+                    "id": "r1-b",
+                    "text": "Un contexte trop long finit par diluer ce qui compte : il occupe la fenêtre sans rendre les instructions importantes plus saillantes.",
+                    "lying": false,
+                    "verification": "L'effet est documenté et mesuré sur les longues fenêtres, où une instruction placée au milieu est moins suivie qu'en tête ou en fin."
+                  },
+                  {
+                    "id": "r1-c",
+                    "text": "Une fois le contexte posé, l'assistant s'y conforme sans qu'on ait à le vérifier : c'est ce qui le distingue d'un prompt.",
+                    "lying": true,
+                    "verification": "Un contexte oriente, il ne contraint pas. Ce qui contraint est exécutable : un hook, un test, une commande qui échoue. Le contexte réduit la fréquence des écarts, il ne les supprime pas, et la vérification reste due."
+                  },
+                  {
+                    "id": "r1-d",
+                    "text": "Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une seule fois.",
+                    "lying": false,
+                    "verification": "Se vérifie en donnant le même fichier à un nouveau venu humain, sans rien y ajouter : s'il y trouve ce qu'il cherchait, le texte a servi aux deux publics sans être réécrit."
+                  }
+                ],
+                "objection": {
+                  "targetId": "r1-b",
+                  "argument": "Je pense que c'est celle sur la dilution qui ment. Les modèles récents tiennent des fenêtres de plusieurs centaines de milliers de jetons : la longueur du contexte n'est plus un facteur."
+                }
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "r2",
+                "prompt": "Vous demandez à un assistant à quoi se reconnaît une réponse sur laquelle on peut s'appuyer. Il répond ceci.",
+                "claims": [
+                  {
+                    "id": "r2-a",
+                    "text": "Un test écrit par le même assistant que le code peut passer pour une mauvaise raison : il décrit ce que le code fait, pas la demande.",
+                    "lying": false,
+                    "verification": "Se vérifie en cassant le comportement attendu : un test qui reste vert testait le code, pas la demande."
+                  },
+                  {
+                    "id": "r2-b",
+                    "text": "Quand l'assistant détaille son raisonnement pas à pas, la réponse est plus fiable : le niveau de détail indique sa justesse.",
+                    "lying": true,
+                    "verification": "L'explication est produite par le même processus que la réponse et peut la justifier après coup. Une explication longue et une réponse fausse coexistent sans difficulté. Ce qui indique la justesse est une vérification indépendante : une exécution, une source ouverte."
+                  },
+                  {
+                    "id": "r2-c",
+                    "text": "Un assistant qui cite une source ne l'a pas nécessairement lue : la citation ne vaut que si on l'ouvre soi-même.",
+                    "lying": false,
+                    "verification": "Se vérifie en ouvrant la source citée et en y cherchant l'affirmation qu'elle est censée porter."
+                  },
+                  {
+                    "id": "r2-d",
+                    "text": "Faire échouer un test avant de le faire passer est ce qui prouve qu'il teste réellement quelque chose.",
+                    "lying": false,
+                    "verification": "Un test qui n'a jamais été vu rouge peut être vert parce qu'il n'assure rien. Le voir échouer sur le comportement absent est ce qui le qualifie."
+                  }
+                ],
+                "objection": {
+                  "targetId": "r2-b",
+                  "argument": "Je pense que c'est celle sur le raisonnement détaillé qui ment. Une explication est une reconstruction : elle est produite en même temps que la réponse et peut la justifier après coup."
+                }
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "r3",
+                "prompt": "Vous demandez à un assistant comment découper une feature avant de la lui confier. Il répond ceci.",
+                "claims": [
+                  {
+                    "id": "r3-a",
+                    "text": "Découper une feature en lots plus petits rend chaque retour vérifiable séparément, sans attendre les lots suivants.",
+                    "lying": false,
+                    "verification": "Se vérifie en jouant les tests d'un lot sans attendre les suivants : le verdict porte sur ce lot seul."
+                  },
+                  {
+                    "id": "r3-b",
+                    "text": "Plus le lot confié est petit, meilleur est le résultat : découper au maximum reste toujours la bonne stratégie.",
+                    "lying": true,
+                    "verification": "Un découpage trop fin fait repayer le cadrage à chaque passe et perd le contexte partagé entre les tranches. Le référentiel décrit un cran de taille qui monte avec la maîtrise. Il existe une taille juste ; elle n'est pas le minimum."
+                  },
+                  {
+                    "id": "r3-c",
+                    "text": "Un lot ne se vérifie pas tant que celui dont il dépend n'existe pas : l'ordre n'est pas une préférence.",
+                    "lying": false,
+                    "verification": "Se vérifie en confiant le lot dépendant en premier : rien n'y est exécutable tant que ce dont il dépend n'existe pas."
+                  },
+                  {
+                    "id": "r3-d",
+                    "text": "Un lot dont on ne sait pas dire ce qui prouverait qu'il est fini n'est pas prêt à être confié à un assistant.",
+                    "lying": false,
+                    "verification": "Se vérifie en essayant d'énoncer son critère d'acceptation avant de le confier : s'il ne s'énonce pas, il ne se vérifiera pas non plus au retour."
+                  }
+                ],
+                "objection": {
+                  "targetId": "r3-c",
+                  "argument": "Je pense que c'est celle sur les dépendances qui ment. Un assistant à qui on donne le dépôt entier retrouve seul ce qui manque : l'ordre des lots n'a rien d'absolu."
+                }
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "r4",
+                "prompt": "Vous demandez à un assistant quoi faire quand ce qu'il produit échoue deux fois de suite. Il répond ceci.",
+                "claims": [
+                  {
+                    "id": "r4-a",
+                    "text": "Un échec qui se répète sur la même demande est un signal sur le cadre donné, pas seulement sur le modèle.",
+                    "lying": false,
+                    "verification": "Se vérifie en changeant le cadre — la consigne, le contexte, le critère de fin — sans changer de modèle : l'échec bouge."
+                  },
+                  {
+                    "id": "r4-b",
+                    "text": "Un hook qui bloque une action rend la main au développeur : il signale l'écart, il ne poursuit pas le travail à sa place.",
+                    "lying": false,
+                    "verification": "Se vérifie en le déclenchant : l'action s'arrête et rien d'autre ne se produit. C'est une boucle de relance, pas un hook, qui reprend le travail."
+                  },
+                  {
+                    "id": "r4-c",
+                    "text": "Reprendre la main sur le code produit signe un échec de la délégation : un usage mature se mesure au code non touché.",
+                    "lying": true,
+                    "verification": "Le référentiel mesure l'intervention comme un cran qui monte : savoir où reprendre la main est une compétence, pas un aveu. Ce qui se mesure est la part produite par l'IA rapportée au volume, jamais l'absence de reprise."
+                  },
+                  {
+                    "id": "r4-d",
+                    "text": "Une boucle de relance sur une commande en échec ne vaut que si la commande dit vraiment si le travail est fini.",
+                    "lying": false,
+                    "verification": "Se vérifie en la lançant sur une commande qui passe pour une mauvaise raison : la boucle s'arrête sur un vert qui ne prouve rien."
+                  }
+                ],
+                "objection": {
+                  "targetId": "r4-b",
+                  "argument": "Je pense que c'est celle sur le hook qui ment. Un hook peut parfaitement corriger le format d'un fichier puis laisser passer : il fait donc bien le travail à votre place."
+                }
               }
             ]
           },
           "criteria": [
             {
               "id": "g1-3-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La fausse affirmation a-t-elle été identifiée ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "lies-unmasked-at-least",
+                "threshold": 3
               },
               "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 2
-                },
                 {
                   "dimension": "verification",
                   "weight": 2
@@ -278,18 +391,15 @@
             },
             {
               "id": "g1-3-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Le choix est-il resté stable sous la contradiction ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "held-chances-at-least",
+                "minOpportunities": 2
               },
               "mapping": [
                 {
-                  "dimension": "intervention",
-                  "weight": 1
-                },
-                {
                   "dimension": "verification",
-                  "weight": 1
+                  "weight": 2
                 }
               ]
             }

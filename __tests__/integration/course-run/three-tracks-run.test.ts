@@ -19,6 +19,7 @@ import { FixedClock } from '@/infrastructure/clock/fixed.adapter'
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
+import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 
 /**
@@ -106,6 +107,12 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
     const config = defectHuntConfigSchema.parse(game.config)
     return buildDefectHuntAnswer(config, [], 0)
   }
+  /**
+   * `g1-3` porte lie-detector depuis la phase 4 de son propre plan : ce test
+   * mesure `parallele`, jamais `verification`, donc n'importe quelle trace
+   * conforme suffit — voir `defaultLieDetectorAnswer`.
+   */
+  if (game.type === 'lie-detector') return defaultLieDetectorAnswer(game.config)
   return { selected: [] }
 }
 

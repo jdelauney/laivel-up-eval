@@ -122,7 +122,7 @@ Vingt Stories, une par jeu. C'est le gros du travail et le cœur du produit.
 | 2 | [mener-plusieurs-chantiers-de-front.md](aidd_docs/backlog/stories/mener-plusieurs-chantiers-de-front.md) | **livrée** (jeu `three-tracks`) |
 | 3 | [miser-ma-confiance-a-l-aveugle.md](aidd_docs/backlog/stories/miser-ma-confiance-a-l-aveugle.md) | **livrée** (jeu `confidence-bet`) |
 | 4 | [trouver-les-erreurs-sans-liste.md](aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md) | **livrée** (jeu `defect-hunt`) |
-| 5 | [demasquer-l-affirmation-qui-ment.md](aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md) | |
+| 5 | [demasquer-l-affirmation-qui-ment.md](aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md) | **livrée** (jeu `lie-detector`) |
 | 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | |
 | 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | |
 | 8 | [repartir-un-budget-de-projet.md](aidd_docs/backlog/stories/repartir-un-budget-de-projet.md) | |
@@ -139,11 +139,12 @@ Vingt Stories, une par jeu. C'est le gros du travail et le cœur du produit.
 | 19 | [decouper-une-feature-en-lots.md](aidd_docs/backlog/stories/decouper-une-feature-en-lots.md) | |
 | 20 | [equiper-le-depot-avant-les-vagues.md](aidd_docs/backlog/stories/equiper-le-depot-avant-les-vagues.md) | |
 
-Trois règles propres à cette Epic :
+Quatre règles propres à cette Epic :
 
 - Les jeux 1 et 2 portent les axes `intervention` et `parallele`. Sans eux, **aucun niveau à partir de Red n'est annonçable** : ils passent avant tout autre, et le 1 est déjà livré.
 - Le jeu `checkpoints` est le gabarit des jeux à état, pas des autres. Chaque jeu garde sa propre surface — ne pas dupliquer un écran existant pour aller plus vite.
 - Chaque jeu porte ses garde-fous anti-triche, dans sa Story. Un jeu livré sans garde-fou est un jeu qui se joue au lieu de mesurer.
+- **Un garde-fou anti-triche se mesure, il ne se déclare pas.** Leçon de `lie-detector`, dont deux critères passaient les tests en récompensant l'inverse de ce qu'ils annonçaient : l'un décrochait sans lecture, l'autre reprochait à un lecteur parfait une ignorance qu'il n'avait pas. Aucun test unitaire ne l'a vu, tous étaient verts. Ce qui l'a vu est le passage en force brute de **l'espace complet des parties possibles** — 65536 traces pour quatre manches de quatre choix — profil par profil : celui qui ne lit pas, celui qui suit toujours, celui qui ne bouge jamais, celui qui lit juste puis se dédit. Un jeu dont l'espace des traces tient en mémoire ne se valide pas autrement.
 
 Les vingt Stories sont indépendantes les unes des autres. Pour en mener plusieurs de front :
 
