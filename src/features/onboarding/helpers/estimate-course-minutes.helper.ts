@@ -12,8 +12,11 @@ const ROUNDING_STEP_MINUTES = 5
 
 /**
  * Une estimation d'expérience produit, pas une règle de session : aucun
- * verdict ne dépend du temps passé, donc ce calcul vit dans la feature
- * `onboarding` et non dans le domaine.
+ * verdict ne dépend de la DURÉE DU PARCOURS, et c'est bien pourquoi cette
+ * estimation vit dans la feature `onboarding` et non dans le domaine. Le
+ * temps imparti d'une situation, lui, est l'affaire du jeu qui le porte —
+ * `defect-hunt` note un dépassement — et il vit dans sa propre configuration,
+ * jamais ici.
  *
  * Le résultat suit toujours le nombre de situations du parcours chargé —
  * jamais une valeur figée — pour ne pas mentir au premier jeu ajouté.

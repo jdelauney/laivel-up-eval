@@ -4,6 +4,9 @@ import { checkpointsConfigSchema } from '@/games/checkpoints/schema/config.schem
 import { ConfidenceBetEvaluator } from '@/games/confidence-bet/confidence-bet.evaluator'
 import { confidenceBetAnswerSchema } from '@/games/confidence-bet/schema/answer.schema'
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
+import { DefectHuntEvaluator } from '@/games/defect-hunt/defect-hunt.evaluator'
+import { defectHuntAnswerSchema } from '@/games/defect-hunt/schema/answer.schema'
+import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
 import { testBenchAnswerSchema } from '@/games/test-bench/schema/answer.schema'
 import { TestBenchEvaluator } from '@/games/test-bench/test-bench.evaluator'
 import { threeTracksAnswerSchema } from '@/games/three-tracks/schema/answer.schema'
@@ -42,6 +45,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new ConfidenceBetEvaluator(),
     configSchema: confidenceBetConfigSchema,
     answerSchema: confidenceBetAnswerSchema,
+  })
+
+  registry.register('defect-hunt', {
+    evaluator: new DefectHuntEvaluator(),
+    configSchema: defectHuntConfigSchema,
+    answerSchema: defectHuntAnswerSchema,
   })
 
   return registry
