@@ -39,24 +39,39 @@ describe('use lie detector', () => {
     expect(result.current.roundNumber).toBe(1)
     expect(result.current.roundsTotal).toBe(3)
     expect(result.current.objection).toBeUndefined()
-    expect(result.current.currentReading).toBeUndefined()
     expect(result.current.revelations).toBeUndefined()
   })
 
+  /**
+   * Rejouée après la première désignation (F8, revue du 30/08) : la garde
+   * ne tournait auparavant qu'en phase `picking`. L'objection s'affiche
+   * alors légitimement — c'est le jeu — mais la menteuse et les
+   * vérifications doivent rester tues jusqu'à la révélation.
+   */
   it('never exposes lying or a verification string before the round is revealed', () => {
     const { result } = renderGame()
 
-    const serialized = JSON.stringify(
-      Object.fromEntries(
-        Object.entries(result.current).filter(
-          ([, value]) => typeof value !== 'function',
+    const serializeVisible = () =>
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(result.current).filter(
+            ([, value]) => typeof value !== 'function',
+          ),
         ),
-      ),
-    )
+      )
 
-    expect(serialized).not.toContain('lying')
-    expect(serialized).not.toContain('Vérification')
-    expect(serialized).not.toContain('Argument de')
+    const beforePicking = serializeVisible()
+    expect(beforePicking).not.toContain('lying')
+    expect(beforePicking).not.toContain('Vérification')
+    expect(beforePicking).not.toContain('Argument de')
+
+    act(() => {
+      result.current.designate('r1-a')
+    })
+
+    const duringObjection = serializeVisible()
+    expect(duringObjection).not.toContain('lying')
+    expect(duringObjection).not.toContain('Vérification')
   })
 
   it('locks the first designation: a further click while in the objection phase moves the final pick, never the first', () => {
@@ -122,7 +137,7 @@ describe('use lie detector', () => {
     expect(result.current.finalPickId).toBe('r1-a')
   })
 
-  it('exposes the current round reading only once revealed, derived from readRounds', () => {
+  it('exposes the revelations only once revealed', () => {
     const { result } = renderGame()
 
     act(() => {
@@ -132,7 +147,6 @@ describe('use lie detector', () => {
       result.current.hold()
     })
 
-    expect(result.current.currentReading?.unmasked).toBe(true)
     expect(result.current.revelations?.map((entry) => entry.id)).toEqual([
       'r1-a',
       'r1-b',

@@ -111,16 +111,14 @@ Temps 2 — tenir ou se dédire
 Temps 3 — la révélation
 
 ┌──────────────────────────────────────────────────────────────────┐
-│ (8) Le relevé de la manche : ce que vous avez désigné, puis tenu  │
-├──────────────────────────────────────────────────────────────────┤
-│ (9) Les quatre affirmations figées, chacune avec sa vérification  │
+│ (8) Les quatre affirmations figées, chacune avec sa vérification  │
 │   ┌────┬────────────────────────────────────────────────────┐     │
-│   │ ✖  │ …                    c est elle qui ment · parce…  │     │
+│   │ ✖  │ …          c est elle qui ment · parce… · la vôtre │     │
 │   ├────┼────────────────────────────────────────────────────┤     │
 │   │ ✔  │ …                    vraie · se vérifie à …        │     │
 │   └────┴────────────────────────────────────────────────────┘     │
 ├──────────────────────────────────────────────────────────────────┤
-│ (10) [ Manche suivante ]   ·   [ Situation suivante ] à la fin    │
+│ (9) [ Manche suivante ]   ·   [ Situation suivante ] à la fin     │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -131,9 +129,10 @@ Temps 3 — la révélation
 5. Le coût du geste, annoncé avant qu'il soit posé, comme l'exige `DESIGN.md`.
 6. L'objection : du texte de configuration, présenté comme un avis de l'assistant. Une seule formulation, qu'elle contredise ou qu'elle confirme.
 7. Le second geste : maintenir explicitement, ou désigner autrement. Les deux chemins mènent à la révélation, et aucun n'est présenté comme le bon.
-8. Le relevé de la manche : des faits — ce qui a été désigné, ce qui a été tenu. Aucun verdict de critère.
-9. La révélation : chaque affirmation, la menteuse comme les vraies, avec sa vérification. C'est ce que le joueur emporte.
-10. Le passage à la manche suivante, ou à la situation suivante — qui soumet la trace déjà figée.
+8. La révélation : chaque affirmation, la menteuse comme les vraies, avec sa vérification. C'est ce que le joueur emporte. La désignation finale du joueur reste marquée « la vôtre » sur sa tuile — c'est ce qui reprend le rôle qu'un relevé séparé aurait joué, voir la rétractation ci-dessous.
+9. Le passage à la manche suivante, ou à la situation suivante — qui soumet la trace déjà figée.
+
+**Encart (8) retracté (revue du 30/08, F4/F9).** Cette version projetait un encart « le relevé de la manche » — ce qui a été désigné, ce qui a été tenu — au-dessus de la grille figée. Il n'a jamais été construit : `useLieDetector` n'expose ni le hook ni un composant dédié à ce relevé, et la fiche de surface comme la phase 5 ne le mentionnent nulle part. La raison tient à la grille elle-même : chaque tuile révélée porte déjà la marque « la vôtre » (`claim-card.tsx`) sur la désignation finale du joueur, en plus de son verdict (menteuse ou vraie). Un encart séparé n'aurait fait que répéter, dans une autre police, ce que la grille dit déjà en un coup d'œil — sans rien y ajouter sur ce qui a été désigné en premier, puisque la story ne demande de révéler que la finale et le verdict, jamais un historique du premier temps.
 
 ## Tasks to do
 
@@ -156,14 +155,14 @@ Temps 3 — la révélation
 5. Exposer `hold()` : maintient la désignation courante et bascule sur `revealed`.
 6. Exposer `advance()` : passe à la manche suivante, ou soumet la trace **une seule fois** à la dernière manche, via un `useRef` d'appel unique, sur le modèle de `useDefectHunt`.
 7. Le hook **n'expose jamais** `lying`, ni la nature de l'objection, avant que la manche soit révélée. Ce qui n'est pas exposé ne peut pas fuiter à l'écran.
-8. Exposer, pour la révélation seulement, la lecture de la manche courante issue de `readRounds` — jamais un calcul refait ici.
+8. Exposer, pour la révélation seulement, les `revelations` de la manche courante (chaque affirmation, son verdict, sa vérification), dérivées directement de la configuration. **Abandonné (F4, revue du 30/08) :** une lecture `currentReading` issue de `readRounds` était exposée en plus, mais aucun composant ne la consommait — la marque « la vôtre » portée par chaque tuile à la révélation dit déjà ce qu'un relevé séparé aurait répété. Retirée du hook plutôt que branchée sur un écran qui n'en avait pas besoin.
 
 ### `3)` Les composants
 
 > Muets, sans logique. La logique vit dans le hook et le helper.
 
-1. `elements/claim-card.tsx` : une affirmation, son état (`libre` · `désignée` · `pointée par l'assistant`), et après révélation son verdict et sa vérification. Un bouton, pour l'atteignabilité au clavier native.
-2. `elements/objection-note.tsx` : l'avis de l'assistant, sa cible et son argument. Une seule formulation, qui ne change pas selon ce que le joueur a désigné.
+1. `elements/claim-card.tsx` : une affirmation, son état (`libre` · `désignée`), et après révélation son verdict et sa vérification. **Révisé (F9, revue du 30/08) :** pas d'état « pointée par l'assistant » — la présentation ne dépend jamais de la nature de l'objection, elle ne connaît pas sa cible. Un bouton, pour l'atteignabilité au clavier native.
+2. `elements/objection-note.tsx` : l'avis de l'assistant, son argument seul. **Révisé (F9, revue du 30/08) :** ne reçoit jamais la cible de l'objection, précisément pour ne pas pouvoir la laisser fuiter par la présentation. Une seule formulation, qui ne change pas selon ce que le joueur a désigné.
 3. `composites/round-sheet.tsx` : la manche — la mise en situation, les quatre affirmations, l'objection quand elle est là, la révélation quand elle est là.
 4. `composites/lie-detector-game.tsx` : la racine — la consigne, la manche courante sur le total, la feuille de manche, l'action de passage.
 

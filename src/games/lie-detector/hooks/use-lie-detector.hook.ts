@@ -1,9 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { buildLieDetectorAnswer } from '../actions/build-lie-detector-answer.action'
-import { type RoundReading, readRounds } from '../helpers/read-rounds.helper'
-import type { LieDetectorAnswer, Pick } from '../schema/answer.schema'
+import type { Pick } from '../schema/answer.schema'
 import {
-  type LieDetectorConfig,
   lieDetectorConfigSchema,
   type Objection,
 } from '../schema/config.schema'
@@ -126,26 +124,6 @@ export const useLieDetector = (
       ? undefined
       : currentRound.objection
 
-  /**
-   * La lecture de la manche courante, issue de `readRounds`, jamais un
-   * calcul refait ici : une configuration et une trace réduites à cette
-   * seule manche, passées à la même fonction que l'évaluateur.
-   */
-  const currentReading: RoundReading | undefined = useMemo(() => {
-    if (phase !== 'revealed' || currentRound === undefined) return undefined
-    if (firstPickId === undefined || finalPickId === undefined) return undefined
-
-    const scopedConfig: LieDetectorConfig = {
-      ...parsed,
-      rounds: [currentRound],
-    }
-    const scopedTrace: LieDetectorAnswer = {
-      picks: [{ roundId: currentRound.id, firstPickId, finalPickId }],
-    }
-
-    return readRounds(scopedConfig, scopedTrace).rounds[0]
-  }, [phase, currentRound, firstPickId, finalPickId, parsed])
-
   const revelations: readonly ClaimRevelation[] | undefined =
     phase !== 'revealed' || currentRound === undefined
       ? undefined
@@ -169,7 +147,6 @@ export const useLieDetector = (
     designate,
     hold,
     advance,
-    currentReading,
     revelations,
   }
 }
