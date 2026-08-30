@@ -39,7 +39,7 @@ Le joueur lit le rapport, décide s'il en extrait un cadre avant d'interroger l'
 
 | Bande | Ce qu'elle porte | Pourquoi elle est là |
 | --- | --- | --- |
-| Consigne | Le cadre annoncé — dépôt unique, prix affichés, ordre libre | Se replie dès la deuxième situation, sur le modèle de `lie-detector` |
+| Consigne | Le cadre annoncé — dépôt unique, prix affichés | Se replie dès la deuxième situation, sur le modèle de `lie-detector` |
 | Compteur / coût engagé | Situation courante sur trois, coût engagé cumulé | Deux quantités, jamais un compte de réussites |
 | Rapport | Symptôme puis faits gratuits | La matière du cadrage, toujours visible |
 | Cadrage / Marché | Les deux gestes, pairs sur desktop (deux colonnes), empilés en une colonne sous 640px | Le cœur de la mesure |
@@ -65,7 +65,7 @@ Le cadre s'annonce dans la consigne, jamais les critères.
 | --- | --- |
 | Que le cadre se transmet une seule fois, et se verrouille | Que l'ordre des deux gestes est lu |
 | Le prix de chaque indice, avant l'achat | Qu'acheter beaucoup coûte un critère |
-| Que l'ordre des deux gestes est libre | Qu'il en existe un qui vaut mieux |
+| *(rien : la phrase sur l'ordre a été retirée du `statement` au tour 1, cf. `phase-4.md`)* | Que l'ordre des deux gestes existe, et qu'un ordre vaille mieux qu'un autre |
 | La situation courante sur le total | Le compte des situations déjà résolues, et les seuils |
 | Le coût engagé, à mesure qu'il monte | Qu'une tranche fausse est pénalisée, et qu'une tranche à l'aveugle l'est davantage |
 
