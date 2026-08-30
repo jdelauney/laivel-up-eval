@@ -503,14 +503,14 @@
                   },
                   {
                     "id": "s1-c-clock",
-                    "text": "L'horloge du serveur de production a pris du retard.",
+                    "text": "L'horloge du serveur de production avait pris du retard.",
                     "actual": true,
                     "verification": "Confirmé : l'horloge du serveur de production accuse vingt minutes de retard sur la source de référence, ce qui fait paraître chaque jeton comme émis dans le futur. Recaler l'horloge sur la source de référence a fait disparaître les 401.",
                     "ruledOutByReport": false
                   },
                   {
                     "id": "s1-c-header",
-                    "text": "Le client envoie un en-tête Authorization mal formé.",
+                    "text": "Le client envoie un en-tête Authorization, mal formé.",
                     "actual": false,
                     "verification": "L'en-tête est conforme au schéma Bearer attendu : ce n'est pas la cause.",
                     "ruledOutByReport": false
@@ -716,21 +716,21 @@
                 "causes": [
                   {
                     "id": "s3-c-parallel",
-                    "text": "Les tests s'exécutent en parallèle sans isolation d'état.",
+                    "text": "Les tests s'exécutent en parallèle sans réelle isolation.",
                     "actual": true,
                     "verification": "Confirmé : isoler l'état entre les tests, ou désactiver le parallélisme sur l'agent CI, fait disparaître les échecs intermittents.",
                     "ruledOutByReport": false
                   },
                   {
                     "id": "s3-c-env",
-                    "text": "Les tests dépendent d'une variable d'environnement absente en CI.",
+                    "text": "Les tests dépendent d'une variable d'environnement absente.",
                     "actual": false,
                     "verification": "Toutes les variables d'environnement requises sont bien présentes sur l'agent CI : ce n'est pas la cause.",
                     "ruledOutByReport": true
                   },
                   {
                     "id": "s3-c-node",
-                    "text": "La version de Node en CI diffère de celle en local.",
+                    "text": "La version de Node installée en CI diffère de celle en local.",
                     "actual": false,
                     "verification": "La version de Node de l'agent CI est identique à celle du poste local : ce n'est pas la cause.",
                     "ruledOutByReport": true
@@ -744,7 +744,7 @@
                   },
                   {
                     "id": "s3-c-timezone",
-                    "text": "Le fuseau horaire de l'agent CI diffère du poste local.",
+                    "text": "Le fuseau horaire de l'agent CI diffère bien du poste local.",
                     "actual": false,
                     "verification": "Les deux environnements partagent le même fuseau horaire : ce n'est pas la cause.",
                     "ruledOutByReport": false
@@ -756,7 +756,7 @@
           "criteria": [
             {
               "id": "g2-1-c1",
-              "question": "L'incident a-t-il été résolu en achetant moins de la moitié des indices ?",
+              "question": "Les incidents ont-ils été résolus en achetant moins de la moitié des indices ?",
               "rule": {
                 "type": "frugal-solves-at-least",
                 "share": 0.5,

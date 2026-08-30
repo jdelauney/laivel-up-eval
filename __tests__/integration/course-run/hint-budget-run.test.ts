@@ -366,25 +366,42 @@ describe('hint-budget in the course', () => {
   })
 
   /**
-   * W7 de la revue 2 : le garde-fou aux extrêmes ne mesurait que « ni la
-   * plus longue ni la plus courte », un canal résiduel restait ouvert — la
-   * cause réelle occupait le même **rang de longueur** (le k-ième plus
-   * court) dans deux situations sur trois, rendant une politique « trancher
-   * la k-ième plus courte » gagnante à l'aveugle. Étendu au balayage
-   * complet du rang plutôt qu'aux seuls extrêmes, sur le modèle du garde-fou
-   * de rang déclaré déjà présent ci-dessus.
+   * W7 de la revue 2 : le premier garde-fou (retiré ici) triait en ordre
+   * croissant et prenait `indexOf` — une variante qui reste distincte même
+   * quand le rang « k-ième plus longue » ne l'est pas, parce que des
+   * longueurs ex æquo brisent la relation attendue entre les deux tris.
+   * Preuve : sur l'ancien corpus, ce garde-fou passait (rangs croissants
+   * 1 · 2 · 3) alors qu'une politique aveugle « trancher la deuxième plus
+   * longue cause » résolvait déjà deux situations sur trois — exactement le
+   * seuil de `c1`. Remplacé par un balayage complet des cinq rangs de
+   * longueur **descendante** : pour chaque k de 1 (le texte le plus long)
+   * à 5 (le plus court), « trancher la k-ième plus longue cause, sans rien
+   * lire » ne doit jamais résoudre plus d'une situation sur trois.
    */
-  it('never lets the actual cause land on the same length rank across the three situations, not only at the extremes', () => {
+  it('never lets a "cut the k-th longest cause" policy solve more than one of the three situations, for every k', () => {
     const config = realG2_1Config()
 
-    const lengthRanks = config.situations.map((situation) => {
+    const descendingRankOfActual = (situation: Situation): number => {
       const sortedIds = [...situation.causes]
-        .sort((a, b) => a.text.length - b.text.length)
+        .sort((a, b) => b.text.length - a.text.length)
         .map((cause) => cause.id)
-      return sortedIds.indexOf(actualCauseIdOf(situation))
-    })
+      return sortedIds.indexOf(actualCauseIdOf(situation)) + 1
+    }
 
-    expect(new Set(lengthRanks).size).toBe(lengthRanks.length)
+    const actualRanks = config.situations.map(descendingRankOfActual)
+    const causeCount = config.situations[0]?.causes.length ?? 0
+
+    for (let k = 1; k <= causeCount; k++) {
+      const situationsSolvedByK = actualRanks.filter(
+        (rank) => rank === k,
+      ).length
+      expect(situationsSolvedByK).toBeLessThanOrEqual(1)
+    }
+
+    // Condition suffisante pour la propriété ci-dessus, et plus lisible sur
+    // un échec de test : les trois rangs descendants sont deux à deux
+    // distincts.
+    expect(new Set(actualRanks).size).toBe(actualRanks.length)
   })
 
   /**
