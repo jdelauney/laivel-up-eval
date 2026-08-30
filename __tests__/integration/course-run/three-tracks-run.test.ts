@@ -10,6 +10,8 @@ import { buildCheckpointsAnswer } from '@/games/checkpoints/actions/build-checkp
 import { checkpointsConfigSchema } from '@/games/checkpoints/schema/config.schema'
 import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-confidence-bet-answer.action'
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
+import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
+import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
 import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
@@ -93,6 +95,16 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
         stake: config.neutralStake,
       })),
     )
+  }
+  /**
+   * `g1-2` porte defect-hunt depuis la phase 4 de son propre plan : ce test
+   * mesure `parallele`, jamais `verification`, donc n'importe quelle trace
+   * conforme suffit — ici, une revue qui ne marque aucune ligne, rendue
+   * instantanément.
+   */
+  if (game.type === 'defect-hunt') {
+    const config = defectHuntConfigSchema.parse(game.config)
+    return buildDefectHuntAnswer(config, [], 0)
   }
   return { selected: [] }
 }

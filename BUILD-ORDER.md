@@ -120,8 +120,8 @@ Vingt Stories, une par jeu. C'est le gros du travail et le cœur du produit.
 | --- | --- | --- |
 | 1 | [reprendre-la-main-aux-bons-moments.md](aidd_docs/backlog/stories/reprendre-la-main-aux-bons-moments.md) | **livrée** (jeu `checkpoints`) |
 | 2 | [mener-plusieurs-chantiers-de-front.md](aidd_docs/backlog/stories/mener-plusieurs-chantiers-de-front.md) | **livrée** (jeu `three-tracks`) |
-| 3 | [miser-ma-confiance-a-l-aveugle.md](aidd_docs/backlog/stories/miser-ma-confiance-a-l-aveugle.md) | |
-| 4 | [trouver-les-erreurs-sans-liste.md](aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md) | |
+| 3 | [miser-ma-confiance-a-l-aveugle.md](aidd_docs/backlog/stories/miser-ma-confiance-a-l-aveugle.md) | **livrée** (jeu `confidence-bet`) |
+| 4 | [trouver-les-erreurs-sans-liste.md](aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md) | **livrée** (jeu `defect-hunt`) |
 | 5 | [demasquer-l-affirmation-qui-ment.md](aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md) | |
 | 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | |
 | 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | |

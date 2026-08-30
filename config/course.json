@@ -128,45 +128,58 @@
         },
         {
           "id": "g1-2",
-          "type": "test-bench",
+          "type": "defect-hunt",
           "label": "Combien d'erreurs voyez-vous ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Cet extrait porte un nombre de défauts qui vous est annoncé ; leur nature ne l'est pas, et aucune liste ne vous est proposée. Marquez les lignes que vous jugez fautives, puis rendez votre revue. Marquer une ligne saine compte contre vous. Le temps imparti court à l'écran : il ne vous interrompt jamais, mais rendre au-delà se voit.",
+            "snippet": {
+              "label": "Un routeur de fichiers, paginé",
+              "language": "ts",
+              "code": "import { Router } from 'express'\nimport { sanitizeIdentifier } from 'express-query-guard'\nimport { db } from '../infra/db'\n\nconst PAGE_SIZE = 20\nconst router = Router()\n\nrouter.get('/owners/:owner/files', async (req, res) => {\n  const client = await db.connect()\n  const { owner } = req.params\n\n  const sql = `SELECT id, name FROM files WHERE owner = '${owner}' ORDER BY name`\n  const result = await client.query(sql)\n\n  if (result.rows.length === 0) return res.status(404).json({ error: 'aucun fichier' })\n\n  const page = Number(req.query.page)\n  const offset = page * PAGE_SIZE\n  const paged = result.rows.slice(offset, offset + PAGE_SIZE)\n\n  client.release()\n  res.json({ items: paged, page })\n})\n\nexport default router"
+            },
+            "timeLimitSeconds": 180,
+            "defects": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "e1",
+                "line": 2,
+                "kind": "hallucinated-dependency",
+                "reveal": "Le paquet « express-query-guard » n'existe pas sur npm, et le symbole importé, sanitizeIdentifier, n'est jamais appelé dans la suite du code."
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "e2",
+                "line": 12,
+                "kind": "security",
+                "reveal": "Le paramètre owner, tiré de l'URL, est interpolé brut dans la requête SQL plutôt que lié en paramètre : c'est une injection SQL directe."
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "e3",
+                "line": 15,
+                "kind": "resource",
+                "reveal": "Ce retour anticipé sort de la fonction sans jamais appeler client.release() : la connexion ouverte plus haut reste ouverte sur ce chemin, et chaque requête sans résultat fuit une connexion du pool."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "e4",
+                "line": 17,
+                "kind": "contract",
+                "reveal": "Number(req.query.page) convertit une valeur de requête sans la valider : si le paramètre est absent ou non numérique, page vaut NaN, et rien ne le signale."
+              },
+              {
+                "id": "e5",
+                "line": 18,
+                "kind": "logic",
+                "reveal": "offset vaut page * PAGE_SIZE : sur la première page, page vaut 1, ce qui saute déjà les vingt premiers éléments au lieu de les inclure. La formule correcte est (page - 1) * PAGE_SIZE."
               }
             ]
           },
           "criteria": [
             {
               "id": "g1-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Au moins 80 % des défauts de l'extrait ont-ils été trouvés ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "found-ratio-at-least",
+                "threshold": 0.8
               },
               "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 2
-                },
                 {
                   "dimension": "verification",
                   "weight": 2
@@ -175,15 +188,39 @@
             },
             {
               "id": "g1-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Les marques posées à côté d'un défaut sont-elles restées sous leur seuil ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "false-positives-at-most",
+                "threshold": 2
               },
               "mapping": [
                 {
-                  "dimension": "intervention",
-                  "weight": 1
-                },
+                  "dimension": "verification",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "id": "g1-2-c3",
+              "question": "Le défaut qui ne se lit pas dans l'extrait a-t-il été trouvé ?",
+              "rule": {
+                "type": "kinds-found-including",
+                "kinds": ["hallucinated-dependency"]
+              },
+              "mapping": [
+                {
+                  "dimension": "verification",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "id": "g1-2-c4",
+              "question": "La revue a-t-elle été rendue dans le temps imparti ?",
+              "rule": {
+                "type": "within-time-budget"
+              },
+              "mapping": [
                 {
                   "dimension": "verification",
                   "weight": 1

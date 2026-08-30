@@ -19,3 +19,13 @@ order: 4
 - Le critère « au moins 80 % des erreurs trouvées » ressort satisfait ou manqué.
 - Les faux positifs sont comptés et comparés à leur seuil.
 - Le temps imparti est visible et son dépassement fait manquer son critère.
+
+## Seuils retenus
+
+Câblés dans `config/course.json`, situation `g1-2`, et verrouillés par
+`__tests__/integration/course-run/defect-hunt-run.test.ts` :
+
+- Ratio de défauts trouvés : au moins **80 %** (`found-ratio-at-least`, 0.8).
+- Marques posées à côté d'un défaut : au plus **deux** (`false-positives-at-most`, 2).
+- Temps imparti : **trois minutes** (`timeLimitSeconds: 180`), lu par `within-time-budget`, sans seuil propre à la règle.
+- Le dépassement du temps ne coûte que son propre critère (`g1-2-c4`) : la partie ne s'arrête pas, et les trois autres critères gardent leur verdict.
