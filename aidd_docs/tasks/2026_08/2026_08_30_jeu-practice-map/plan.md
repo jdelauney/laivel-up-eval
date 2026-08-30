@@ -1,0 +1,41 @@
+---
+objective: "Le jeu practice-map se joue de bout en bout à la place du placeholder g2-2, mesure sur la dimension pilotage-contexte si la lecture des pratiques du joueur tient debout — placement juste, quadrant haute rigueur reconnu, relations d'ordre tenues — et n'oblige aucun contrat existant à bouger."
+status: in-progress
+---
+
+# Plan: Le jeu `practice-map`, situer les pratiques sur deux axes
+
+## Overview
+
+| Field | Value |
+| --- | --- |
+| **Goal** | Mesurer si un joueur sait situer les pratiques du parcours l'une par rapport à l'autre sur les axes délégation et rigueur, plutôt que les ranger dans des cases |
+| **Source** | `aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md` · `aidd_docs/backlog/epics/parcours-couvrant-les-axes.md` · `config/signature.json` · `DESIGN.md` |
+
+## Phases
+
+| # | Phase | File |
+| --- | --- | --- |
+| 1 | Les contrats et la lecture pure des placements | [`phase-1.md`](./phase-1.md) |
+| 2 | L'évaluateur et ses trois règles | [`phase-2.md`](./phase-2.md) |
+| 3 | Le jeu à l'écran : poser, déplacer, soumettre | [`phase-3.md`](./phase-3.md) |
+| 4 | Le jeu dans le parcours, et son corpus | [`phase-4.md`](./phase-4.md) |
+| 5 | La passe impeccable de la surface | [`phase-5.md`](./phase-5.md) |
+
+## Decisions
+
+| Decision | Why |
+| --- | --- |
+| Le jeu reprend le gabarit **structurel** des sept jeux déjà livrés : schéma de configuration à refus, trace + `parse*Trace`, helper pur partagé entre l'écran et l'évaluateur, évaluateur à règles déclaratives, deux blocs de câblage | Huitième jeu du parcours. Le gabarit est structurel, jamais visuel : la surface se dessine à son tour, en phase 5 |
+| Le type du jeu est **`practice-map`** | Nommer par l'intention : ce qui est produit est une lecture des pratiques, pas une manipulation de jetons. `two-axis-grid` ou `drag-matrix` nommeraient le mécanisme, et « grid » entre en collision avec `config/grid.json`, qui est le référentiel officiel |
+| « Cohérence avec les autres jeux du parcours » se mesure **dans le jeu seul**, sur des relations d'ordre déclarées en configuration | Tranché avec le chef le 30/08, note consignée en fin de story. Le port `GameEvaluator` ne passe à un jeu que sa propre réponse ; aucun evaluator ne voit la trace des autres. Élargir le port pour un seul jeu resterait de toute façon fragile : `practice-map` est en groupe 2, `checkpoints` et `three-tracks` en groupe 7, donc pas encore joués — le critère sortirait « non mesuré » pour la plupart des joueurs. Les pratiques posées **sont** les sujets des autres jeux ; la cohérence de leur lecture est la même matière, mesurée sans dépendance à l'ordre de jeu |
+| Les deux axes sont **continus**, et l'écran ne porte **aucune ligne de quadrant** | La story le dit en toutes lettres : « sans case prédéfinie ». Une croix centrale visible invite à aimanter les jetons dans quatre cases et transforme une lecture continue en un choix à quatre branches — exactement ce que la story refuse. Ce sont les pôles nommés au bout de chaque axe qui portent le cadre |
+| **Trois critères**, pesés **2 · 1 · 1**, tous sur la seule dimension `pilotage-contexte` | Le mapping `harness` du placeholder disparaît, comme chez `g1-2`, `g1-3` et `g2-1` : les six premiers groupes portent la signature, seul le septième porte les axes du référentiel officiel. `c1` (le placement est juste) pèse 2 ; `c2` (le quadrant haute rigueur est reconnu) et `c3` (les relations d'ordre tiennent) pèsent 1 chacun |
+| `c2` demande qu'une pratique dont la zone attendue **est** en haute rigueur y soit **effectivement** posée, pas qu'une pratique quelconque atterrisse en haut | La story écrit « au moins une pratique placée en quadrant haute rigueur ». Pris à la lettre, le critère se tient en glissant n'importe quel jeton en haut à droite, sans lire une ligne : un critère qu'un geste unique satisfait ne mesure personne, et l'épique nomme précisément cette classe de triche. Le resserrement suit le précédent de `miser-ma-confiance-a-l-aveugle`, dont les deux seuils ont été rendus symétriques après mesure de leur difficulté réelle |
+| `c1` et `c3` lisent **deux choses différentes**, et c'est voulu | Un joueur dont la lecture est bonne mais décalée en bloc — toutes les pratiques trop basses en rigueur — tient les relations d'ordre et manque les zones. Un joueur qui touche quelques zones au hasard peut inverser deux pratiques voisines. `c1` lit la position absolue, `c3` la position relative ; aucune des deux règles ne lit ce que lit l'autre. C'est la leçon de la scission `c2`/`c3` de `hint-budget` appliquée d'emblée : une règle, un axe de lecture, et la question affichée dit exactement cet axe |
+| Les garde-fous anti-triche sont portés par le **schéma de configuration**, en refus au chargement, jamais par une consigne d'écriture du corpus | Deux tours de revue sur `hint-budget` ont montré qu'une note dans un fichier de phase ne borne rien de mécanique : elle ferme le canal de fuite repéré et en laisse ouvrir un autre. Ici les quatre fuites — empiler tous les jetons au même endroit, couvrir la moitié du plan de zones attendues, déclarer une relation d'ordre que les zones elles-mêmes ne soutiennent pas, poser toutes les zones du même côté d'un axe — sont rendues **inexprimables** par le contrat, quel que soit le corpus futur. Détail dans `phase-1.md` |
+| Le jeu ne porte **aucune ressource rare chiffrée** : ni budget, ni chronomètre, ni compte de déplacements | L'épique pose la règle commune « le joueur dépense une ressource rare ». Ici la rareté est l'irréversibilité de la lecture soumise, pas une monnaie. Un budget de déplacements mesurerait la précision du geste — une compétence motrice — et non le jugement ; un chronomètre mesurerait la vitesse de lecture. C'est l'argument que `hint-budget` a déjà opposé au chronomètre : deux ressources rares en concurrence mesurent laquelle le joueur préfère, pas ce qu'on cherche |
+| Le joueur déplace librement jusqu'à la soumission ; **le verrou est la soumission**, jamais le dépôt d'un jeton | Un verrou au dépôt rendrait un glissement raté irrécupérable et transformerait le jeu en épreuve de souris. Le verrou n'a de sens que là où il empêche le tâtonnement de détruire ce qu'on mesure — c'était le cas du cadrage de `hint-budget`, dont on lit l'**ordre** ; ce n'est pas le cas ici, où l'on ne lit que la position finale |
+| La révélation donne le **repère** de chaque pratique — ce que la pratique demande réellement — jamais sa place attendue, jamais un verdict de placement | Afficher les zones attendues, c'est remettre la grille de correction : le parcours autorise de rejouer un jeu déjà soumis, et le second passage deviendrait une recopie. Le repère donne le « pourquoi », qui est la promesse du produit, sans donner la réponse. Choix identique à celui de `hint-budget`, qui montre la cause réelle et jamais si le cadrage était fondé |
+| **Sept pratiques**, prises dans les sujets des autres jeux du parcours | Sept laisse deux pratiques de marge sur le seuil de `c1` (quatre en zone) et une sur celui de `c3` (six relations sur sept). Sous cinq, chaque erreur de lecture bascule un critère ; au-delà de huit, la réserve déborde de l'écran sur mobile et le jeu mesure l'endurance |
+| L'atteignabilité au clavier est traitée **dans le jeu**, pas déléguée à une primitive | `DESIGN.md` l'énonce : « Les jeux chronométrés et les glissers-déposers sont l'exception : leur interaction est propre, donc l'atteignabilité au clavier est à traiter dans le jeu lui-même. » Un jeton est un bouton ; il se saisit au clavier, se déplace aux flèches par pas fixe, se dépose. La position atteinte est annoncée **en mots** — « délégation forte, rigueur faible » — jamais en nombres, qui donneraient au joueur clavier une précision que le joueur souris n'a pas |
