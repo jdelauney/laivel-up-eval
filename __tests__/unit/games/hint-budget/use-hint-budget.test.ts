@@ -2,10 +2,15 @@ import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useHintBudget } from '@/games/hint-budget/hooks/use-hint-budget.hook'
 
-const framing = (id: string, established: boolean) => ({
+const framing = (
+  id: string,
+  established: boolean,
+  refersTo: string | null = null,
+) => ({
   id,
   text: `Lecture ${id}.`,
   established,
+  refersTo,
 })
 
 const hint = (id: string, cost: number, eliminates: string[] = []) => ({

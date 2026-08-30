@@ -6,10 +6,15 @@ import {
   hintBudgetConfigSchema,
 } from '@/games/hint-budget/schema/config.schema'
 
-const framing = (id: string, established: boolean) => ({
+const framing = (
+  id: string,
+  established: boolean,
+  refersTo: string | null = null,
+) => ({
   id,
   text: `Lecture ${id}.`,
   established,
+  refersTo,
 })
 
 const hint = (id: string, cost: number, eliminates: string[] = []) => ({

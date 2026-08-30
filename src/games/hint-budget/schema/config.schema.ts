@@ -20,6 +20,21 @@ export const framingSchema = z.object({
   // marque désigne une supposition — une phrase qui sonne juste, que rien
   // à l'écran n'appuie. Les deux se présentent exactement pareil au joueur.
   established: z.boolean(),
+  // La cause candidate que cette lecture désigne nommément, `null` quand
+  // elle n'en désigne aucune.
+  //
+  // **Ajouté au tour 5.** Le plancher du tour 4 ne portait que sur les
+  // cibles d'indices, alors que le panneau de cadrage nomme lui aussi des
+  // causes : les lectures établies redisent ce que le rapport écarte, et
+  // les suppositions pouvaient déguiser une hypothèse de diagnostic. Sur
+  // `s2`, les cinq lectures et les cinq intitulés nommaient ensemble quatre
+  // causes sur cinq — la survivante était la réponse, sans un achat.
+  //
+  // Une mesure lexicale ne pouvait pas servir de garde-fou : elle compte
+  // aussi les locutions partagées (« de l'agent CI ») et rejetterait un
+  // corpus sain. La désignation se déclare donc, comme `hint.eliminates`,
+  // et le plancher se calcule sur l'union de tout ce que l'écran nomme.
+  refersTo: z.string().min(1).nullable(),
 })
 
 export const hintSchema = z.object({
@@ -138,7 +153,7 @@ const baseConfigSchema = z.object({
  * un indice ne peut dire que « ce n'est pas X ».
  *
  * `causeSchema.ruledOutByReport` et `hintSchema.eliminates` rendent le
- * champ d'élimination explicite, et les sept refus suivants rendent la
+ * champ d'élimination explicite, et les huit refus suivants rendent la
  * fuite inexprimable plutôt que de compter sur la relecture du corpus :
  * - un `eliminates` qui référence une cause absente de la situation est une
  *   référence pendante ;
@@ -155,15 +170,27 @@ const baseConfigSchema = z.object({
  * - après le rapport seul, il doit rester au moins trois causes en lice —
  *   sinon le cadrage n'a plus de matière et la frugalité cesse d'être un
  *   arbitrage ;
- * - **aucun indice pris seul ne peut, combiné au rapport, ramener le champ
- *   en dessous de deux causes** — c'est le refus qui ferme la délégation
- *   totale : sans lui, acheter le seul indice qui élimine tout le reste et
- *   trancher par élimination tient le critère de frugalité sans lecture ni
- *   cadrage, exactement ce que l'épique nomme comme triche à bloquer ;
+ * - une lecture de cadrage ne désigne jamais la cause réelle, et son
+ *   `refersTo` référence une cause connue de sa situation ;
+ * - **le plancher de deux causes** : tout ce que l'écran nomme — ce que le
+ *   rapport écarte, ce que les indices éliminent, ce que les lectures de
+ *   cadrage désignent — laisse toujours au moins deux causes jamais
+ *   nommées, dont la réelle ;
  * - **un chemin frugal doit exister** : au moins une combinaison d'au plus
- *   la moitié des indices (arrondie au sol) doit, avec le rapport, ramener
- *   le champ à exactement une cause. Sans ce refus, le précédent pourrait
- *   rendre une situation ingagnable sous le seuil de frugalité du parcours.
+ *   la moitié des indices (arrondie au sol) doit ramener le champ à ce
+ *   plancher de deux. Sans ce refus, le plancher pourrait rendre une
+ *   situation impossible à resserrer sous le seuil de frugalité.
+ *
+ * **Le plancher, tour 4 puis tour 5.** Les refus précédents formaient un
+ * théorème que personne n'avait vu : ils forçaient les indices à couvrir
+ * toutes les causes en lice sauf la réelle, et les `label` sont publics
+ * avant l'achat. Lire les intitulés, barrer les causes qu'ils nomment, et la
+ * survivante *était* la réponse — sans achat, sans lecture, sans cadrage. Le
+ * tour 5 a montré que le même complément restait ouvert sur le panneau de
+ * cadrage, qui nomme lui aussi des causes. Le plancher couvre donc l'union
+ * de toutes les désignations, et remplace le refus « aucun indice pris seul
+ * ne descend sous deux causes », qui depuis la cardinalité exacte ne pouvait
+ * plus rejeter aucune configuration que les autres acceptaient.
  */
 export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
   (config, context) => {
@@ -401,19 +428,66 @@ export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
       // jamais mieux qu'un pile ou face, et la discrimination finale revient
       // au symptôme et au rapport — c'est-à-dire à une lecture, ce que le jeu
       // prétend mesurer.
-      const everyEliminationIds = new Set([
+      // Une lecture de cadrage ne désigne jamais la cause réelle : sinon le
+      // panneau la donnerait avant même le premier achat.
+      const declaredCauseIds = new Set(
+        situation.causes.map((cause) => cause.id),
+      )
+
+      situation.framings.forEach((framing, framingIndex) => {
+        if (framing.refersTo === null) return
+
+        if (!declaredCauseIds.has(framing.refersTo)) {
+          context.addIssue({
+            code: 'custom',
+            path: [
+              'situations',
+              situationIndex,
+              'framings',
+              framingIndex,
+              'refersTo',
+            ],
+            message: `la lecture « ${framing.id} » de la situation « ${situation.id} » désigne « ${framing.refersTo} », absente de ses causes`,
+          })
+          return
+        }
+
+        if (framing.refersTo !== actualCause?.id) return
+
+        context.addIssue({
+          code: 'custom',
+          path: [
+            'situations',
+            situationIndex,
+            'framings',
+            framingIndex,
+            'refersTo',
+          ],
+          message: `la lecture « ${framing.id} » de la situation « ${situation.id} » désigne la cause réelle : aucune lecture de cadrage ne peut nommer la bonne réponse`,
+        })
+      })
+
+      // **Le plancher, élargi au tour 5 à tout ce que l'écran nomme.** Il ne
+      // portait que sur les cibles d'indices ; le panneau de cadrage nommait
+      // lui aussi des causes, et le complément redevenait un singleton. Le
+      // plancher couvre désormais l'union : ce que le rapport écarte, ce que
+      // les indices éliminent, ce que les lectures de cadrage désignent.
+      const namedCauseIds = new Set([
         ...ruledOutByReportIds,
         ...situation.hints.flatMap((hint) => hint.eliminates),
+        ...situation.framings.flatMap((framing) =>
+          framing.refersTo === null ? [] : [framing.refersTo],
+        ),
       ])
       const standingCauses = situation.causes.filter(
-        (cause) => !everyEliminationIds.has(cause.id),
+        (cause) => !namedCauseIds.has(cause.id),
       )
 
       if (standingCauses.length < 2) {
         context.addIssue({
           code: 'custom',
-          path: ['situations', situationIndex, 'hints'],
-          message: `dans la situation « ${situation.id} », acheter tous les indices ne laisse que ${standingCauses.length} cause(s) debout : il en faut au moins deux, sinon la cause réelle est le complément de ce que les intitulés annoncent, lisible sans rien acheter`,
+          path: ['situations', situationIndex, 'causes'],
+          message: `dans la situation « ${situation.id} », tout ce que l'écran nomme — rapport, indices, lectures de cadrage — ne laisse que ${standingCauses.length} cause(s) jamais nommée(s) : il en faut au moins deux, sinon la cause réelle est le complément de ce qui est affiché, lisible sans rien acheter`,
         })
       }
 

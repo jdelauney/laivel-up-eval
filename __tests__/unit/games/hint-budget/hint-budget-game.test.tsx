@@ -8,10 +8,15 @@ import { HintBudgetGame } from '@/games/hint-budget/components/composites/hint-b
  * Vitest unit, sur le modèle de `lie-detector-game.test.tsx`.
  */
 
-const framing = (id: string, established: boolean) => ({
+const framing = (
+  id: string,
+  established: boolean,
+  refersTo: string | null = null,
+) => ({
   id,
   text: `Lecture ${id}, longue de quelques mots pour ressembler au corpus réel.`,
   established,
+  refersTo,
 })
 
 const hint = (id: string, cost: number, eliminates: string[] = []) => ({

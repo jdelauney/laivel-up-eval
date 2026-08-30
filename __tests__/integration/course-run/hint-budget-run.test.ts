@@ -11,6 +11,7 @@ import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
 import { buildHintBudgetAnswer } from '@/games/hint-budget/actions/build-hint-budget-answer.action'
 import { readSituations } from '@/games/hint-budget/helpers/read-situations.helper'
+import { HintBudgetEvaluator } from '@/games/hint-budget/hint-budget.evaluator'
 import {
   type Attempt,
   parseHintBudgetTrace,
@@ -110,31 +111,26 @@ const establishedFramingIdsOf = (situation: Situation): string[] =>
   situation.framings.filter((framing) => framing.established).map((f) => f.id)
 
 /**
- * Cadre juste, d'entrée, dans les deux premières situations, en achetant au
- * plus deux indices sur cinq, et tranche juste. La troisième situation ne
- * pèse sur aucun des deux seuils (`threshold: 2`) : le profil doit rester
- * satisfaisant même si elle est jouée n'importe comment.
+ * Cadre juste, d'entrée, partout, en achetant au plus deux indices sur cinq,
+ * et tranche juste partout.
+ *
+ * **Corrigé au tour 5.** Ce profil laissait la troisième situation au hasard,
+ * sur la foi d'un commentaire qui affirmait qu'elle « ne pèse sur aucun des
+ * deux seuils (`threshold: 2`) ». C'était faux depuis le passage de `c1` à
+ * `3` sur `3`, et le test ne passait plus que par accident : la cause réelle
+ * de `s3` se trouve être sa première cause déclarée, celle que la branche
+ * jouait au hasard. Un test qui réussit pour cette raison-là ne prouve rien.
  */
 const frugalFramerAttempts = (config: HintBudgetConfig): Attempt[] =>
-  config.situations.map((situation, index) => {
-    if (index >= 2) {
-      return {
-        situationId: situation.id,
-        framing: null,
-        boughtHintIds: [],
-        cutCauseId: situation.causes[0].id,
-      }
-    }
-    return {
-      situationId: situation.id,
-      framing: {
-        retainedIds: establishedFramingIdsOf(situation),
-        afterHints: 0,
-      },
-      boughtHintIds: [situation.hints[0].id],
-      cutCauseId: actualCauseIdOf(situation),
-    }
-  })
+  config.situations.map((situation) => ({
+    situationId: situation.id,
+    framing: {
+      retainedIds: establishedFramingIdsOf(situation),
+      afterHints: 0,
+    },
+    boughtHintIds: [situation.hints[0].id],
+    cutCauseId: actualCauseIdOf(situation),
+  }))
 
 /** N'ouvre jamais le cadrage, et achète tous les indices de chaque situation. */
 const eagerAskerAttempts = (config: HintBudgetConfig): Attempt[] =>
@@ -459,6 +455,80 @@ describe('hint-budget in the course', () => {
       ).toBeGreaterThanOrEqual(2)
       expect(standing.some((cause) => cause.actual)).toBe(true)
     })
+  })
+
+  /**
+   * Le balayage du complément, la fuite du tour 5. Le plancher du tour 4 ne
+   * couvrait que les cibles d'indices, mais le panneau de cadrage nomme lui
+   * aussi des causes : les lectures établies redisent ce que le rapport
+   * écarte, et une supposition pouvait déguiser une hypothèse de diagnostic.
+   * Sur `s2`, les cinq lectures et les cinq intitulés nommaient ensemble
+   * quatre causes sur cinq — la survivante était la réponse, sans un achat.
+   *
+   * La désignation est déclarée (`framing.refersTo`, `hint.eliminates`),
+   * jamais mesurée lexicalement : une mesure de sous-chaîne compte aussi les
+   * locutions partagées (« de l'agent CI ») et rejetterait un corpus sain.
+   */
+  it('never lets everything the screen names leave a single cause unnamed', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const namedCauseIds = new Set([
+        ...situation.causes
+          .filter((cause) => cause.ruledOutByReport)
+          .map((cause) => cause.id),
+        ...situation.hints.flatMap((hint) => hint.eliminates),
+        ...situation.framings.flatMap((framing) =>
+          framing.refersTo === null ? [] : [framing.refersTo],
+        ),
+      ])
+      const neverNamed = situation.causes.filter(
+        (cause) => !namedCauseIds.has(cause.id),
+      )
+
+      expect(
+        neverNamed.length,
+        `${situation.id} ne laisse que ${neverNamed.length} cause(s) jamais nommée(s) par l'écran : le complément désigne la réponse`,
+      ).toBeGreaterThanOrEqual(2)
+      expect(neverNamed.some((cause) => cause.actual)).toBe(true)
+    })
+  })
+
+  /**
+   * Le seuil de `c1` n'était protégé par rien : le ramener à `2` laissait
+   * toute la suite verte (relevé au tour 5). Ce test ferme le trou par le
+   * comportement plutôt que par la valeur — il joue la politique du
+   * balayage, celle qui a le plus haut rendement sans lecture, et exige
+   * qu'elle ne tienne pas `c1`.
+   *
+   * Le balayage laisse deux causes debout par situation. Le profil ci-dessous
+   * lui donne le meilleur cas possible : il tranche juste dans deux
+   * situations sur trois, ce qu'un pile ou face rend une fois sur quatre.
+   * À `threshold: 3`, ça ne suffit pas. À `2`, ça suffirait — et ce test
+   * échouerait, ce qui est exactement son rôle.
+   */
+  it('does not let the best two-out-of-three sweep outcome hold the frugality criterion', () => {
+    const { game } = realG2_1()
+    const config = realG2_1Config()
+
+    const attempts = config.situations.map((situation, index) => ({
+      situationId: situation.id,
+      framing: null,
+      boughtHintIds: [],
+      // Juste dans les deux premières situations, faux dans la troisième.
+      cutCauseId:
+        index < 2
+          ? actualCauseIdOf(situation)
+          : (situation.causes.find((cause) => !cause.actual)?.id ?? ''),
+    }))
+
+    const [frugality] = new HintBudgetEvaluator().evaluate(
+      { attempts },
+      game.config,
+      game.criteria,
+    )
+
+    expect(frugality?.satisfied).toBe(false)
   })
 
   it('carries, for every situation, a purchase path that narrows the field to the last two causes', () => {

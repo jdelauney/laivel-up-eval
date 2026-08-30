@@ -434,27 +434,32 @@
                   {
                     "id": "s1-f1",
                     "text": "La même clé secrète signe les jetons dans les deux environnements.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s1-c-secret"
                   },
                   {
                     "id": "s1-f2",
                     "text": "Le certificat TLS du proxy a été renouvelé récemment et reste valide plusieurs mois.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s1-c-tls"
                   },
                   {
                     "id": "s1-f3",
-                    "text": "Un nouveau pare-feu du proxy bloque les jetons dont l'en-tête dépasse une certaine longueur.",
-                    "established": false
+                    "text": "Le proxy applique une limite de débit depuis sa dernière montée de version.",
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s1-f4",
-                    "text": "Le jeton est mis en cache côté client et n'est jamais régénéré entre deux appels.",
-                    "established": false
+                    "text": "Les appels sortants passent par un tunnel réseau ajouté cette semaine.",
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s1-f5",
                     "text": "Le service d'authentification a été migré vers un nouveau fournisseur hier.",
-                    "established": false
+                    "established": false,
+                    "refersTo": null
                   }
                 ],
                 "hints": [
@@ -544,27 +549,32 @@
                   {
                     "id": "s2-f1",
                     "text": "Le service de facturation a changé de bibliothèque de calcul la semaine dernière.",
-                    "established": false
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s2-f2",
                     "text": "Toutes les lignes de cette facture sont dans la même devise, sans conversion appliquée.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s2-c-currency"
                   },
                   {
                     "id": "s2-f3",
-                    "text": "Les lignes en devise étrangère utilisent un taux de change figé au trimestre.",
-                    "established": false
+                    "text": "Le format d'affichage des montants a changé avec la dernière version.",
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s2-f4",
                     "text": "Aucune remise n'est configurée pour ce type de facture.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s2-c-discount"
                   },
                   {
                     "id": "s2-f5",
-                    "text": "Le total est recalculé une seconde fois par un job asynchrone qui écrase la valeur initiale.",
-                    "established": false
+                    "text": "Le modèle de facture a été refait par l'assistant la semaine dernière.",
+                    "established": false,
+                    "refersTo": null
                   }
                 ],
                 "hints": [
@@ -653,28 +663,33 @@
                 "framings": [
                   {
                     "id": "s3-f1",
-                    "text": "L'agent CI utilise une image reconstruite chaque nuit, avec des versions de paquets non figées.",
-                    "established": false
+                    "text": "Le pipeline CI a été migré vers un nouveau fournisseur le mois dernier.",
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s3-f2",
                     "text": "Le pipeline CI exécute les tests avec un compte de service aux permissions restreintes.",
-                    "established": false
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s3-f3",
                     "text": "Toutes les variables d'environnement requises par la suite sont bien présentes sur l'agent CI.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s3-c-env"
                   },
                   {
                     "id": "s3-f4",
-                    "text": "Le dépôt de paquets interne a changé d'adresse la semaine dernière.",
-                    "established": false
+                    "text": "Les journaux de la CI sont tronqués au-delà d'une certaine taille.",
+                    "established": false,
+                    "refersTo": null
                   },
                   {
                     "id": "s3-f5",
                     "text": "La version de Node installée sur l'agent CI est strictement identique à celle du poste local.",
-                    "established": true
+                    "established": true,
+                    "refersTo": "s3-c-node"
                   }
                 ],
                 "hints": [
