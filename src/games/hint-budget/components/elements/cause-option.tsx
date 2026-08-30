@@ -75,7 +75,12 @@ export const CauseOption = ({
     </>
   )
 
-  const shell = 'flex flex-col gap-0.5 bg-plane p-3 text-left'
+  // Un filet propre à chaque carte, jamais une couleur de fond du conteneur
+  // vue à travers un espacement : la grille des causes ne compte pas
+  // toujours un multiple de ses colonnes, et le second motif laisserait un
+  // pan de fond nu là où une carte manque.
+  const shell =
+    'flex flex-col gap-0.5 border border-plane-rule bg-plane p-3 text-left'
 
   if (!interactive) {
     return <div className={shell}>{body}</div>
@@ -86,7 +91,7 @@ export const CauseOption = ({
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`${shell} border border-plane-rule outline-plane-foreground -outline-offset-2 hover:bg-plane-foreground/4 focus-visible:outline-2`}
+      className={`${shell} outline-plane-foreground -outline-offset-2 hover:bg-plane-foreground/4 focus-visible:outline-2`}
     >
       {body}
     </button>

@@ -1,11 +1,21 @@
 import { ChevronDown } from 'lucide-react'
 import { Button } from '../../../../components/ui/button'
 import type { GameComponentProps } from '../../../types/game-component'
+import type { HintView } from '../../hooks/use-hint-budget.hook'
 import { useHintBudget } from '../../hooks/use-hint-budget.hook'
 import { FramingLine } from '../elements/framing-line'
 import { HintCard } from '../elements/hint-card'
 import { CutPanel } from './cut-panel'
 import { IncidentBrief } from './incident-brief'
+
+/**
+ * Le relevé des indices déjà achetés se plafonne à deux entrées visibles
+ * d'emblée, le reste se replie derrière un repli natif — `DESIGN.md` :
+ * « un relevé qui s'allonge ne pousse jamais la décision courante hors de
+ * l'écran ». Le marché lui-même ne peut pas s'allonger : il ne fait que
+ * rétrécir à mesure que ses indices rejoignent le relevé.
+ */
+const PURCHASED_LOG_CAP = 2
 
 /**
  * Le septième jeu à état du parcours, et le premier du deuxième groupe :
@@ -65,7 +75,7 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
 
       <IncidentBrief symptom={symptom} report={report} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6">
         <section className="border border-plane-rule bg-plane">
           <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
             Le cadrage
@@ -93,23 +103,7 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
           </footer>
         </section>
 
-        <section className="border border-plane-rule bg-plane">
-          <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
-            L'assistant
-          </header>
-          <div>
-            {hints.map((hint) => (
-              <HintCard
-                key={hint.id}
-                label={hint.label}
-                cost={hint.cost}
-                bought={hint.bought}
-                text={hint.text}
-                onBuy={() => buyHint(hint.id)}
-              />
-            ))}
-          </div>
-        </section>
+        <HintMarket hints={hints} onBuy={buyHint} />
       </div>
 
       <CutPanel
@@ -127,6 +121,80 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Le marché : les indices restant à acheter, prix affiché avant tout clic,
+ * puis le relevé de ceux déjà achetés. Le marché ne peut que rétrécir — un
+ * indice acheté le quitte pour rejoindre le relevé, jamais l'inverse — donc
+ * lui seul n'a pas besoin de se plafonner. Le relevé, qui ne fait que
+ * s'allonger, se replie au-delà de deux entrées.
+ */
+const HintMarket = ({
+  hints,
+  onBuy,
+}: {
+  hints: readonly HintView[]
+  onBuy: (hintId: string) => void
+}) => {
+  const shopHints = hints.filter((hint) => !hint.bought)
+  const boughtHints = hints.filter((hint) => hint.bought)
+  const visibleBought = boughtHints.slice(0, PURCHASED_LOG_CAP)
+  const collapsedBought = boughtHints.slice(PURCHASED_LOG_CAP)
+
+  return (
+    <section className="border border-plane-rule bg-plane">
+      <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
+        L'assistant
+      </header>
+      <div>
+        {shopHints.map((hint) => (
+          <HintCard
+            key={hint.id}
+            label={hint.label}
+            cost={hint.cost}
+            bought={false}
+            onBuy={() => onBuy(hint.id)}
+          />
+        ))}
+      </div>
+      {boughtHints.length > 0 ? (
+        <div className="border-plane-rule border-t">
+          <p className="px-3 pt-2 font-medium text-[10px] text-plane-foreground/45 uppercase tracking-[0.14em]">
+            Déjà acheté
+          </p>
+          {visibleBought.map((hint) => (
+            <HintCard
+              key={hint.id}
+              label={hint.label}
+              cost={hint.cost}
+              bought
+              text={hint.text}
+              onBuy={() => onBuy(hint.id)}
+            />
+          ))}
+          {collapsedBought.length > 0 ? (
+            <details>
+              <summary className="cursor-pointer list-none px-3 py-2 font-medium text-[10px] text-plane-foreground/60 uppercase tracking-[0.14em] [&::-webkit-details-marker]:hidden">
+                Voir {collapsedBought.length} indice
+                {collapsedBought.length > 1 ? 's' : ''} de plus
+              </summary>
+              {collapsedBought.map((hint) => (
+                <HintCard
+                  key={hint.id}
+                  label={hint.label}
+                  cost={hint.cost}
+                  bought
+                  text={hint.text}
+                  onBuy={() => onBuy(hint.id)}
+                />
+              ))}
+            </details>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   )
 }
 

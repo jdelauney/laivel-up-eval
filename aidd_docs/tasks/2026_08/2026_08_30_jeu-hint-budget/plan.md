@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu hint-budget se joue de bout en bout à la place du placeholder g2-1, mesure sur la dimension pilotage-contexte si le joueur cadre avant d'interroger et s'il tranche en achetant peu d'indices, et n'oblige aucun contrat existant à bouger."
-status: in-progress
+status: implemented
 ---
 
 # Plan: Le jeu `hint-budget`, cadrer avant de demander, payer chaque indice

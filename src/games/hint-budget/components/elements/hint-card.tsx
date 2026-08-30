@@ -22,7 +22,7 @@ export const HintCard = ({
   onBuy: () => void
 }) => (
   <div className="border-plane-rule border-b px-3 py-2 last:border-b-0">
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col items-start gap-1.5">
       <span className="text-plane-foreground text-sm">{label}</span>
       {bought ? (
         <span className="flex items-center gap-1 font-medium text-[10px] text-plane-foreground/50 uppercase tabular-nums tracking-[0.14em]">

@@ -260,4 +260,66 @@ describe('hint budget game, rendered', () => {
     expect(framingButton).toBeInTheDocument()
     expect(hintButton).toBeInTheDocument()
   })
+
+  /**
+   * Garde-fou de la passe : la révélation pose la cause et le relevé,
+   * jamais un verdict sur le cadrage. Aucun mot ne doit qualifier le
+   * cadrage, qu'il ait été posé d'entrée, tardivement, partiellement ou
+   * jamais.
+   */
+  it('never qualifies the framing at the revelation, whatever the framing was', () => {
+    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+
+    // Le panneau "Le cadrage" et son bouton "Transmettre ce cadre" restent
+    // légitimement visibles après la tranche : ce texte de chrome n'est pas
+    // ce que ce garde-fou vérifie. Seul le relevé — le pied de la révélation
+    // — ne doit jamais qualifier le cadrage.
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: new RegExp(config.situations[0].causes[0].text),
+      }),
+    )
+
+    const total = screen.getByText(/^total/i)
+    const revelationFooter = total.closest('footer')?.textContent ?? ''
+    expect(revelationFooter).not.toMatch(
+      /cadr|fond[ée]|établi|suppos|grounded|framing/i,
+    )
+  })
+
+  /**
+   * L'ordre de parcours au clavier et au lecteur d'écran doit suivre l'ordre
+   * de lecture du corpus, dans les deux inventaires, jamais un ordre visuel
+   * recomposé par la grille — sur le modèle de `lie-detector-game.test.tsx`.
+   */
+  it('keeps the framing list and the hints market in the corpus reading order for keyboard and screen-reader traversal', () => {
+    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+
+    const framingTexts = config.situations[0].framings.map(
+      (entry) => entry.text,
+    )
+    const framingButtons = screen
+      .getAllByRole('button')
+      .filter((button) =>
+        framingTexts.some((text) => button.textContent?.includes(text)),
+      )
+    const framingOrder = framingButtons.map((button) =>
+      framingTexts.findIndex((text) => button.textContent?.includes(text)),
+    )
+    expect(framingOrder).toEqual([0, 1, 2, 3, 4])
+
+    // Les intitulés d'indices apparaissent dans le document dans le même
+    // ordre que le corpus, indépendamment de tout repositionnement visuel
+    // par la grille CSS.
+    const domNodes = Array.from(document.body.querySelectorAll('*'))
+    const hintLabels = config.situations[0].hints.map((entry) => entry.label)
+    const hintPositions = hintLabels.map((label) =>
+      domNodes.indexOf(screen.getByText(label)),
+    )
+
+    hintPositions.reduce((previous, current) => {
+      expect(current).toBeGreaterThan(previous)
+      return current
+    })
+  })
 })

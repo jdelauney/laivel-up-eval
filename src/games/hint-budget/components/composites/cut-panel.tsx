@@ -25,7 +25,13 @@ export const CutPanel = ({
   revelation?: SituationRevelation
 }) => (
   <section className="border border-plane-rule bg-plane">
-    <div className="grid grid-cols-1 gap-px bg-plane-rule sm:grid-cols-3">
+    {/*
+     * Espacement réel entre les cartes, jamais le fond du conteneur montré
+     * à travers un `gap-px` : cinq causes sur trois colonnes laissent une
+     * rangée incomplète, et le motif de filet partagé y aurait ouvert un
+     * pan de fond nu à la place de la carte manquante.
+     */}
+    <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-3">
       {causes.map((cause) => {
         const causeRevelation = revelation?.causes.find(
           (entry) => entry.id === cause.id,
