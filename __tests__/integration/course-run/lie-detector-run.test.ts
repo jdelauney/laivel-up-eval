@@ -110,13 +110,46 @@ const alwaysFollowsAssistantPicks = (config: LieDetectorConfig) =>
     finalPickId: round.objection.targetId,
   }))
 
-/** Ne bouge jamais de sa première désignation, quelle qu'elle soit — une vraie affirmation, arbitraire mais dérivée du corpus. */
+/**
+ * Tient chacune de ses désignations justes : la menteuse, dès le premier
+ * temps, jamais bougée. C'est le profil que l'acceptance de phase 4 décrit
+ * (« le profil qui tient chacune de ses désignations justes satisfait le
+ * critère de stabilité »). Corrigé le 30/08 après revue (F2) : la première
+ * écriture dérivait ce profil de `nonLiarIdOf`, donc d'une désignation
+ * FAUSSE dans les quatre manches — il ne couvrait pas l'acceptance, il
+ * verrouillait le bug de F1 comme s'il était le comportement voulu.
+ */
 const neverMovesPicks = (config: LieDetectorConfig) =>
+  config.rounds.map((round) => ({
+    roundId: round.id,
+    firstPickId: liarIdOf(round),
+    finalPickId: liarIdOf(round),
+  }))
+
+/**
+ * Désigne une vraie affirmation dès le premier temps et n'en bouge jamais.
+ * Distinct de `neverMovesPicks` : celui-ci lit FAUX et campe dessus, donc
+ * n'a jamais l'occasion de capituler puisqu'il n'a jamais eu raison. Doit
+ * rater la stabilité — c'est le profil que l'ancienne règle (comptant les
+ * contradictions plutôt que les occasions) laissait passer à tort (F1).
+ */
+const neverMovesWrongPicks = (config: LieDetectorConfig) =>
   config.rounds.map((round) => ({
     roundId: round.id,
     firstPickId: nonLiarIdOf(round),
     finalPickId: nonLiarIdOf(round),
   }))
+
+/**
+ * Démasque exactement `count` manches sur quatre, dans l'ordre du corpus,
+ * chaque désignation tenue (première = finale) : isole le seuil de
+ * `g1-3-c1` de la stabilité, jamais mesurée ici.
+ */
+const unmaskExactlyPicks = (config: LieDetectorConfig, count: number) =>
+  config.rounds.map((round, index) => {
+    const pickId = index < count ? liarIdOf(round) : nonLiarIdOf(round)
+    return { roundId: round.id, firstPickId: pickId, finalPickId: pickId }
+  })
 
 /** Juste au premier temps, puis retournée : la finale suit toujours la cible de l'objection. */
 const correctThenRetreatsPicks = (config: LieDetectorConfig) =>
@@ -157,6 +190,37 @@ describe('lie-detector in the course', () => {
     expect([...dimensions]).toEqual(['verification'])
   })
 
+  /**
+   * F6 : le seuil de `g1-3-c1` n'était vérifié par aucun test — un lot
+   * borné entre 2 et 4 dans les profils existants passait en silence. Épingle
+   * la valeur exacte, puis la sonde des deux côtés de la frontière.
+   */
+  it('pins the identification threshold at exactly three unmasked rounds out of four', () => {
+    const { game } = realG1_3()
+    const criterion = game.criteria.find((entry) => entry.id === 'g1-3-c1')
+
+    expect(criterion?.rule).toEqual({
+      type: 'lies-unmasked-at-least',
+      threshold: 3,
+    })
+
+    const twoUnmasked = verificationDimension(
+      playG1_3(unmaskExactlyPicks(realG1_3Config(), 2)),
+    )
+    const identificationAtTwo = twoUnmasked.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-3-c1',
+    )
+    expect(identificationAtTwo?.satisfied).toBe(false)
+
+    const threeUnmasked = verificationDimension(
+      playG1_3(unmaskExactlyPicks(realG1_3Config(), 3)),
+    )
+    const identificationAtThree = threeUnmasked.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-3-c1',
+    )
+    expect(identificationAtThree?.satisfied).toBe(true)
+  })
+
   it('rewards designating the liar four times out of four and holding under contradiction: both criteria satisfied', () => {
     const dimension = verificationDimension(
       playG1_3(correctAndHeldPicks(realG1_3Config())),
@@ -176,14 +240,21 @@ describe('lie-detector in the course', () => {
     const dimension = verificationDimension(
       playG1_3(alwaysFollowsAssistantPicks(realG1_3Config())),
     )
-    const identification = dimension.contributions.find(
-      (contribution) => contribution.criterionId === 'g1-3-c1',
+    const satisfiedByCriterion = Object.fromEntries(
+      dimension.contributions.map((contribution) => [
+        contribution.criterionId,
+        contribution.satisfied,
+      ]),
     )
 
-    expect(identification?.satisfied).toBe(false)
+    expect(satisfiedByCriterion['g1-3-c1']).toBe(false)
+    // Ce profil n'est jamais contredit (sa première désignation vise
+    // toujours la cible de l'objection) : c'est le refus de la vacuité que
+    // la story impose (F3) — sans matière, `g1-3-c2` ne se satisfait pas.
+    expect(satisfiedByCriterion['g1-3-c2']).toBe(false)
   })
 
-  it('holds the stability criterion for the profile that never moves off its first designation', () => {
+  it('holds the stability criterion for the profile that never moves off a correct designation', () => {
     const dimension = verificationDimension(
       playG1_3(neverMovesPicks(realG1_3Config())),
     )
@@ -192,6 +263,22 @@ describe('lie-detector in the course', () => {
     )
 
     expect(stability?.satisfied).toBe(true)
+  })
+
+  /**
+   * F2 : le pendant du profil ci-dessus, qui lit FAUX et campe dessus. Sans
+   * occasion (il n'a jamais eu raison), la stabilité doit rater — c'est
+   * exactement le trou que la règle bogosement écrite (F1) laissait passer.
+   */
+  it('sinks the stability criterion for the profile that never moves off a wrong designation', () => {
+    const dimension = verificationDimension(
+      playG1_3(neverMovesWrongPicks(realG1_3Config())),
+    )
+    const stability = dimension.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-3-c2',
+    )
+
+    expect(stability?.satisfied).toBe(false)
   })
 
   it('misses both criteria for the profile correct at first then retreating on every objection', () => {
