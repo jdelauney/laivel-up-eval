@@ -34,9 +34,9 @@ journey
   section Setup
     charger le parcours réel et isoler g2-1 => sa configuration passe le schéma du jeu: 5: system
   section Happy path
-    jouer un profil qui cadre juste d entrée puis résout deux situations sur trois avec au plus deux indices => les deux critères ressortent satisfaits et pilotage-contexte monte: 5: system
+    jouer un profil qui cadre juste d entrée puis résout les trois situations avec au plus deux indices chacune => les trois critères ressortent satisfaits et pilotage-contexte monte: 5: system
   section Edge case - le demandeur pressé
-    jouer un profil qui n ouvre jamais le cadrage et achète tous les indices => les deux critères ressortent manqués: 1: system
+    jouer un profil qui n ouvre jamais le cadrage et achète tous les indices => les trois critères ressortent manqués: 1: system
   section Edge case - le cadreur dispendieux
     jouer un profil qui cadre juste partout puis achète tous les indices => seul le critère de cadrage ressort satisfait: 1: system
   section Edge case - tout cocher
@@ -63,6 +63,8 @@ Les règles d'écriture, qu'aucun test ne peut rattraper :
 
 1. **Le rapport doit suffire à écarter deux causes sur cinq**, jamais plus. En dessous, le cadrage n'a pas de matière ; au-dessus, le jeu se résout sans acheter et la frugalité cesse d'être un arbitrage.
 2. ~~Le prix d'un indice suit ce qu'il tranche. Le plus cher désigne la cause ; les moins chers écartent une piste chacun.~~ **Corrigé le 30/08, après revue : cette règle contredisait la règle 4 et a produit la faille qu'elle décrit.** Le corpus initial suivait cette version : `h5` de chaque situation paraphrasait la cause réelle mot pour mot (`s1-h5` ≈ `s1-c-clock`), rendant « acheter le seul indice le plus cher puis trancher » une stratégie qui tenait `c1` 3/3 à l'aveugle — exactement la délégation totale que l'épique nomme comme triche à bloquer. La règle qui tient est la 4 : **l'indice le plus cher est celui qui écarte le plus d'alternatives, jamais celui qui livre la réponse.** Prix retenus, inchangés : `5 · 10 · 15 · 20 · 25`.
+
+   **Périmé au tour 5.** « Le plus cher écarte le plus d'alternatives » ne tient plus depuis la cardinalité exacte du tour 3 : chaque indice écarte exactement une cause (`hint.eliminates.length === 1`), quel que soit son prix. Sur le corpus livré, l'indice qui écarte encore une cause en lice — le seul « utile » depuis le plancher du tour 4 — coûte `5` sur `s1`, `25` sur `s2`, `20` sur `s3` : ni le rang ni le prix ne suivent plus ce qui tranche. Voir `plan.md`, décision du tour 5, pour l'arbitrage assumé plutôt que corrigé.
 3. **Une lecture de cadrage établie est une reformulation de ce que le rapport dit**, jamais une déduction. Une supposition est une phrase qui *sonne* juste et que rien à l'écran n'appuie — c'est là que se joue la lecture.
 4. **Un indice ne peut dire que « ce n'est pas X ».** Il écarte une cause, une seule, nommée, et jamais la cause réelle. Il ne décrit jamais le mécanisme de celle qui reste.
 
@@ -86,7 +88,7 @@ Les règles d'écriture, qu'aucun test ne peut rattraper :
 
    La règle de non-doublon porte sur les causes **encore en lice**, et n'a donc pas d'exception : deux indices qui reconfirment une cause que le rapport a déjà écartée ne fuitent rien — le rapport l'annonçait gratuitement — et paient deux fois la même information. C'est le mécanisme du jeu : l'achat gaspillé est le prix de ne pas avoir lu le rapport, et le `label` de chaque indice permet de savoir de quelle piste il parle avant de payer.
 
-   Les positions de la paire utile diffèrent d'une situation à l'autre — `{1,4}` sur `s1`, `{2,5}` sur `s2`, `{3,4}` sur `s3` — pour qu'aucune paire de positions fixe ne soit utile plus d'une fois. Trancher frugalement exige de lire *lesquels* des cinq indices écartent une cause encore en lice, jamais d'en acheter deux au rang habituel.
+   **Périmé au tour 4, voir « Le plancher élargi au tour 5 » plus bas.** L'encadré ci-dessus décrit l'économie du tour 3 (2 indices utiles, un champ ramené à une seule cause) : le plancher de deux causes du tour 4 l'a remplacée par une économie à **un seul** indice utile par situation, aux positions `1` sur `s1`, `5` sur `s2`, `4` sur `s3` — distinctes, donc aucune position fixe n'est utile deux fois. Trancher frugalement exige de lire *lequel* des cinq indices écarte encore une cause en lice, jamais d'en acheter deux au rang habituel.
 
 Les deux montants de l'économie : `wrongCutPenalty` à `40`, `blindCutSurcharge` à `30`. La surtaxe excède strictement l'indice le plus cher (`25`), ce que le schéma vérifie au chargement — c'est le quatrième critère d'acceptation de la story.
 
@@ -98,13 +100,13 @@ Les deux montants de l'économie : `wrongCutPenalty` à `40`, `blindCutSurcharge
 
 | Critère | Question | Règle | Mapping |
 | --- | --- | --- | --- |
-| `g2-1-c1` | L'incident a-t-il été résolu en achetant moins de la moitié des indices ? | `frugal-solves-at-least` · `share: 0.5` · `threshold: 2` | `pilotage-contexte` · poids `2` |
+| `g2-1-c1` | Les incidents ont-ils été résolus en achetant moins de la moitié des indices ? | `frugal-solves-at-least` · `share: 0.5` · `threshold: 3` | `pilotage-contexte` · poids `2` |
 | `g2-1-c2` | Le contexte a-t-il été posé avant le premier indice ? | `framed-first-at-least` · `threshold: 2` | `pilotage-contexte` · poids `1` |
 | `g2-1-c3` | Ce contexte était-il fondé sur le rapport ? | `grounded-framings-at-least` · `threshold: 2` | `pilotage-contexte` · poids `1` |
 
 Le mapping `harness` du placeholder disparaît : les six premiers groupes portent la signature, seul le septième porte les axes du référentiel officiel. C'est la même coupe que celle faite chez `g1-2` et `g1-3`. Le poids `2 · 1 · 1` garde l'équilibre initial entre trancher frugalement (`2`) et cadrer (`1 + 1`).
 
-Le seuil de `c1` à deux situations sur trois : cinq causes portent la chance d'une tranche aveugle à `1/5`, donc à `10,4 %` pour deux situations sur trois — l'ordre de grandeur retenu chez `lie-detector` (`15,6 %`). La marge d'une situation laisse un lecteur qui se trompe une fois satisfaire le critère.
+**Le seuil de `c1` est passé de deux à trois situations sur trois au tour 4** (`plan.md`, décision du tour 4) : le plancher de deux causes retire aux indices tout pouvoir de discrimination final, donc toute marge laissée sur ce seuil se traduit directement en marge de chance plutôt qu'en marge d'erreur de lecture. `c1` n'a donc plus aucune marge : une seule situation manquée le fait tomber. Le détail des probabilités de chance, recalculé sur le corpus courant, vit dans « Trois chances, mesurées et non arrondies » plus bas.
 
 ## Les politiques aveugles, recalculées sur le corpus du tour 2 (30/08)
 
@@ -130,7 +132,7 @@ Neuf politiques, chacune définie **entièrement** par son triplet **cadrage × 
 
 Sur ce corpus, **aucune politique aveugle ne tient `c1` ni `c3`.** Une seule en tient un — `c2`, par la ligne ci-dessus — et c'est nommé, pas caché.
 
-## Trois chances, mesurées et non arrondies (tour 3, 30/08)
+## Quatre politiques mesurées, non arrondies (tour 3, recalculées au tour 4)
 
 Le tableau ci-dessus répond à « une politique mécanique gagne-t-elle ». Il ne répond pas à « quelle est la part de chance ». Mesuré sur le corpus du tour 3, contre `c1`, qui pèse 2 des 4 points du jeu :
 
@@ -147,9 +149,7 @@ Le balayage des intitulés est la fuite que le tour 4 a trouvée, et elle valait
 
 Les quatre politiques passent désormais sous les 15,6 % retenus chez `lie-detector`. Le prix payé est nommé : `c1` n'a plus de marge d'erreur, une situation manquée le fait tomber.
 
-La troisième ligne **n'est pas une politique aveugle** : déduire la survivante exige de lire les éliminations des deux indices achetés et les cinq causes. C'est le jeu joué correctement, et son taux élevé dit seulement que le jeu est gagnable quand on le joue. Elle figure ici parce qu'elle se mémorise depuis une soluce — la seule parade tenable étant que les positions de la paire utile diffèrent d'une situation à l'autre (`{1,4}`, `{2,5}`, `{3,4}`), ce qui fait qu'aucune paire fixe n'est utile plus d'une fois.
-
-**La deuxième ligne est celle qui appelle un arbitrage.** 25,9 % dépasse les 15,6 % retenus chez `lie-detector` pour une politique comparable. Elle est structurelle, pas accidentelle : le rapport ramène honnêtement le champ à trois causes, donc deviner parmi les survivantes vaut un tiers. La baisser exigerait plus de causes survivantes, donc plus d'indices utiles pour les écarter, donc un budget frugal supérieur à deux — c'est-à-dire un autre jeu. Deux atténuations tiennent la ligne sans la déplacer : ce joueur a **lu le rapport**, ce qui est déjà un geste du parcours, et il manque `c2` comme `c3` s'il n'a rien cadré, donc il plafonne à 2 des 4 points. Consigné plutôt que corrigé en silence : relever le seuil de `c1` à 3 sur 3 le ramènerait à 3,7 %, au prix d'un critère sans marge d'erreur.
+La quatrième ligne (« Achète deux indices à positions fixes, puis déduit ») **n'est pas une politique aveugle** : atteindre le plancher exige de lire lequel des cinq indices écarte encore une cause en lice, et les cinq causes elles-mêmes. C'est le jeu joué correctement, et son taux dit seulement que le jeu est gagnable quand on le joue — à ce niveau, gagnable au pile ou face par situation, plus depuis le plancher du tour 4. Elle figure ici parce qu'elle se mémorise depuis une soluce — la seule parade tenable étant que la position de l'indice utile diffère d'une situation à l'autre (`1` sur `s1`, `5` sur `s2`, `4` sur `s3`), ce qui fait qu'aucune position fixe n'est utile plus d'une fois.
 
 ## Tasks to do
 
@@ -188,10 +188,10 @@ La troisième ligne **n'est pas une politique aveugle** : déduire la survivante
 | 1 | Ajouter le jeu n'a demandé que les deux blocs de câblage |
 | 2 | Le parcours réel se charge sans refus, et `g2-1` passe `hintBudgetConfigSchema` |
 | 3 | `checkpoints-run` et `three-tracks-run` traversent les sept groupes sans refus de soumission |
-| 4 | Un profil qui cadre juste d'entrée et résout deux situations sur trois avec au plus deux indices satisfait les deux critères |
-| 4 | Un profil qui ne cadre jamais et achète tous les indices manque les deux |
+| 4 | Un profil qui cadre juste d'entrée et résout les trois situations avec au plus deux indices chacune satisfait les trois critères |
+| 4 | Un profil qui ne cadre jamais et achète tous les indices manque les trois |
 | 4 | Trancher systématiquement la première cause de chaque situation résout au plus une situation |
-| 4 | Retenir toutes les lectures de chaque situation ne satisfait le critère de cadrage dans aucune |
+| 4 | Retenir toutes les lectures de chaque situation satisfait `c2` (l'ordre : cadré en premier) et manque `c3` (le fondement : rien n'appuie une sélection totale) — cf. Amendements ci-dessous |
 | 4 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
 
 ### Amendements du 30/08, après revue
@@ -223,3 +223,11 @@ Le geste décisif n'est donc plus un achat mais une lecture : entre les deux der
 | `s3` | parallélisme sans isolation · cache de dépendances corrompu | « l'échec ne porte jamais sur les mêmes tests d'une exécution à l'autre » — un cache corrompu échouerait de façon déterministe |
 
 C'est la part du corpus que le contrat ne peut pas vérifier : le schéma garantit qu'il **reste** deux causes, pas que le rapport permette de les départager. La qualité de ces trois inférences reste éditoriale. Le plafond d'exploitation, lui, est mécanique : sans la lecture, le mieux qu'une politique obtienne est un pile ou face par situation.
+
+## Le plancher élargi au tour 5 : le panneau de cadrage nomme des causes aussi
+
+Le plancher du tour 4 ne portait que sur les cibles d'indices. Le panneau de cadrage nomme des causes lui aussi : une lecture `established` reformule ce que le rapport écarte, une supposition non surveillée pouvait déguiser une hypothèse de diagnostic. Sur `s2`, les cinq lectures et les cinq intitulés du marché nommaient ensemble quatre causes sur cinq — le complément était redevenu un singleton, exactement le canal que le tour 4 venait de fermer côté indices, rouvert sur une seconde surface publique du même écran.
+
+Fermé en contrat, pas en consigne, sur le modèle du tour 2 : `framingSchema` porte désormais `refersTo: string | null`, la cause candidate qu'une lecture désigne nommément — sur le modèle exact de `hint.eliminates`. Une garde lexicale (plus longue sous-chaîne commune) ne pouvait pas suffire : elle compte aussi les locutions partagées entre lecture et cause (« de l'agent CI ») et rejetterait un corpus sain tout en laissant passer une paraphrase. Le plancher de deux causes se recalcule désormais sur **l'union** de tout ce que l'écran nomme — exclusions du rapport, éliminations d'indice, références de cadrage — plutôt que sur les seules éliminations d'indice. Détail du contrat : `phase-1.md`, section « Le plancher élargi à tout ce que l'écran nomme ».
+
+Six suppositions ont été réécrites pour qu'aucune ne désigne plus une cause candidate par accident — une supposition reste une phrase qui *sonne* juste sans jamais nommer un diagnostic, jamais une hypothèse de panne déguisée : `s1-f3` (limite de débit du proxy, plutôt que le pare-feu qui évoquait `s1-c-header`), `s1-f4` (tunnel réseau ajouté cette semaine, plutôt que le jeton mis en cache côté client), `s2-f3` (format d'affichage des montants, plutôt que le taux de change figé qui évoquait `s2-c-vat`), `s2-f5` (modèle de facture refait par l'assistant, plutôt que le job asynchrone qui évoquait `s2-c-double`), `s3-f1` (pipeline CI migré vers un nouveau fournisseur, plutôt que l'image reconstruite chaque nuit), `s3-f4` (journaux de la CI tronqués, plutôt que le dépôt de paquets interne qui évoquait `s3-c-cache`). Les cinq lectures `established` gardent leur texte : seule leur cible se déclare, `refersTo` égal à la cause que leur reformulation du rapport écarte déjà.

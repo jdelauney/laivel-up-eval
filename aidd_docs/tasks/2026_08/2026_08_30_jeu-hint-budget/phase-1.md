@@ -4,6 +4,8 @@ status: done
 
 # Instruction: Les contrats et la lecture pure des situations
 
+**Note d'historique.** Cette page garde son contenu d'origine, comme `phase-2.md:7` le pose pour la sienne. `SituationReading` portait `framedAndGrounded` à la livraison de cette phase ; la scission du 30/08 (`c2`/`c3`, cf. `plan.md`) l'a retiré au profit de `framedFirst` et `framingGrounded` lus séparément. Les mentions de `framedAndGrounded` ci-dessous décrivent donc ce qui a été construit alors, pas le contrat courant — `read-situations.helper.ts` et ses tests portent la version vivante.
+
 ## Architecture projection
 
 > Tree of the final files. ✅ create · ✏️ modify · ❌ delete
@@ -12,7 +14,7 @@ status: done
 .
 ├── src/games/hint-budget/
 │   ├── schema/
-│   │   ├── config.schema.ts                    ✅ ce qu un auteur de parcours écrit, et ses neuf refus
+│   │   ├── config.schema.ts                    ✅ ce qu un auteur de parcours écrit, et ses dix-huit refus (après le tour 5)
 │   │   └── answer.schema.ts                    ✅ la trace du cadrage, des achats et de la tranche
 │   └── helpers/
 │       └── read-situations.helper.ts           ✅ la lecture pure, partagée par l écran et l évaluateur
@@ -92,7 +94,7 @@ journey
 3. Poser `attemptSchema` : `situationId` non vide, `framing` (`framingEntrySchema` ou `null` — `null` veut dire jamais posé), `boughtHintIds` (tableau, possiblement vide, dans **l'ordre d'achat**), `cutCauseId` non vide.
 4. Poser `hintBudgetAnswerSchema` : `attempts`, au moins une entrée, plus trois refus de schéma — une situation présente deux fois dans la trace, un indice acheté deux fois dans la même situation, une lecture retenue deux fois dans le même cadrage. Ce sont des défauts de la trace elle-même, indépendants de toute configuration : ils se refusent au niveau du schéma, sur le modèle des doublons de `lie-detector`.
 5. Documenter qu'aucun champ dérivé n'entre dans la trace : résolu, frugal, cadrage fondé, cadrage premier et coût se recalculent depuis ces champs et la configuration. `afterHints` est une **position dans le déroulé**, pas un verdict.
-6. Poser cinq erreurs nommées : `IncompleteTraceError` (une situation de la configuration n'est pas couverte), `UnknownSituationError`, `UnknownCauseError` (porte l'identifiant fautif **et** la situation), `UnknownHintError` (idem), `UnknownFramingError` (idem), et `ForgedFramingError` — `afterHints` dépasse le nombre d'indices réellement achetés, ce qu'aucun déroulé ne peut produire.
+6. Poser six erreurs nommées : `IncompleteTraceError` (une situation de la configuration n'est pas couverte), `UnknownSituationError`, `UnknownCauseError` (porte l'identifiant fautif **et** la situation), `UnknownHintError` (idem), `UnknownFramingError` (idem), et `ForgedFramingError` — `afterHints` dépasse le nombre d'indices réellement achetés, ce qu'aucun déroulé ne peut produire.
 7. Poser `parseHintBudgetTrace(answer, config)` : parse le schéma, puis vérifie la trace contre la configuration — une entrée par situation exactement, chaque identifiant connu de sa situation, `afterHints` cohérent avec les achats.
 8. Documenter pourquoi une situation sans tranche n'est pas recevable : trancher est le geste qui clôt une situation, l'écran ne laisse jamais passer une situation sans tranche, donc une trace qui en porte une est forgée.
 
@@ -132,7 +134,7 @@ journey
 | 2 | Une trace qui omet une situation, qui tranche une cause inconnue, ou dont `afterHints` dépasse les achats, lève l'erreur nommée qui porte l'identifiant fautif |
 | 2 | Une trace qui achète deux fois le même indice dans une situation est refusée par le schéma |
 | 3 | Un cadrage qui retient toutes les lectures établies et aucune supposition rend `framingGrounded: true` ; en retirer une seule établie, ou en ajouter une supposée, le rend `false` |
-| 3 | Un cadrage exact posé après un achat rend `framingGrounded: true` et `framedFirst: false`, donc `framedAndGrounded: false` |
+| 3 | Un cadrage exact posé après un achat rend `framingGrounded: true` et `framedFirst: false` — donc `c2` (l'ordre) manqué et `c3` (le fondement) tenu, depuis la scission du 30/08 |
 | 3 | Une tranche fausse sans aucun indice coûte strictement plus qu'une tranche fausse après l'achat de l'indice le plus cher de la situation |
 | 4 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
 
@@ -174,3 +176,14 @@ Le correctif du tour 3, celui qui a rendu les indices purement éliminatifs, est
 Le refus 4 change donc de nature. Il ne dit plus « aucun indice **pris seul** ne descend sous deux causes » — énoncé qui, depuis la cardinalité exacte, ne pouvait plus rejeter aucune configuration que les autres refus acceptaient, et que le tour 4 a relevé comme sans pouvoir de porte. Il dit désormais : **même en achetant tous les indices, deux causes restent debout.** Le complément cesse d'être un singleton, le balayage des intitulés ne rend jamais mieux qu'un pile ou face, et la discrimination finale revient au symptôme et au rapport — c'est-à-dire à une lecture, ce que le jeu prétend mesurer.
 
 Le refus 5 suit : le chemin frugal vise le plancher de deux, plus l'unicité.
+
+### Le plancher élargi à tout ce que l'écran nomme, posé au tour 5
+
+Le plancher du tour 4 ne portait que sur les cibles d'indices (`hint.eliminates`). Le panneau de cadrage nomme des causes aussi : une lecture `established` reformule ce que le rapport écarte, et une supposition non surveillée pouvait déguiser une hypothèse de diagnostic. Sur `s2`, les cinq lectures et les cinq intitulés du marché nommaient ensemble quatre causes sur cinq — la survivante était la réponse, sans rien acheter ni rien lire du rapport ; le complément était redevenu un singleton, exactement le canal que le tour 4 venait de fermer côté indices.
+
+Une garde lexicale (plus longue sous-chaîne commune) ne pouvait pas fermer ce canal : elle compte aussi les locutions partagées entre lecture et cause (« de l'agent CI »), donc rejetterait un corpus sain tout en laissant passer une paraphrase habile. `framingSchema` porte donc désormais `refersTo: string | null` — la cause candidate qu'une lecture désigne nommément, sur le modèle exact de `hint.eliminates` — et deux refus au chargement s'ajoutent aux dix-huit du tableau ci-dessus :
+
+- une lecture dont le `refersTo` référence une cause absente de sa situation est une référence pendante ;
+- une lecture dont le `refersTo` désigne la cause `actual` de sa situation : aucune lecture de cadrage ne peut nommer la bonne réponse, au même titre qu'aucun indice ne le peut.
+
+Le plancher de deux causes (refus 4 du tour 2, reformulé au tour 4) se recalcule sur **l'union** de tout ce que l'écran nomme — exclusions du rapport, éliminations d'indice, références de cadrage — plutôt que sur les seules éliminations d'indice. Six suppositions du corpus ont été réécrites en conséquence pour qu'aucune ne désigne plus une cause candidate par accident : `s1-f3`, `s1-f4`, `s2-f3`, `s2-f5`, `s3-f1`, `s3-f4`. Détail du corpus : `phase-4.md`, section « Le plancher élargi au tour 5 ».
