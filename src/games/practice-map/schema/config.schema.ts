@@ -26,6 +26,25 @@ export const polesSchema = z.object({
   rigorHigh: z.string().min(1),
 })
 
+/**
+ * Un quadrant ne peut pas se nommer en recopiant ses deux pôles : la
+ * combinaison brute (« vous le faites, un garde-fou la tient sans vous »)
+ * déborde toute cellule du plan, et n'apporte rien que les pôles n'ont déjà
+ * dit au bord du plan. Une matrice SWOT nomme ses quadrants parce que le nom
+ * porte un sens que les axes seuls ne donnent pas — c'est ce que ce champ
+ * porte : quatre noms courts, écrits par le corpus, jamais dérivés des
+ * pôles. Plafonné à 24 caractères par le contrat, comme `shortLabel` l'est à
+ * 18 : au-delà, une ligne ne suffit plus et le libellé déborde de sa cellule.
+ */
+const MAX_QUADRANT_LABEL_LENGTH = 24
+
+export const quadrantsSchema = z.object({
+  highRigorLowIntensity: z.string().min(1).max(MAX_QUADRANT_LABEL_LENGTH),
+  highRigorHighIntensity: z.string().min(1).max(MAX_QUADRANT_LABEL_LENGTH),
+  lowRigorLowIntensity: z.string().min(1).max(MAX_QUADRANT_LABEL_LENGTH),
+  lowRigorHighIntensity: z.string().min(1).max(MAX_QUADRANT_LABEL_LENGTH),
+})
+
 export const zoneSchema = z
   .object({
     intensityFrom: z.number().min(0).max(1),
@@ -50,10 +69,23 @@ export const zoneSchema = z
     }
   })
 
+/**
+ * Le plan ne peut pas rendre `label` en entier : les libellés réels vont de
+ * 46 à 77 caractères, et sept jetons posés proches les uns des autres se
+ * recouvriraient. `shortLabel` est ce que le plan affiche à la place — la
+ * réserve, elle, garde `label` en entier, qui reste aussi le nom accessible
+ * du bouton. Plafonné à 18 caractères par le contrat, pas par une consigne
+ * de corpus : au-delà, deux jetons partageant un préfixe redeviennent
+ * indiscernables une fois posés, exactement le défaut que ce champ corrige.
+ */
+const MAX_SHORT_LABEL_LENGTH = 18
+
 export const practiceSchema = z.object({
   id: z.string().min(1),
-  // Ce qui est écrit sur le jeton.
+  // Ce qui est écrit sur le jeton, dans la réserve, et son nom accessible.
   label: z.string().min(1),
+  // Ce que le plan affiche à la place de `label`, une fois le jeton posé.
+  shortLabel: z.string().min(1).max(MAX_SHORT_LABEL_LENGTH),
   expected: zoneSchema,
   // Le repère montré à la révélation, jamais avant : ce que la pratique
   // demande réellement, jamais sa place attendue.
@@ -73,6 +105,9 @@ const baseConfigSchema = z.object({
   statement: z.string().min(1),
   highRigorFrom: z.number().min(0).max(1),
   poles: polesSchema,
+  // Les quatre noms de quadrant, écrits par le corpus — jamais dérivés des
+  // pôles à l'affichage, qui déborderaient toute cellule du plan.
+  quadrants: quadrantsSchema,
   practices: z.array(practiceSchema).min(4),
   orderings: z.array(orderingSchema).min(3),
 })
@@ -298,6 +333,7 @@ export const practiceMapConfigSchema = baseConfigSchema.superRefine(
 )
 
 export type Poles = z.infer<typeof polesSchema>
+export type Quadrants = z.infer<typeof quadrantsSchema>
 export type Zone = z.infer<typeof zoneSchema>
 export type Practice = z.infer<typeof practiceSchema>
 export type Ordering = z.infer<typeof orderingSchema>

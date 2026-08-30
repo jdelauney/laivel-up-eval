@@ -8,6 +8,24 @@ const poles = () => ({
   rigorHigh: 'un garde-fou la tient sans vous',
 })
 
+const quadrants = (
+  overrides: Partial<{
+    highRigorLowIntensity: string
+    highRigorHighIntensity: string
+    lowRigorLowIntensity: string
+    lowRigorHighIntensity: string
+  }> = {},
+) => ({
+  highRigorLowIntensity:
+    overrides.highRigorLowIntensity ?? 'Outillé, à la main',
+  highRigorHighIntensity:
+    overrides.highRigorHighIntensity ?? 'Outillé, délégué',
+  lowRigorLowIntensity:
+    overrides.lowRigorLowIntensity ?? 'À la main, sans filet',
+  lowRigorHighIntensity:
+    overrides.lowRigorHighIntensity ?? 'Délégué, sans filet',
+})
+
 const zone = (
   intensityFrom: number,
   intensityTo: number,
@@ -18,10 +36,15 @@ const zone = (
 const practice = (
   id: string,
   expected: ReturnType<typeof zone>,
-  overrides: Partial<{ label: string; marker: string }> = {},
+  overrides: Partial<{
+    label: string
+    shortLabel: string
+    marker: string
+  }> = {},
 ) => ({
   id,
   label: overrides.label ?? `Pratique ${id}.`,
+  shortLabel: overrides.shortLabel ?? `Court ${id}`,
   expected,
   marker: overrides.marker ?? `Repère de ${id}.`,
 })
@@ -47,6 +70,7 @@ const validConfig = () => ({
   statement: 'Consigne de test.',
   highRigorFrom: 0.5,
   poles: poles(),
+  quadrants: quadrants(),
   practices: [
     practice('p1', zone(0, 0.2, 0, 0.2)),
     practice('p2', zone(0.3, 0.5, 0.3, 0.5)),
@@ -252,5 +276,39 @@ describe('practice-map config schema', () => {
     const issue = firstIssue(config)
     expect(issue.path).toEqual(['orderings', 0])
     expect(issue.message).toContain('o1')
+  })
+
+  /**
+   * Le plan affiche `shortLabel`, jamais `label` : sept jetons aux libellés
+   * réels de 46 à 77 caractères se recouvriraient sinon. Le plafond est
+   * porté par le contrat, pas par une consigne de corpus.
+   */
+  it('rejects a shortLabel longer than 18 characters, naming the field', () => {
+    const config = validConfig()
+    config.practices[0] = practice('p1', zone(0, 0.2, 0, 0.2), {
+      shortLabel: 'x'.repeat(19),
+    })
+
+    const result = practiceMapConfigSchema.safeParse(config)
+    if (result.success) throw new Error('the config should have been rejected')
+    const issue = result.error.issues.find(
+      (candidate) =>
+        candidate.path.length === 3 && candidate.path[2] === 'shortLabel',
+    )
+    expect(issue).toBeDefined()
+    expect(issue?.path).toEqual(['practices', 0, 'shortLabel'])
+  })
+
+  /**
+   * Un nom de quadrant recopiant ses deux pôles déborde toute cellule du
+   * plan. Le plafond de 24 caractères est porté par le contrat, comme celui
+   * de `shortLabel` l'est à 18.
+   */
+  it('rejects a quadrant label longer than 24 characters, naming the field', () => {
+    const config = validConfig()
+    config.quadrants = quadrants({ highRigorLowIntensity: 'x'.repeat(25) })
+
+    const issue = firstIssue(config)
+    expect(issue.path).toEqual(['quadrants', 'highRigorLowIntensity'])
   })
 })

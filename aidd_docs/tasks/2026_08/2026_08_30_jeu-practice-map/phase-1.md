@@ -130,3 +130,23 @@ journey
 | 3 | Un point posé exactement sur la bordure de sa zone est lu dedans ; deux pratiques posées au même niveau sur l'axe d'une relation ne la tiennent pas ; le helper ne lit aucun seuil |
 | 4 | La trace rendue par l'action suit l'ordre des pratiques de la configuration et ne porte aucun champ dérivé |
 | 5 | `npm run test` passe, et chacun des refus du schéma est couvert par un test qui ne viole que lui |
+
+## Correction du 30/08, ajout du champ `shortLabel`
+
+Arbitrage du chef pendant la phase 5, après refus de la passe de surface : le plan ne peut pas rendre `label` en entier — les libellés réels vont de 46 à 77 caractères, et deux pratiques partageant un préfixe long (« Écrire le fichier... », « Écrire la fonction... ») devenaient indiscernables une fois tronquées au même endroit à l'écran, rendant impossible de relire son propre placement avant de soumettre.
+
+`practiceSchema` porte désormais un cinquième champ : `shortLabel: z.string().min(1).max(18)`. Requis, plafonné à 18 caractères **par le contrat**, refusé au chargement au-delà — pas une consigne de corpus, un onzième refus au même rang que les dix déjà déclarés en `superRefine`. `label` reste ce qui est écrit dans la réserve et le nom accessible du jeton partout (`aria-label`) ; `shortLabel` est ce que le plan affiche à la place de `label` une fois le jeton posé ou saisi. Aucun autre champ, aucune autre règle de `practiceSchema` ne bouge.
+
+Testé dans `config.schema.test.ts` : `rejects a shortLabel longer than 18 characters, naming the field`.
+
+Les sept `shortLabel` du corpus réel de `g2-2` sont écrits dans `config/course.json`, documentés dans `phase-4.md`.
+
+## Correction du 30/08, ajout du champ `quadrants`
+
+Second arbitrage du chef, un tour plus tard, sur un défaut mesuré à l'écran plutôt que décrit : les quatre libellés de quadrant du plan combinaient jusque-là les deux pôles déjà affichés à son bord (« vous le faites, un garde-fou la tient sans vous ») — une conjonction de deux phrases entières qui débordait toute cellule du plan, y compris par-dessus la médiane qui sépare les quadrants.
+
+`baseConfigSchema` porte désormais un champ `quadrants: quadrantsSchema`, un objet à quatre chaînes requises — `highRigorLowIntensity`, `highRigorHighIntensity`, `lowRigorLowIntensity`, `lowRigorHighIntensity` — chacune plafonnée à 24 caractères **par le contrat**, refusée au chargement au-delà, comme `shortLabel` l'est à 18. Les quatre noms sont écrits par le corpus, jamais dérivés des pôles à l'affichage : une matrice SWOT nomme ses quadrants parce que le nom porte un sens que les axes seuls ne donnent pas, pas en recopiant les deux extrémités d'axe.
+
+Testé dans `config.schema.test.ts` : `rejects a quadrant label longer than 24 characters, naming the field`.
+
+Les quatre valeurs du corpus réel de `g2-2` sont écrites dans `config/course.json`, documentées dans `phase-4.md`.

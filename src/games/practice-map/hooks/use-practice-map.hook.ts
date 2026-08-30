@@ -4,18 +4,34 @@ import {
   type Poles,
   type PracticeMapConfig,
   practiceMapConfigSchema,
+  type Quadrants,
 } from '../schema/config.schema'
 
 /** Les deux temps d'une lecture : poser, voir la révélation. */
 export type PracticeMapPhase = 'placing' | 'revealed'
 
-/** Une pratique telle que la réserve ou le plan la lisent : jamais `expected`. */
-export type PracticeToken = { id: string; label: string }
+/**
+ * Une entrée de la légende permanente de la réserve : les sept pratiques y
+ * restent toujours listées, posées ou non — perdre la clé des numéros au
+ * moment de relire son placement serait perdre exactement ce que le jeu
+ * mesure. `number` est l'index de la pratique dans la configuration (1 à
+ * sept), jamais un champ de corpus : une source de vérité de plus à tenir
+ * synchronisée pour rien. `label` reste le nom accessible du jeton partout.
+ */
+export type LegendEntry = {
+  id: string
+  number: number
+  label: string
+  shortLabel: string
+  placed: boolean
+}
 
 /** Une pratique posée, avec sa coordonnée : jamais `expected`. */
 export type PlacedToken = {
   id: string
+  number: number
   label: string
+  shortLabel: string
   intensity: number
   rigor: number
 }
@@ -40,9 +56,15 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value))
  * ne font plus rien une fois la phase `'revealed'` atteinte.
  *
  * Le hook n'expose **jamais** `expected` ni `marker` avant leur heure : les
- * jetons rendus à l'écran ne portent que `id` et `label`, et les repères
- * n'apparaissent dans la valeur de retour qu'en phase `'revealed'`. Ce qui
- * n'est pas exposé ne peut pas fuiter à l'écran.
+ * jetons rendus à l'écran ne portent que `id`, `number`, `label` et
+ * `shortLabel`, et les repères n'apparaissent dans la valeur de retour qu'en
+ * phase `'revealed'`. Ce qui n'est pas exposé ne peut pas fuiter à l'écran.
+ *
+ * **`legend` est permanente : elle porte les sept pratiques, posées ou
+ * non.** Une pratique posée n'en disparaît plus — seul son champ `placed`
+ * change — parce que le badge d'un jeton posé sur le plan n'affiche qu'un
+ * numéro : le joueur doit pouvoir résoudre ce numéro à tout instant,
+ * particulièrement au moment de relire son placement avant de soumettre.
  */
 export const usePracticeMap = (
   config: unknown,
@@ -144,17 +166,26 @@ export const usePracticeMap = (
     )
   }
 
-  const tray: readonly PracticeToken[] = parsed.practices
-    .filter((practice) => !placements.has(practice.id))
-    .map((practice) => ({ id: practice.id, label: practice.label }))
+  // Une seule liste ordonnée, source à la fois du numéro de badge (l'index
+  // dans la configuration, stable qu'une pratique soit posée ou non) et de
+  // la légende comme des jetons du plan.
+  const indexed = parsed.practices.map((practice, index) => ({
+    id: practice.id,
+    number: index + 1,
+    label: practice.label,
+    shortLabel: practice.shortLabel,
+  }))
 
-  const placedTokens: readonly PlacedToken[] = parsed.practices.flatMap(
-    (practice) => {
-      const placement = placements.get(practice.id)
-      if (placement === undefined) return []
-      return [{ id: practice.id, label: practice.label, ...placement }]
-    },
-  )
+  const legend: readonly LegendEntry[] = indexed.map((entry) => ({
+    ...entry,
+    placed: placements.has(entry.id),
+  }))
+
+  const placedTokens: readonly PlacedToken[] = indexed.flatMap((entry) => {
+    const placement = placements.get(entry.id)
+    if (placement === undefined) return []
+    return [{ ...entry, ...placement }]
+  })
 
   const canSubmit = placements.size === parsed.practices.length
 
@@ -185,7 +216,8 @@ export const usePracticeMap = (
   return {
     statement: parsed.statement,
     poles: parsed.poles as Poles,
-    tray,
+    quadrants: parsed.quadrants as Quadrants,
+    legend,
     placedTokens,
     heldId,
     heldPosition,

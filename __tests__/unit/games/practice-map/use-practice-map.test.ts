@@ -9,6 +9,13 @@ const poles = () => ({
   rigorHigh: 'un garde-fou la tient sans vous',
 })
 
+const quadrants = () => ({
+  highRigorLowIntensity: 'Outillé, à la main',
+  highRigorHighIntensity: 'Outillé, délégué',
+  lowRigorLowIntensity: 'À la main, sans filet',
+  lowRigorHighIntensity: 'Délégué, sans filet',
+})
+
 const zone = (
   intensityFrom: number,
   intensityTo: number,
@@ -19,6 +26,7 @@ const zone = (
 const practice = (id: string, expected: ReturnType<typeof zone>) => ({
   id,
   label: `Pratique ${id}.`,
+  shortLabel: `Court ${id}`,
   expected,
   marker: `Repère de ${id}.`,
 })
@@ -27,6 +35,7 @@ const baseConfig = () => ({
   statement: 'Consigne de test.',
   highRigorFrom: 0.5,
   poles: poles(),
+  quadrants: quadrants(),
   practices: [
     practice('p1', zone(0, 0.2, 0, 0.2)),
     practice('p2', zone(0.3, 0.5, 0.3, 0.5)),
@@ -46,11 +55,12 @@ const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
 })
 
 describe('use practice map', () => {
-  it('opens with every practice in the tray, nothing placed, playing phase', () => {
+  it('opens with every practice in the legend, none placed, playing phase', () => {
     const { result } = renderGame()
 
     expect(result.current.phase).toBe('placing')
-    expect(result.current.tray).toHaveLength(4)
+    expect(result.current.legend).toHaveLength(4)
+    expect(result.current.legend.every((entry) => !entry.placed)).toBe(true)
     expect(result.current.placedTokens).toHaveLength(0)
     expect(result.current.canSubmit).toBe(false)
   })
@@ -81,7 +91,7 @@ describe('use practice map', () => {
     expect(serializeVisible()).not.toContain('Repère de')
   })
 
-  it('moves a practice from the tray to the plane once placed', () => {
+  it('marks a practice placed in the legend, without removing it, once placed on the plane', () => {
     const { result } = renderGame()
 
     act(() => {
@@ -91,9 +101,22 @@ describe('use practice map', () => {
       result.current.place(0.15, 0.05)
     })
 
-    expect(result.current.tray.map((entry) => entry.id)).not.toContain('p1')
+    // La légende est permanente : `p1` y reste, marquée posée — perdre la
+    // clé d'un numéro au moment de relire son plan serait perdre ce que le
+    // jeu mesure.
+    expect(result.current.legend).toHaveLength(4)
+    expect(
+      result.current.legend.find((entry) => entry.id === 'p1')?.placed,
+    ).toBe(true)
     expect(result.current.placedTokens).toEqual([
-      { id: 'p1', label: 'Pratique p1.', intensity: 0.15, rigor: 0.05 },
+      {
+        id: 'p1',
+        number: 1,
+        label: 'Pratique p1.',
+        shortLabel: 'Court p1',
+        intensity: 0.15,
+        rigor: 0.05,
+      },
     ])
   })
 
@@ -116,7 +139,9 @@ describe('use practice map', () => {
     expect(result.current.placedTokens).toHaveLength(1)
     expect(result.current.placedTokens[0]).toEqual({
       id: 'p1',
+      number: 1,
       label: 'Pratique p1.',
+      shortLabel: 'Court p1',
       intensity: 0.9,
       rigor: 0.9,
     })
@@ -159,10 +184,12 @@ describe('use practice map', () => {
 
     expect(result.current.heldId).toBeUndefined()
     expect(result.current.heldPosition).toBeUndefined()
-    expect(result.current.tray.map((entry) => entry.id)).toContain('p1')
+    expect(
+      result.current.legend.find((entry) => entry.id === 'p1')?.placed,
+    ).toBe(false)
   })
 
-  it('does nothing on submit while the tray is not empty', () => {
+  it('does nothing on submit while a practice remains unplaced', () => {
     const { result } = renderGame()
 
     act(() => {

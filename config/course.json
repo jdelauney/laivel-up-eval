@@ -491,10 +491,17 @@
               "rigorLow": "rien ne la vérifie",
               "rigorHigh": "un garde-fou la tient sans vous"
             },
+            "quadrants": {
+              "highRigorLowIntensity": "Outillé, à la main",
+              "highRigorHighIntensity": "Outillé, délégué",
+              "lowRigorLowIntensity": "À la main, sans filet",
+              "lowRigorHighIntensity": "Délégué, sans filet"
+            },
             "practices": [
               {
                 "id": "p1",
                 "label": "Relancer le même prompt quand la réponse ne convient pas",
+                "shortLabel": "Relance identique",
                 "expected": {
                   "intensityFrom": 0.5,
                   "intensityTo": 0.75,
@@ -506,6 +513,7 @@
               {
                 "id": "p2",
                 "label": "Relire soi-même chaque diff avant de l'accepter",
+                "shortLabel": "Relire chaque diff",
                 "expected": {
                   "intensityFrom": 0.35,
                   "intensityTo": 0.65,
@@ -517,6 +525,7 @@
               {
                 "id": "p3",
                 "label": "Brancher une boucle qui relance l'agent tant que la commande du projet échoue",
+                "shortLabel": "Boucle de relance",
                 "expected": {
                   "intensityFrom": 0.7,
                   "intensityTo": 1,
@@ -528,6 +537,7 @@
               {
                 "id": "p4",
                 "label": "Écrire le fichier de contexte du dépôt avant la première tâche",
+                "shortLabel": "Fichier contexte",
                 "expected": {
                   "intensityFrom": 0,
                   "intensityTo": 0.25,
@@ -539,6 +549,7 @@
               {
                 "id": "p5",
                 "label": "Confier une tâche floue à un agent en autonomie, pull request comprise",
+                "shortLabel": "Tâche en autonomie",
                 "expected": {
                   "intensityFrom": 0.8,
                   "intensityTo": 1,
@@ -550,6 +561,7 @@
               {
                 "id": "p6",
                 "label": "Écrire la fonction soi-même sans rien demander",
+                "shortLabel": "Fonction soi-même",
                 "expected": {
                   "intensityFrom": 0,
                   "intensityTo": 0.2,
@@ -561,6 +573,7 @@
               {
                 "id": "p7",
                 "label": "Poser un hook qui bloque le commit et rend la main",
+                "shortLabel": "Hook bloquant",
                 "expected": {
                   "intensityFrom": 0.3,
                   "intensityTo": 0.55,

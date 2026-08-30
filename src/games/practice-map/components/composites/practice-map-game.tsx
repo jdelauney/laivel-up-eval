@@ -22,7 +22,8 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
     statement,
     poles,
-    tray,
+    quadrants,
+    legend,
     placedTokens,
     heldId,
     heldPosition,
@@ -67,18 +68,21 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
     )
   }
 
-  const heldLabel = [...tray, ...placedTokens].find(
-    (token) => token.id === heldId,
-  )?.label
+  // `legend` porte les sept pratiques en permanence, posées ou non : une
+  // seule source pour retrouver le numéro et le libellé du jeton saisi,
+  // qu'il vienne de la réserve ou du plan.
+  const heldSource = legend.find((entry) => entry.id === heldId)
 
   const heldToken =
     heldId === undefined ||
     heldPosition === undefined ||
-    heldLabel === undefined
+    heldSource === undefined
       ? undefined
       : {
           id: heldId,
-          label: heldLabel,
+          number: heldSource.number,
+          label: heldSource.label,
+          shortLabel: heldSource.shortLabel,
           intensity: heldPosition.intensity,
           rigor: heldPosition.rigor,
         }
@@ -90,24 +94,45 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
 
   return (
     <div className="flex flex-col gap-3 sm:gap-6">
-      <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
-        {statement}
-      </p>
+      {/* La consigne et son annonce clavier forment un seul bloc : un
+       * `gap-6` séparé de chaque côté de l'annonce — vide tant qu'aucun
+       * jeton n'est saisi — creusait un vide double entre la consigne et le
+       * plan, sans rien dedans. */}
+      <div className="flex flex-col gap-1">
+        <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
+          {statement}
+        </p>
 
-      {/* Le pendant clavier du retour visuel : la position candidate,
-       * annoncée en mots à chaque désignation ou déplacement. */}
-      <p
-        aria-live="polite"
-        className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]"
-      >
-        {announcement}
-      </p>
+        {/* Le pendant clavier du retour visuel : la position candidate,
+         * annoncée en mots à chaque désignation ou déplacement. */}
+        <p
+          aria-live="polite"
+          className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]"
+        >
+          {announcement}
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_16rem] sm:gap-6">
+      {/* `minmax(0,1fr)`, jamais `1fr` seul : le carré du plan a un minimum
+       * de contenu transféré par `aspect-square`, qui remonterait sinon
+       * jusqu'à cette piste et la clouerait à la hauteur plancher du plan
+       * plutôt que de lui laisser la largeur que la colonne permet — même
+       * idiome que `course-view.tsx` sur sa propre colonne de contenu.
+       *
+       * **La réserve est revenue à `16rem`, au troisième tour.** La cible de
+       * dominance du plan (`11rem`) est retirée : avec des badges numérotés,
+       * la taille du plan n'est plus jugée, et la réserve, devenue légende
+       * permanente de sept lignes plutôt que trois plafonnées, a bien plus
+       * besoin de largeur pour ne pas s'étirer en hauteur. `16rem` reste le
+       * meilleur compromis mesuré (`qa/README.md`, réserve/légende) : plus
+       * étroit, chaque ligne s'enroule sur plus de lignes de texte et pousse
+       * la page bien plus bas. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_16rem] sm:gap-6">
         <PracticePlane
           placedTokens={placedTokens}
           heldToken={heldToken}
           poles={poles}
+          quadrants={quadrants}
           interactive={heldId !== undefined}
           onDesignate={place}
           onNudge={nudge}
@@ -118,7 +143,7 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
           onRelease={release}
           onHoldToken={hold}
         />
-        <PracticeTray tokens={tray} heldId={heldId} onHold={hold} />
+        <PracticeTray entries={legend} heldId={heldId} onHold={hold} />
       </div>
 
       <div>

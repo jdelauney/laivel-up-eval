@@ -124,3 +124,32 @@ journey
 | 2 | Le `course.json` réel se charge sans erreur ; les sept zones sont disjointes, chacune sous 12 % du plan, et les sept relations sont soutenues par les zones |
 | 3 | Sept jetons empilés au même point, comme sept jetons sur une diagonale unique, manquent les trois critères |
 | 4 | La lecture juste satisfait les trois critères, la lecture nulle les manque, la lecture décalée en bloc manque `c1` et satisfait `c3` ; `npm run test` et `npm run typecheck` passent |
+
+## Correction du 30/08, ajout des sept `shortLabel`
+
+Arbitrage du chef pendant la phase 5 (détail dans `phase-1.md`, section « Correction du 30/08 ») : le plan ne peut pas rendre `label` en entier, deux pratiques partageant un préfixe devenant indiscernables une fois tronquées au même endroit. Chaque pratique de `g2-2` porte désormais un `shortLabel`, plafonné à 18 caractères par le contrat, choisi pour ne partager aucun préfixe long avec les six autres :
+
+| `id` | `label` | `shortLabel` |
+| --- | --- | --- |
+| `p1` | Relancer le même prompt quand la réponse ne convient pas | Relance identique |
+| `p2` | Relire soi-même chaque diff avant de l'accepter | Relire chaque diff |
+| `p3` | Brancher une boucle qui relance l'agent tant que la commande du projet échoue | Boucle de relance |
+| `p4` | Écrire le fichier de contexte du dépôt avant la première tâche | Fichier contexte |
+| `p5` | Confier une tâche floue à un agent en autonomie, pull request comprise | Tâche en autonomie |
+| `p6` | Écrire la fonction soi-même sans rien demander | Fonction soi-même |
+| `p7` | Poser un hook qui bloque le commit et rend la main | Hook bloquant |
+
+Aucune zone, aucune relation d'ordre, aucun `marker` ne bouge. Vérifié : `config/course.json` reste valide de bout en bout (`__tests__/integration/config-loading/course.test.ts`, `practice-map-run.test.ts`), et les tests unitaires de rendu sur ce corpus mis à jour continuent de passer.
+
+## Correction du 30/08, ajout des quatre `quadrants`
+
+Second arbitrage du chef (détail dans `phase-1.md`, section « Correction du 30/08, ajout du champ `quadrants` ») : les quatre libellés de quadrant du plan, jusque-là une combinaison des pôles déjà affichés à son bord, débordaient toute cellule du plan — une conjonction de deux phrases entières ne tient dans aucune cellule de 112px. `g2-2` porte désormais un objet `quadrants`, quatre chaînes plafonnées à 24 caractères par le contrat :
+
+| Champ | Valeur |
+| --- | --- |
+| `highRigorLowIntensity` | Outillé, à la main |
+| `highRigorHighIntensity` | Outillé, délégué |
+| `lowRigorLowIntensity` | À la main, sans filet |
+| `lowRigorHighIntensity` | Délégué, sans filet |
+
+Ces quatre noms combinent le sens des pôles sans en recopier le texte : « outillé » porte ce qu'un garde-fou apporte (haute rigueur), « sans filet » ce que son absence coûte (basse rigueur), « à la main » et « délégué » portent les deux pôles de l'axe d'intensité déjà nommés ailleurs sur l'écran. Aucune zone, aucun `shortLabel`, aucune relation d'ordre ne bouge. Vérifié : `config/course.json` reste valide de bout en bout, et les quatre valeurs se rendent sans déborder de leur cellule à aucun gabarit (`aidd_docs/tasks/2026_08/2026_08_30_jeu-practice-map/qa/README.md`).

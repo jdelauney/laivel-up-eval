@@ -13,6 +13,13 @@ const poles = () => ({
   rigorHigh: 'un garde-fou la tient sans vous',
 })
 
+const quadrants = () => ({
+  highRigorLowIntensity: 'Outillé, à la main',
+  highRigorHighIntensity: 'Outillé, délégué',
+  lowRigorLowIntensity: 'À la main, sans filet',
+  lowRigorHighIntensity: 'Délégué, sans filet',
+})
+
 const zone = (
   intensityFrom: number,
   intensityTo: number,
@@ -23,6 +30,7 @@ const zone = (
 const practice = (id: string, expected: ReturnType<typeof zone>) => ({
   id,
   label: `Pratique ${id}.`,
+  shortLabel: `Court ${id}`,
   expected,
   marker: `Repère de ${id}.`,
 })
@@ -31,6 +39,7 @@ const config: PracticeMapConfig = practiceMapConfigSchema.parse({
   statement: 'Consigne de test.',
   highRigorFrom: 0.5,
   poles: poles(),
+  quadrants: quadrants(),
   practices: [
     practice('p1', zone(0, 0.2, 0, 0.2)),
     practice('p2', zone(0.3, 0.5, 0.3, 0.5)),
