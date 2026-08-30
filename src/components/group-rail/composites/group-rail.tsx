@@ -51,12 +51,25 @@ export const GroupRail = ({ groups }: { groups: readonly RailGroup[] }) => (
    * pourcentage : sept groupes totalisaient 400 % et la rampe débordait de
    * l'écran. Ici les onglets se partagent une hauteur bornée, quel qu'en soit
    * le nombre, et le plancher garde un petit groupe cliquable.
+   *
+   * La hauteur est plafonnée à 90 % de la fenêtre : les 30 rem visés étaient
+   * une constante posée à sept groupes, et un écran court la faisait déborder
+   * sous la ligne de flottaison. Le plancher de 90 % laisse voir qu'il y a une
+   * page en dessous.
+   *
+   * `min-w-0` sur la liste elle-même : en rangée, sa largeur minimale est
+   * celle de son contenu, et une colonne de grille vaut `auto` — donc bornée
+   * par ce minimum, jamais par la fenêtre. C'est ce qui élargissait toute la
+   * page à 390 px, la rampe imposant son minimum au reste de l'écran.
    */
-  <ol className="flex flex-row gap-1 md:h-[30rem] md:flex-col md:gap-1.5">
+  <ol className="flex min-w-0 flex-row gap-1 md:h-[30rem] md:max-h-[90vh] md:flex-col md:gap-1.5">
     {groups.map((group, index) => (
       <li
         key={group.id}
-        className="flex min-w-0 md:min-h-9"
+        /* Le plancher tient les deux lignes du libellé — son nom et son
+         * compte de jeux — descendantes comprises. À 36 px il les rognait
+         * dès que la rampe se comprimait sur une fenêtre courte. */
+        className="flex min-w-0 md:min-h-10"
         style={{ flexGrow: group.gameCount, flexBasis: 0 }}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:flex-row md:items-stretch md:gap-3">
