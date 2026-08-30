@@ -70,8 +70,29 @@ export const causeSchema = z.object({
   // Pourquoi cette cause est la bonne, ou pourquoi celle-ci ne l'est pas.
   // Montrée à la révélation uniquement.
   verification: z.string().min(1),
-  // Le rapport gratuit écarte-t-il déjà cette cause. Jamais vrai pour la
-  // cause réelle — un refus ci-dessous l'interdit.
+  // Le rapport **énonce**-t-il l'exclusion de cette cause. Jamais vrai pour
+  // la cause réelle — un refus ci-dessous l'interdit.
+  //
+  // **Énoncée, pas inférable, et la distinction porte tout le jeu.** Relevé
+  // au tour 6 comme une couture : trois causes du corpus — le cache CDN de
+  // `s1`, le double calcul de `s2`, le cache de dépendances de `s3` — sont
+  // bel et bien écartées *par le rapport*, et pourtant déclarées `false`.
+  // Ce n'est pas une déclaration complaisante destinée à faire passer le
+  // plancher : c'est la définition du champ.
+  //
+  // `true` veut dire que le rapport pose l'exclusion telle quelle, et que le
+  // joueur n'a qu'à la lire — « aucune remise n'est configurée pour ce type
+  // de facture » écarte la remise, point. Ces trois causes-là demandent un
+  // pas de plus : le rapport donne un fait, et il faut en tirer une
+  // conséquence. « L'échec ne porte jamais sur les mêmes tests d'une
+  // exécution à l'autre » n'écarte un cache corrompu que pour qui sait qu'un
+  // cache corrompu échoue de façon déterministe.
+  //
+  // Ce pas de plus est précisément ce que le jeu mesure, et c'est lui qui
+  // départage les deux causes que le plancher laisse debout. Le déclarer
+  // `true` reviendrait à dire que le rapport fait le raisonnement à la place
+  // du joueur — et le schéma rejetterait alors son propre corpus, ce qui est
+  // la bonne réaction : il ne resterait plus rien à trancher.
   ruledOutByReport: z.boolean(),
 })
 

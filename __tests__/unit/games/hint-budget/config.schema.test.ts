@@ -395,4 +395,67 @@ describe('hint-budget config schema', () => {
       expect(issue.message).toContain('s1')
     })
   })
+
+  /**
+   * Les trois refus posés aux tours 4 et 5 — le plancher de deux causes et
+   * les deux garde-fous de `framing.refersTo` — n'avaient aucun test qui les
+   * isole, relevé au tour 6. C'est le trou que le tour 5 venait de fermer sur
+   * le seuil de `c1`, rouvert au même endroit sur le garde-fou central de la
+   * branche : un refus que rien ne teste peut disparaître sans que la suite
+   * bronche, et c'est précisément lui qui empêche la cause réelle d'être le
+   * complément de ce que l'écran affiche.
+   */
+  describe('the two-cause floor', () => {
+    it('rejects a situation where everything the screen names leaves a single cause unnamed', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        framings: [
+          framing('s1-f1', true, 's1-c3'),
+          framing('s1-f2', true),
+          framing('s1-f3', false),
+          framing('s1-f4', false),
+          framing('s1-f5', false),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'causes'])
+      expect(issue.message).toContain('s1')
+      expect(issue.message).toContain('1 cause')
+    })
+
+    it('rejects a framing reading that names the actual cause', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        framings: [
+          framing('s1-f1', true, 's1-c2'),
+          framing('s1-f2', true),
+          framing('s1-f3', false),
+          framing('s1-f4', false),
+          framing('s1-f5', false),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'framings', 0, 'refersTo'])
+      expect(issue.message).toContain('s1-f1')
+    })
+
+    it('rejects a framing reading whose refersTo names a cause absent from its situation', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        framings: [
+          framing('s1-f1', true, 'introuvable'),
+          framing('s1-f2', true),
+          framing('s1-f3', false),
+          framing('s1-f4', false),
+          framing('s1-f5', false),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'framings', 0, 'refersTo'])
+      expect(issue.message).toContain('introuvable')
+    })
+  })
 })

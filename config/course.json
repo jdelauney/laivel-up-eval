@@ -532,7 +532,7 @@
                     "id": "s1-c-cdn",
                     "text": "Le cache CDN sert une version périmée de la réponse.",
                     "actual": false,
-                    "verification": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas la cause.",
+                    "verification": "Le rapport le dit sans le conclure : chaque appel reçoit un refus calculé à la volée, jamais deux fois la même réponse servie à l'identique. Un cache resservirait la même. Ce n'est pas la cause.",
                     "ruledOutByReport": false
                   }
                 ]
@@ -626,7 +626,7 @@
                     "id": "s2-c-double",
                     "text": "Le total de la facture est recalculé deux fois de façon indépendante.",
                     "actual": false,
-                    "verification": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas la cause.",
+                    "verification": "Le rapport le dit sans le conclure : l'écart n'apparaît que sur les lignes dont la quantité comporte une décimale. Un total calculé deux fois serait faux partout, jamais sur ces lignes-là seulement. Ce n'est pas la cause.",
                     "ruledOutByReport": false
                   },
                   {
@@ -755,7 +755,7 @@
                     "id": "s3-c-cache",
                     "text": "Le cache de dépendances de l'agent CI est corrompu.",
                     "actual": false,
-                    "verification": "Le cache de dépendances de l'agent CI est reconstruit à l'identique, sans corruption : ce n'est pas la cause.",
+                    "verification": "Le rapport le dit sans le conclure : l'échec ne porte jamais sur les mêmes tests d'une exécution à l'autre. Un cache corrompu ferait échouer les mêmes tests à chaque fois. Ce n'est pas la cause.",
                     "ruledOutByReport": false
                   },
                   {
