@@ -25,6 +25,7 @@ import projectSignature from '../../../config/signature.json'
 import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
+import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
 
 /**
  * Le jeu traverse le moteur de production : le vrai parcours, le vrai registre,

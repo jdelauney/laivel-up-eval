@@ -3,6 +3,7 @@ import { ConfidenceBetGame } from './confidence-bet/components/composites/confid
 import { DefectHuntGame } from './defect-hunt/components/composites/defect-hunt-game'
 import { HintBudgetGame } from './hint-budget/components/composites/hint-budget-game'
 import { LieDetectorGame } from './lie-detector/components/composites/lie-detector-game'
+import { PracticeMapGame } from './practice-map/components/composites/practice-map-game'
 import { TestBenchGame } from './test-bench/components/composites/test-bench-game'
 import { ThreeTracksGame } from './three-tracks/components/composites/three-tracks-game'
 import type { GameComponent } from './types/game-component'
