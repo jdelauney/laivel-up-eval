@@ -175,6 +175,21 @@ const positionalCutterAttempts = (config: HintBudgetConfig): Attempt[] =>
     cutCauseId: situation.causes[0].id,
   }))
 
+/**
+ * Transmet un cadre vide avant tout achat, dans chaque situation, puis
+ * tranche au hasard (la première cause déclarée). Avant le correctif du
+ * 30/08 (tour 2 de revue), `framedFirst` ne vérifiait que l'ordre — trois
+ * clics sur « Transmettre ce cadre », zéro lecture — et ce profil tenait
+ * `c2` 3/3. W9 de la revue 2 : garde-fou manquant, ajouté ici.
+ */
+const emptyFramerAttempts = (config: HintBudgetConfig): Attempt[] =>
+  config.situations.map((situation) => ({
+    situationId: situation.id,
+    framing: { retainedIds: [], afterHints: 0 },
+    boughtHintIds: [],
+    cutCauseId: situation.causes[0].id,
+  }))
+
 const playG2_1 = (attempts: readonly Attempt[]): GameSessionFacade => {
   const facade = buildFacade(isolatedCourse())
   facade.start('Alice')
@@ -275,6 +290,28 @@ describe('hint-budget in the course', () => {
     expect(satisfiedByCriterion['g2-1-c3']).toBe(false)
   })
 
+  /**
+   * W9 de la revue 2 : le profil qui déclenchait C2 (cadrage vide posé en
+   * premier) n'était couvert nulle part. `framedFirst` exige désormais un
+   * cadrage non vide (`read-situations.helper.ts`, correction du 30/08,
+   * tour 2) : trois dépôts vides ne tiennent plus aucun des trois critères.
+   */
+  it('sinks all three criteria for the profile that posts an empty framing first in every situation', () => {
+    const dimension = pilotageContexteDimension(
+      playG2_1(emptyFramerAttempts(realG2_1Config())),
+    )
+    const satisfiedByCriterion = Object.fromEntries(
+      dimension.contributions.map((contribution) => [
+        contribution.criterionId,
+        contribution.satisfied,
+      ]),
+    )
+
+    expect(satisfiedByCriterion['g2-1-c1']).toBe(false)
+    expect(satisfiedByCriterion['g2-1-c2']).toBe(false)
+    expect(satisfiedByCriterion['g2-1-c3']).toBe(false)
+  })
+
   it('solves at most one situation for the profile that always cuts the first declared cause', () => {
     const config = realG2_1Config()
     const attempts = positionalCutterAttempts(config)
@@ -325,6 +362,87 @@ describe('hint-budget in the course', () => {
       const shortest = Math.min(...lengths)
 
       expect(longest - shortest).toBeLessThanOrEqual(longest / 4)
+    })
+  })
+
+  /**
+   * W7 de la revue 2 : le garde-fou aux extrêmes ne mesurait que « ni la
+   * plus longue ni la plus courte », un canal résiduel restait ouvert — la
+   * cause réelle occupait le même **rang de longueur** (le k-ième plus
+   * court) dans deux situations sur trois, rendant une politique « trancher
+   * la k-ième plus courte » gagnante à l'aveugle. Étendu au balayage
+   * complet du rang plutôt qu'aux seuls extrêmes, sur le modèle du garde-fou
+   * de rang déclaré déjà présent ci-dessus.
+   */
+  it('never lets the actual cause land on the same length rank across the three situations, not only at the extremes', () => {
+    const config = realG2_1Config()
+
+    const lengthRanks = config.situations.map((situation) => {
+      const sortedIds = [...situation.causes]
+        .sort((a, b) => a.text.length - b.text.length)
+        .map((cause) => cause.id)
+      return sortedIds.indexOf(actualCauseIdOf(situation))
+    })
+
+    expect(new Set(lengthRanks).size).toBe(lengthRanks.length)
+  })
+
+  /**
+   * C1 de la revue 2, fermé au niveau du corpus lui-même plutôt qu'au seul
+   * refus de schéma : acheter un seul indice, quel qu'il soit, ne réduit
+   * jamais le champ des causes en jeu (rapport compris) à moins de deux —
+   * la délégation totale que l'épique interdit reste impossible sur le
+   * corpus réel, pas seulement sur un corpus synthétique de test.
+   */
+  it('never lets a single hint, combined with the report, narrow a real situation down to one cause', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const ruledOutByReportIds = new Set(
+        situation.causes
+          .filter((cause) => cause.ruledOutByReport)
+          .map((cause) => cause.id),
+      )
+
+      situation.hints.forEach((hint) => {
+        const coveredIds = new Set([...ruledOutByReportIds, ...hint.eliminates])
+        const remaining = situation.causes.filter(
+          (cause) => !coveredIds.has(cause.id),
+        ).length
+
+        expect(remaining).toBeGreaterThanOrEqual(2)
+      })
+    })
+  })
+
+  /**
+   * La contrepartie du refus précédent : le jeu reste gagnable frugalement.
+   * Sur le corpus réel, `h1` et `h2` de chaque situation écartent chacun
+   * l'une des deux causes que le rapport laisse en jeu — leur achat
+   * conjoint (deux indices sur cinq, sous le seuil de frugalité) ramène le
+   * champ à la seule cause réelle.
+   */
+  it('carries, for every situation, a two-hint combination that narrows the field to the actual cause alone', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const ruledOutByReportIds = new Set(
+        situation.causes
+          .filter((cause) => cause.ruledOutByReport)
+          .map((cause) => cause.id),
+      )
+      const actualCauseId = actualCauseIdOf(situation)
+
+      const coveredIds = new Set([
+        ...ruledOutByReportIds,
+        ...situation.hints[0].eliminates,
+        ...situation.hints[1].eliminates,
+      ])
+      const remaining = situation.causes
+        .map((cause) => cause.id)
+        .filter((id) => !coveredIds.has(id))
+
+      expect(remaining).toEqual([actualCauseId])
     })
   })
 

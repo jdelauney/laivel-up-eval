@@ -11,23 +11,29 @@ const framing = (id: string, established: boolean) => ({
   established,
 })
 
-const hint = (id: string, cost: number) => ({
+const hint = (id: string, cost: number, eliminates: string[] = []) => ({
   id,
   label: `Indice ${id}.`,
   cost,
   text: `Texte de l'indice ${id}.`,
+  eliminates,
 })
 
-const cause = (id: string, actual: boolean) => ({
+const cause = (id: string, actual: boolean, ruledOutByReport = false) => ({
   id,
   text: `Cause ${id}.`,
   actual,
   verification: `Vérification ${id}.`,
+  ruledOutByReport,
 })
 
 /**
  * `f1`, `f2` établies ; `f3`, `f4`, `f5` supposées. `h1`(5) · `h2`(10) ·
- * `h3`(15). `c2` est la cause réelle.
+ * `h3`(15) · `h4`(20) — quatre indices, pas trois : le chemin frugal du
+ * contrat de config exige de ramener le champ à une cause avec au plus
+ * `floor(hints.length / 2)` indices, ce que trois indices sur trois causes
+ * ne peuvent jamais satisfaire (voir `config.schema.ts`). `c2` est la cause
+ * réelle ; `h1` écarte `c1`, `h2` écarte `c3`.
  */
 const situation = (id: string) => ({
   id,
@@ -40,7 +46,12 @@ const situation = (id: string) => ({
     framing(`${id}-f4`, false),
     framing(`${id}-f5`, false),
   ],
-  hints: [hint(`${id}-h1`, 5), hint(`${id}-h2`, 10), hint(`${id}-h3`, 15)],
+  hints: [
+    hint(`${id}-h1`, 5, [`${id}-c1`]),
+    hint(`${id}-h2`, 10, [`${id}-c3`]),
+    hint(`${id}-h3`, 15),
+    hint(`${id}-h4`, 20),
+  ],
   causes: [
     cause(`${id}-c1`, false),
     cause(`${id}-c2`, true),
@@ -178,7 +189,7 @@ describe('read situations', () => {
 
     const afterPriciestHint = readSituations(config, {
       attempts: [
-        attempt('s1', { boughtHintIds: ['s1-h3'], cutCauseId: 's1-c1' }),
+        attempt('s1', { boughtHintIds: ['s1-h4'], cutCauseId: 's1-c1' }),
         filler,
       ],
     }).situations[0]

@@ -7,20 +7,33 @@ const framing = (id: string, established: boolean) => ({
   established,
 })
 
-const hint = (id: string, cost: number) => ({
+const hint = (id: string, cost: number, eliminates: string[] = []) => ({
   id,
   label: `Indice ${id}.`,
   cost,
   text: `Texte de l'indice ${id}.`,
+  eliminates,
 })
 
-const cause = (id: string, actual: boolean) => ({
+const cause = (id: string, actual: boolean, ruledOutByReport = false) => ({
   id,
   text: `Cause ${id}.`,
   actual,
   verification: `Vérification ${id}.`,
+  ruledOutByReport,
 })
 
+/**
+ * Trois causes (le minimum du schéma) forcent `ruledOutByReport` à zéro
+ * partout : le refus « au moins trois causes restent après le rapport »
+ * n'admet aucune marge en dessous. Quatre indices, pas trois : le chemin
+ * frugal exige de faire tomber le champ à une cause avec au plus
+ * `floor(hints.length / 2)` d'entre eux ; à trois indices ce plafond vaut un
+ * seul indice, qui ne peut jamais suffire sans violer le refus voisin
+ * (aucun indice seul ne ramène le champ sous deux). `h1` et `h2` écartent
+ * chacun l'une des deux causes non réelles ; leur combinaison (deux indices,
+ * sous le plafond de deux) ramène le champ à une seule cause.
+ */
 const situation = (
   id: string,
   overrides: Partial<{
@@ -40,9 +53,10 @@ const situation = (
     framing(`${id}-f5`, false),
   ],
   hints: overrides.hints ?? [
-    hint(`${id}-h1`, 5),
-    hint(`${id}-h2`, 10),
+    hint(`${id}-h1`, 5, [`${id}-c1`]),
+    hint(`${id}-h2`, 10, [`${id}-c3`]),
     hint(`${id}-h3`, 15),
+    hint(`${id}-h4`, 20),
   ],
   causes: overrides.causes ?? [
     cause(`${id}-c1`, false),
@@ -197,5 +211,112 @@ describe('hint-budget config schema', () => {
     const issue = firstIssue(config)
     expect(issue.path).toEqual(['blindCutSurcharge'])
     expect(issue.message).toContain('15')
+  })
+
+  /**
+   * Le graphe d'élimination des causes, ajouté le 30/08 après le tour 2 de
+   * revue : cinq refus qui rendent la délégation totale inexprimable au
+   * contrat, plutôt que de compter sur une consigne d'écriture du corpus.
+   */
+  describe('the cause-elimination graph', () => {
+    it("rejects a hint's eliminates naming a cause absent from the situation", () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5, ['introuvable']),
+          hint('s1-h2', 10, ['s1-c3']),
+          hint('s1-h3', 15),
+          hint('s1-h4', 20),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints', 0, 'eliminates', 0])
+      expect(issue.message).toContain('introuvable')
+      expect(issue.message).toContain('s1-h1')
+    })
+
+    it('rejects a report that rules out the actual cause', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        causes: [
+          cause('s1-c1', false),
+          cause('s1-c2', true, true),
+          cause('s1-c3', false),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'causes'])
+      expect(issue.message).toContain('s1-c2')
+    })
+
+    it('rejects a hint whose eliminates names the actual cause', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5, ['s1-c2']),
+          hint('s1-h2', 10),
+          hint('s1-h3', 15),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints', 0, 'eliminates'])
+      expect(issue.message).toContain('s1-h1')
+      expect(issue.message).toContain('s1-c2')
+    })
+
+    it('rejects a report that rules out too many causes, leaving fewer than three in play', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        causes: [
+          cause('s1-c1', false, true),
+          cause('s1-c2', true),
+          cause('s1-c3', false, true),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'causes'])
+      expect(issue.message).toContain('s1')
+    })
+
+    /**
+     * La preuve directe qu'aucun indice, pris seul, ne peut trancher une
+     * situation : `s1-h1` écarte à lui seul les deux causes non réelles, ce
+     * qui ramènerait le champ à une — la délégation totale que l'épique
+     * interdit. Le refus la rend inexprimable au chargement.
+     */
+    it('rejects a single hint whose eliminates, combined with the report, would leave fewer than two causes', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5, ['s1-c1', 's1-c3']),
+          hint('s1-h2', 10),
+          hint('s1-h3', 15),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints', 0, 'eliminates'])
+      expect(issue.message).toContain('s1-h1')
+    })
+
+    it('rejects a situation where no combination of at most half its hints ever narrows the field to one cause', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5),
+          hint('s1-h2', 10),
+          hint('s1-h3', 15),
+          hint('s1-h4', 20),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints'])
+      expect(issue.message).toContain('s1')
+    })
   })
 })

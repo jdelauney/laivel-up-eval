@@ -12,23 +12,29 @@ const framing = (id: string, established: boolean) => ({
   established,
 })
 
-const hint = (id: string, cost: number) => ({
+const hint = (id: string, cost: number, eliminates: string[] = []) => ({
   id,
   label: `Indice ${id}.`,
   cost,
   text: `Texte de l'indice ${id}.`,
+  eliminates,
 })
 
-const cause = (id: string, actual: boolean) => ({
+const cause = (id: string, actual: boolean, ruledOutByReport = false) => ({
   id,
   text: `Cause ${id}.`,
   actual,
   verification: `Vérification ${id}.`,
+  ruledOutByReport,
 })
 
 /**
  * Cinq indices `5 · 10 · 15 · 20 · 25`, cinq lectures dont deux établies
  * (`f1`, `f2`), une cause réelle (`c2`) : sur le modèle du corpus réel.
+ * `h1` écarte `c1`, `h2` écarte `c3` — le chemin frugal du contrat de
+ * config exige qu'au moins une combinaison d'au plus la moitié des indices
+ * ramène le champ à une seule cause (voir `config.schema.ts`), et qu'aucun
+ * indice pris seul n'y parvienne.
  */
 const situation = (id: string) => ({
   id,
@@ -42,8 +48,8 @@ const situation = (id: string) => ({
     framing(`${id}-f5`, false),
   ],
   hints: [
-    hint(`${id}-h1`, 5),
-    hint(`${id}-h2`, 10),
+    hint(`${id}-h1`, 5, [`${id}-c1`]),
+    hint(`${id}-h2`, 10, [`${id}-c3`]),
     hint(`${id}-h3`, 15),
     hint(`${id}-h4`, 20),
     hint(`${id}-h5`, 25),
@@ -230,8 +236,8 @@ describe('hint-budget evaluator', () => {
     const fourHintSituation = {
       ...situation('s1'),
       hints: [
-        hint('s1-h1', 5),
-        hint('s1-h2', 10),
+        hint('s1-h1', 5, ['s1-c1']),
+        hint('s1-h2', 10, ['s1-c3']),
         hint('s1-h3', 15),
         hint('s1-h4', 20),
       ],

@@ -19,8 +19,12 @@ export type SituationReading = {
   hintsTotal: number
   // Aucun indice acheté dans cette situation.
   blindCut: boolean
-  // Un cadrage a été posé, et il l'a été avant le premier achat. Lu seul par
-  // `framed-first-at-least` (`g2-1-c2`) : l'ordre, rien que l'ordre.
+  // Un cadrage a été posé, il l'a été avant le premier achat, et il retient
+  // au moins une lecture. Lu seul par `framed-first-at-least` (`g2-1-c2`) :
+  // l'ordre, rien que l'ordre — mais un cadrage vide n'est pas un ordre posé,
+  // c'est l'absence de geste. Correction du 30/08, tour 2 : la scission de
+  // `c2` avait retiré tout plancher de contenu, et « transmettre à vide »
+  // tenait l'ordre 3/3 sans lire une ligne.
   framedFirst: boolean
   // Le cadrage retient exactement l'ensemble des lectures établies — toutes,
   // et aucune autre — quel que soit le moment où il a été posé. La version
@@ -66,8 +70,15 @@ const readSituation = (
 
   const solved = attempt.cutCauseId === actualCauseId
   const blindCut = attempt.boughtHintIds.length === 0
+  // Un cadrage vide n'est pas un cadrage posé : la scission du 30/08 avait
+  // laissé passer `retainedIds: []` posé en premier, un geste à trois clics
+  // qui ne lit jamais le rapport et tenait pourtant l'ordre 3/3. Le plancher
+  // est de principe, pas une rustine — ne rien transmettre n'est pas
+  // contextualiser, quel que soit le moment où ce rien est déposé.
   const framedFirst =
-    attempt.framing !== null && attempt.framing.afterHints === 0
+    attempt.framing !== null &&
+    attempt.framing.afterHints === 0 &&
+    attempt.framing.retainedIds.length > 0
 
   const establishedIds = situation.framings
     .filter((framing) => framing.established)

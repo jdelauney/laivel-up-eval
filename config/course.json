@@ -461,31 +461,36 @@
                     "id": "s1-h1",
                     "label": "Vérifier l'en-tête Authorization envoyé par le client",
                     "cost": 5,
-                    "text": "L'en-tête est bien formé, avec le schéma Bearer attendu."
+                    "text": "L'en-tête est bien formé, avec le schéma Bearer attendu : ce n'est pas l'en-tête qui bloque la requête.",
+                    "eliminates": ["s1-c-header"]
                   },
                   {
                     "id": "s1-h2",
                     "label": "Vérifier si la réponse transite par le cache CDN",
                     "cost": 10,
-                    "text": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN."
+                    "text": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas le cache qui sert une version périmée.",
+                    "eliminates": ["s1-c-cdn"]
                   },
                   {
                     "id": "s1-h3",
                     "label": "Comparer l'horloge du serveur de production à une source de temps de référence",
                     "cost": 15,
-                    "text": "Le serveur de production accuse vingt minutes de retard sur la source de référence."
+                    "text": "Le serveur de production accuse vingt minutes de retard sur la source de référence.",
+                    "eliminates": []
                   },
                   {
                     "id": "s1-h4",
                     "label": "Relire le journal d'émission et de validation du jeton en cause",
                     "cost": 20,
-                    "text": "Le jeton a été émis à l'heure du client, puis rejeté par le serveur pour une date d'émission jugée future."
+                    "text": "Le jeton a été émis à l'heure du client, puis rejeté par le serveur pour une date d'émission jugée future.",
+                    "eliminates": []
                   },
                   {
                     "id": "s1-h5",
                     "label": "Demander un diagnostic complet de la chaîne d'authentification",
                     "cost": 25,
-                    "text": "Le diagnostic élimine le certificat, la clé de signature, l'en-tête et le cache : aucun jeton n'est accepté, quel que soit son instant d'émission."
+                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni le certificat ni la clé de signature ne sont en cause.",
+                    "eliminates": ["s1-c-tls", "s1-c-secret"]
                   }
                 ],
                 "causes": [
@@ -493,31 +498,36 @@
                     "id": "s1-c-tls",
                     "text": "Le certificat TLS du reverse proxy vient d'expirer.",
                     "actual": false,
-                    "verification": "Le certificat a été renouvelé la semaine dernière et reste valide huit mois : ce n'est pas la cause."
+                    "verification": "Le certificat a été renouvelé la semaine dernière et reste valide huit mois : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   },
                   {
                     "id": "s1-c-clock",
                     "text": "L'horloge du serveur de production a pris du retard.",
                     "actual": true,
-                    "verification": "Confirmé : l'horloge du serveur de production accuse vingt minutes de retard sur la source de référence, ce qui fait paraître chaque jeton comme émis dans le futur. Recaler l'horloge sur la source de référence a fait disparaître les 401."
+                    "verification": "Confirmé : l'horloge du serveur de production accuse vingt minutes de retard sur la source de référence, ce qui fait paraître chaque jeton comme émis dans le futur. Recaler l'horloge sur la source de référence a fait disparaître les 401.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s1-c-header",
                     "text": "Le client envoie un en-tête Authorization mal formé.",
                     "actual": false,
-                    "verification": "L'en-tête est conforme au schéma Bearer attendu : ce n'est pas la cause."
+                    "verification": "L'en-tête est conforme au schéma Bearer attendu : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s1-c-secret",
                     "text": "La clé secrète de signature diffère entre environnements.",
                     "actual": false,
-                    "verification": "La même clé secrète signe les jetons dans les deux environnements : ce n'est pas la cause."
+                    "verification": "La même clé secrète signe les jetons dans les deux environnements : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   },
                   {
                     "id": "s1-c-cdn",
                     "text": "Le cache CDN sert une version périmée de la réponse.",
                     "actual": false,
-                    "verification": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas la cause."
+                    "verification": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   }
                 ]
               },
@@ -561,31 +571,36 @@
                     "id": "s2-h1",
                     "label": "Vérifier le taux de TVA appliqué à chaque ligne",
                     "cost": 5,
-                    "text": "Le taux de TVA est identique sur toutes les lignes de la facture."
+                    "text": "Le taux de TVA est identique sur toutes les lignes de la facture : ce n'est pas la TVA qui creuse l'écart.",
+                    "eliminates": ["s2-c-vat"]
                   },
                   {
                     "id": "s2-h2",
                     "label": "Compter combien de fois le total est calculé dans la chaîne de facturation",
                     "cost": 10,
-                    "text": "Le total n'est calculé qu'une seule fois, côté serveur."
+                    "text": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas un double calcul.",
+                    "eliminates": ["s2-c-double"]
                   },
                   {
                     "id": "s2-h3",
                     "label": "Comparer le total affiché à la somme des quantités brutes multipliées par le prix unitaire, sans arrondi intermédiaire",
                     "cost": 15,
-                    "text": "Le total sans arrondi intermédiaire diffère de quelques centimes du total affiché, toujours dans le même sens."
+                    "text": "Le total sans arrondi intermédiaire diffère de quelques centimes du total affiché, toujours dans le même sens.",
+                    "eliminates": []
                   },
                   {
                     "id": "s2-h4",
                     "label": "Isoler l'arrondi appliqué à chaque ligne avant l'addition",
                     "cost": 20,
-                    "text": "Chaque ligne est arrondie à deux décimales avant d'être additionnée au total."
+                    "text": "Chaque ligne est arrondie à deux décimales avant d'être additionnée au total.",
+                    "eliminates": []
                   },
                   {
                     "id": "s2-h5",
                     "label": "Demander un diagnostic complet du calcul du total",
                     "cost": 25,
-                    "text": "Le diagnostic élimine la TVA, le double calcul, la conversion de devise et la remise appliquée."
+                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni la devise ni une remise ne sont en cause.",
+                    "eliminates": ["s2-c-currency", "s2-c-discount"]
                   }
                 ],
                 "causes": [
@@ -593,31 +608,36 @@
                     "id": "s2-c-vat",
                     "text": "Le taux de TVA appliqué diffère d'une ligne à l'autre.",
                     "actual": false,
-                    "verification": "Toutes les lignes portent le même taux de TVA : ce n'est pas la cause."
+                    "verification": "Toutes les lignes portent le même taux de TVA : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s2-c-double",
-                    "text": "Le total de la facture est calculé deux fois séparément.",
+                    "text": "Le total de la facture est recalculé deux fois de façon indépendante.",
                     "actual": false,
-                    "verification": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas la cause."
+                    "verification": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s2-c-currency",
                     "text": "La devise de certaines lignes de facture est mal convertie.",
                     "actual": false,
-                    "verification": "Toutes les lignes de cette facture sont dans la même devise, sans conversion : ce n'est pas la cause."
+                    "verification": "Toutes les lignes de cette facture sont dans la même devise, sans conversion : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   },
                   {
                     "id": "s2-c-rounding",
                     "text": "Chaque ligne arrondit son montant avant l'addition totale.",
                     "actual": true,
-                    "verification": "Confirmé : chaque ligne arrondit son montant avant l'addition, ce qui accumule un écart sur les quantités fractionnaires. Recalculer le total à partir des quantités brutes corrige l'écart."
+                    "verification": "Confirmé : chaque ligne arrondit son montant avant l'addition, ce qui accumule un écart sur les quantités fractionnaires. Recalculer le total à partir des quantités brutes corrige l'écart.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s2-c-discount",
                     "text": "Une remise est appliquée deux fois sur certaines lignes.",
                     "actual": false,
-                    "verification": "Aucune remise n'est configurée sur ce type de facture : ce n'est pas la cause."
+                    "verification": "Aucune remise n'est configurée sur ce type de facture : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   }
                 ]
               },
@@ -661,31 +681,36 @@
                     "id": "s3-h1",
                     "label": "Vérifier l'intégrité du cache de dépendances de l'agent CI",
                     "cost": 5,
-                    "text": "Le cache est reconstruit à l'identique du poste local, sans corruption détectée."
+                    "text": "Le cache est reconstruit à l'identique du poste local, sans corruption détectée : ce n'est pas le cache.",
+                    "eliminates": ["s3-c-cache"]
                   },
                   {
                     "id": "s3-h2",
                     "label": "Comparer le fuseau horaire de l'agent CI à celui du poste local",
                     "cost": 10,
-                    "text": "Les deux environnements sont configurés sur le même fuseau horaire."
+                    "text": "Les deux environnements sont configurés sur le même fuseau horaire : ce n'est pas le fuseau.",
+                    "eliminates": ["s3-c-timezone"]
                   },
                   {
                     "id": "s3-h3",
                     "label": "Relancer la suite plusieurs fois de suite sur l'agent CI",
                     "cost": 15,
-                    "text": "Le résultat change d'une exécution à l'autre, sans modification du code."
+                    "text": "Le résultat change d'une exécution à l'autre, sans modification du code.",
+                    "eliminates": []
                   },
                   {
                     "id": "s3-h4",
                     "label": "Comparer le nombre de tests exécutés en parallèle dans les deux environnements",
                     "cost": 20,
-                    "text": "L'agent CI exécute les tests sur plusieurs threads à la fois ; le poste local les exécute un par un."
+                    "text": "L'agent CI exécute les tests sur plusieurs threads à la fois ; le poste local les exécute un par un.",
+                    "eliminates": []
                   },
                   {
                     "id": "s3-h5",
                     "label": "Demander un diagnostic complet de l'isolation des tests",
                     "cost": 25,
-                    "text": "Le diagnostic élimine la variable d'environnement, la version de Node, le cache et le fuseau horaire : rien ne diffère entre les deux environnements."
+                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni une variable d'environnement absente ni une version de Node différente ne sont en cause.",
+                    "eliminates": ["s3-c-env", "s3-c-node"]
                   }
                 ],
                 "causes": [
@@ -693,31 +718,36 @@
                     "id": "s3-c-parallel",
                     "text": "Les tests s'exécutent en parallèle sans isolation d'état.",
                     "actual": true,
-                    "verification": "Confirmé : isoler l'état entre les tests, ou désactiver le parallélisme sur l'agent CI, fait disparaître les échecs intermittents."
+                    "verification": "Confirmé : isoler l'état entre les tests, ou désactiver le parallélisme sur l'agent CI, fait disparaître les échecs intermittents.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s3-c-env",
                     "text": "Les tests dépendent d'une variable d'environnement absente en CI.",
                     "actual": false,
-                    "verification": "Toutes les variables d'environnement requises sont bien présentes sur l'agent CI : ce n'est pas la cause."
+                    "verification": "Toutes les variables d'environnement requises sont bien présentes sur l'agent CI : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   },
                   {
                     "id": "s3-c-node",
                     "text": "La version de Node en CI diffère de celle en local.",
                     "actual": false,
-                    "verification": "La version de Node de l'agent CI est identique à celle du poste local : ce n'est pas la cause."
+                    "verification": "La version de Node de l'agent CI est identique à celle du poste local : ce n'est pas la cause.",
+                    "ruledOutByReport": true
                   },
                   {
                     "id": "s3-c-cache",
                     "text": "Le cache de dépendances de l'agent CI est corrompu.",
                     "actual": false,
-                    "verification": "Le cache de dépendances de l'agent CI est reconstruit à l'identique, sans corruption : ce n'est pas la cause."
+                    "verification": "Le cache de dépendances de l'agent CI est reconstruit à l'identique, sans corruption : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   },
                   {
                     "id": "s3-c-timezone",
                     "text": "Le fuseau horaire de l'agent CI diffère du poste local.",
                     "actual": false,
-                    "verification": "Les deux environnements partagent le même fuseau horaire : ce n'est pas la cause."
+                    "verification": "Les deux environnements partagent le même fuseau horaire : ce n'est pas la cause.",
+                    "ruledOutByReport": false
                   }
                 ]
               }

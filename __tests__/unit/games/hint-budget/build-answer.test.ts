@@ -12,18 +12,20 @@ const framing = (id: string, established: boolean) => ({
   established,
 })
 
-const hint = (id: string, cost: number) => ({
+const hint = (id: string, cost: number, eliminates: string[] = []) => ({
   id,
   label: `Indice ${id}.`,
   cost,
   text: `Texte de l'indice ${id}.`,
+  eliminates,
 })
 
-const cause = (id: string, actual: boolean) => ({
+const cause = (id: string, actual: boolean, ruledOutByReport = false) => ({
   id,
   text: `Cause ${id}.`,
   actual,
   verification: `Vérification ${id}.`,
+  ruledOutByReport,
 })
 
 const situation = (id: string) => ({
@@ -37,7 +39,12 @@ const situation = (id: string) => ({
     framing(`${id}-f4`, false),
     framing(`${id}-f5`, false),
   ],
-  hints: [hint(`${id}-h1`, 5), hint(`${id}-h2`, 10), hint(`${id}-h3`, 15)],
+  hints: [
+    hint(`${id}-h1`, 5, [`${id}-c1`]),
+    hint(`${id}-h2`, 10, [`${id}-c3`]),
+    hint(`${id}-h3`, 15),
+    hint(`${id}-h4`, 20),
+  ],
   causes: [
     cause(`${id}-c1`, false),
     cause(`${id}-c2`, true),
