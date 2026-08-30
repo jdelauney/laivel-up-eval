@@ -38,9 +38,23 @@ Câblés dans `config/course.json`, situation `g1-2`, et verrouillés par
 
 - Score net : au moins **3** points sur les 5 défauts du corpus (`net-score-at-least`, 3). Autrement dit trouver au moins quatre défauts sur cinq sans affirmer plus de deux choses fausses.
 - Ratio de défauts trouvés : au moins **80 %** (`found-ratio-at-least`, 0.8).
-- La dépendance hallucinée, seul défaut que l'extrait ne permet pas de trancher seul, porte son propre critère (`kinds-found-including`).
+- La dépendance hallucinée, seul défaut de nature IA du corpus, porte son propre critère (`kinds-found-including`).
 - Temps imparti : **trois minutes** (`timeLimitSeconds: 180`), lu par `within-time-budget`, sans seuil propre à la règle.
 - Le dépassement du temps ne coûte que son propre critère (`g1-2-c4`) : la partie ne s'arrête pas, et les trois autres critères gardent leur verdict.
+
+## Ce que ce jeu mesure, et ce qu'il ne mesure pas
+
+À écrire ici plutôt qu'à découvrir devant le jury.
+
+**Sur les sept points de la situation, cinq mesurent la relecture de code, deux mesurent la vérification face à une IA.** Quatre défauts sur cinq — coercition silencieuse, décalage de pagination, injection SQL, appel sans parenthèses — sont des défauts humains classiques, sur les grilles de revue depuis quinze ans. Un développeur qui n'a jamais ouvert un assistant et relit des routeurs pour vivre sort au score plein. Seule la dépendance hallucinée est de nature IA, et c'est exactement pourquoi elle porte son propre critère à poids 2.
+
+Ce n'est pas un défaut de conception : `verification` est nourrie par cinq situations, et les deux voisines du même groupe visent l'IA de front — `g1-1` calibre la confiance sur des affirmations vraies, fausses ou indécidables, `g1-3` demande laquelle de ces affirmations ment. Celle-ci est la jambe « sais-tu réellement lire » d'un trépied.
+
+Ce qu'il faut donc dire, et ne pas dire : **« ce jeu mesure si vous attrapez les défauts d'un code que vous n'avez pas écrit, dont un défaut de forme IA »** — pas « ce jeu mesure votre pratique de vérification de l'IA ».
+
+**La séniorité fuit dans la mesure.** Un développeur rigoureux qui relit chaque diff mais connaît mal Express rate le décalage de pagination. `PRODUCT.md` met la séniorité hors périmètre de la **grille officielle** ; `verification` vit dans la signature, qui n'est pas couverte par cette exclusion. Le niveau officiel ne bouge pas, la signature si.
+
+**Le corpus est unique, figé, et publié.** Deux conséquences assumées : rejouer le parcours ne mesure plus rien sur cette situation une fois l'extrait mémorisé, et `config/course.json` porte les lignes, les natures et les explications en clair dans un dépôt public. C'est le prix d'un outil entièrement côté client, où « ce qui est mesuré est de la donnée ». À énoncer sur la page méthodologie.
 
 ## Contrainte de rédaction du corpus
 

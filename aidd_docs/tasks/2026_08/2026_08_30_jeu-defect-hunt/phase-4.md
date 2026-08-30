@@ -68,7 +68,7 @@ journey
 
 | Nature | Ce que le défaut est |
 | --- | --- |
-| `hallucinated-dependency` | L'import d'un paquet qui n'existe pas sur npm, et dont le symbole importé n'est jamais appelé. **Le seul défaut de l'extrait qui ne se tranche pas dans les lignes montrées** |
+| `hallucinated-dependency` | L'import d'un paquet qui n'existe pas sur npm, et dont le symbole importé n'est jamais appelé. **Le seul défaut de nature IA du corpus** — le symbole jamais appelé se voit dans l'extrait, mais l'inexistence du paquet demande de sortir du fichier |
 | `security` | Un paramètre d'URL interpolé brut dans une requête SQL |
 | `resource` | Dans un bloc `finally` correct, un `client?.release` lu sans être appelé — les parenthèses manquent, et c'est le seul endroit où l'on corrige |
 | `logic` | Une pagination décalée : la page 1 saute la première page, les premiers éléments sont inatteignables |
