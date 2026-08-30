@@ -1,11 +1,11 @@
 # Review: Le jeu `lie-detector`, désigner la menteuse puis tenir sa ligne
 
-- **Verdict**: changes-requested
-- **Diff**: `main...9230ffd`
+- **Verdict**: approve
+- **Diff**: `main...3af90e2`
 - **Axes run**: code, functional, relevancy
 - **Date**: 2026_08_30
-- **Findings**: 0 critical, 1 warning, 1 minor
-- **Passe**: 3 (les 11 constats de la passe 1 et les 4 de la passe 2 sont tous re-vérifiés résolus ; 2 constats neufs)
+- **Findings**: 0 critical, 0 warning, 2 minor
+- **Passe**: 5 (11 constats en passe 1, 4 en passe 2-3, 2 deal breakers au challenge — tous re-vérifiés résolus ; 2 nits restants, aucun bloquant)
 
 ## Phases
 
@@ -65,17 +65,21 @@
 
 | Sev | Kind | Phase | Location | Issue | Fix |
 | --- | ---- | ----- | -------- | ----- | --- |
-| 🟡 | rot | 5 | `aidd_docs/backlog/defects/la-revelation-pousse-l-action-hors-de-l-ecran.md:33` | Le défaut porte une mesure que la même branche a depuis invalidée, et contredit le fichier de preuve qu'il cite. Sa table dit « 390 × 844 → 185 px », or `qa/README.md` (point 3) mesure désormais **597 px** à `scrollY = 0` et explique que les 185 px souffraient de la même contamination de défilement que le point 1. `git log` confirme que le fichier n'a pas été retouché depuis `69facee`. Ce n'est pas qu'un chiffre : la section `Impact` argumente « Modéré […] d'où la sévérité basse » — un dépassement de 597 px, soit 71 % d'une hauteur de viewport sous la ligne de flottaison au lieu de 22 %, remet ce classement en jeu. Le défaut est dans le périmètre de `main..HEAD`, et c'est l'artefact qui pilotera la correction future | Porter 597 px dans la table, dater la correction, et relire la ligne `Impact` : la sévérité basse tenait en partie à l'ampleur annoncée |
-| 🟢 | fit | 5 | `config/course.json` (corpus `g1-3`) et `__tests__/integration/course-run/lie-detector-run.test.ts` | La tenue mobile repose sur 9 px de marge qu'aucun test ne protège. Les deux garde-fous de longueur existants mesurent l'**écart intra-manche** (anti-indice de forme), jamais une longueur absolue. Or à 390 px de large, `text-sm` en `leading-snug`, une affirmation passe de 3 à 4 lignes autour de 135 caractères et coûte ~19 px — plus du double de la marge. Un corpus réécrit en respectant le quart d'écart réglementaire peut donc casser la tenue mobile en silence, sans qu'aucune suite ne rougisse | Ajouter au test d'intégration une borne haute sur `claim.text.length` (~135), commentée comme un budget de mise en page mobile et non comme une règle de rédaction |
+| 🟢 | conform | 2 | `config/course.json` (`g1-3-c2`) et `src/games/lie-detector/lie-detector.evaluator.ts:64` | `no-capitulation` est la seule règle paramétrée du parcours dont le nom n'annonce pas son paramètre. Inventaire des 18 types de règles : 14 portent un paramètre, et 13 l'encodent dans leur nom — `*-at-least` (6 règles à seuil), `*-below` / `*-above`, `*-before` / `*-after` (étape), `*-including` (liste), `stake-within-band-on-undecidable` (bornes). `no-capitulation` porte désormais `minOpportunities: 2` sans que rien dans son nom ne le laisse deviner. L'argument de l'exécuteur tient — la règle ne tolère toujours aucune capitulation, seul le plancher d'admissibilité a bougé — mais un lecteur du `switch` de l'évaluateur ne peut pas savoir qu'elle lit un seuil, alors que ses treize sœurs le disent | Renommer sur la convention du dépôt (`held-chances-at-least`, ou `no-capitulation-over`), avec la migration d'un seul critère dans `course.json`. Ou consigner l'exception et sa raison, pour qu'elle ne se lise pas comme un oubli |
+| 🟢 | fit | - | `aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md`, section « Pourquoi `g1-3-c1` se lit sur la première désignation » | La raison donnée au coût assumé ne couvre qu'une manche sur quatre. La story justifie ainsi : « Dans la manche à objection fondée, se corriger revient à suivre l'assistant qui vient de donner la réponse. » Vrai pour `r2`, la seule objection fondée du corpus. Sur `r1`, `r3` et `r4` l'objection est creuse : elle pointe une affirmation vraie, donc un joueur qui se corrige vers la menteuse va là où l'assistant n'a pas pointé — c'est une relecture indépendante, pas une obéissance. La décision reste bonne, c'est son motif qui généralise à partir du quart du corpus | Adosser le coût au motif qui tient sur les quatre manches : `c1` mesure la lecture **non assistée**, et le second temps est assisté par construction puisqu'un avis a été montré. Ce motif ne dépend pas de la nature de l'objection |
 
-## Note d'arbitrage — l'exception `r1` sur mobile
+## Note de vérification — la nouvelle notation
 
-Jugée **légitime**, pas une capitulation déguisée. Quatre vérifications :
+Les deux affirmations du chef, reprises en force brute sur le corpus réel :
 
-- **La contrainte est réelle et mesurée.** L'écart `r1`/`r2` (606 contre 417) vaut ~190 px, exactement la consigne dépliée. Les cartes sont déjà à `p-2 gap-1 leading-snug` sous `sm` ; le chrome restant (285 px) appartient à `course-view.tsx`, partagé par les vingt jeux et hors périmètre — non touché, vérifié.
-- **La hiérarchie est la bonne pour un outil de mesure.** Comparabilité de la mesure avant ergonomie de comparaison : un joueur qui ignore que le clic verrouille et qu'une seule redésignation est offerte ne joue pas la même `r1` que les autres. Le risque est réel et propre à `r1` — aux manches suivantes le cadre est connu.
-- **Le coût est énoncé sans arrondi** et le critère est marqué non atteint là plutôt que redéfini pour coller au résultat. La mesure invalidée est marquée invalidée, pas effacée, et la capture du défaut est conservée comme preuve.
-- **Réserve, non bloquante** : une troisième voie n'est pas nommée dans les alternatives écartées — un écran de règles avant `r1`, qui satisferait les deux. Elle introduirait un motif d'interface pour un seul jeu, ce que la branche refuse déjà par ailleurs pour la barre d'action collante ; le refus serait donc cohérent, mais il gagnerait à être écrit pour que le choix reste révisable.
+- **Un lecteur parfait garde `c1` quoi qu'il fasse au second geste** : vérifié sur les **256** seconds gestes possibles, `c1` tenu dans les 256. `unmasked` ne lit que `firstPickId` (`read-rounds.helper.ts:59`), donc le second geste est structurellement hors de `c1`.
+- **Un joueur au hasard qui ne bouge jamais décroche `c2` dans 15,6 %** : vérifié, **40/256** = 15,625 %, contre 57,8 % au seuil précédent.
+
+Invariant trouvé et vérifié, qui répond au risque d'effet de bord : **satisfaire `c1` implique au moins 2 occasions**, minimum observé exactement 2 sur toutes les parties satisfaisant `c1`. Zéro joueur satisfaisant `c1` et tenant toutes ses occasions n'échoue sur `c2`. Corollaire à consigner : `minOpportunities: 2` est la valeur maximale sûre — à 3, des lecteurs légitimes tomberaient faute de matière, pas faute de tenue.
+
+Coût connu, mesuré et testé : le joueur qui lit mal puis se corrige seul vers la menteuse perd `c1` à partir de **deux** corrections (une seule reste sous le seuil). Couvert par un test nommé.
+
+Dilution du bruit résiduel, revendiquée par la story et vérifiée : `verification` est alimentée par **5 situations**, poids total **24**, dont `g1-3` porte **4** (16,7 %). Le 15,6 % de chance résiduelle porte sur les 2 points de `c2`, soit 8,3 % de la dimension.
 
 ## Verification
 

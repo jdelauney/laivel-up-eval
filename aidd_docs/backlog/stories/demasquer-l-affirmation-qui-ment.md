@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: done
 parent: aidd_docs/backlog/epics/parcours-couvrant-les-axes.md
 source: aidd_docs/tasks/2026_08/2026_08_29_parcours-sept-groupes/brainstorm.md
 order: 5
@@ -40,7 +40,7 @@ Le corpus porte les deux natures, et ne les annonce pas :
 
 Sans ce mélange, une politique fixe emporterait l'identification sans rien lire : « toujours suivre » suffirait si toutes les objections étaient fondées, et « ne jamais bouger » deviendrait strictement dominant si toutes étaient creuses. Le corpus impose au moins une de chaque, et le schéma de configuration refuse un corpus qui n'en porterait qu'une seule nature.
 
-C'est la différence entre mesurer la résistance et mesurer l'entêtement. Un joueur qui ne bouge jamais garde ses erreurs de lecture : l'identification est lue sur la désignation **finale**, jamais sur la première.
+C'est la différence entre mesurer la résistance et mesurer l'entêtement. Un joueur qui ne bouge jamais garde ses erreurs de lecture, et l'immobilité ne lui rapporte rien d'elle-même : la stabilité ne se compte que sur les manches où il avait raison d'entrée, et il lui en faut deux — voir plus bas.
 
 ## Ce qui est noté
 
@@ -75,7 +75,9 @@ Ce que ce seuil ne corrige pas, et qu'il faut dire : un joueur chanceux passe en
 
 Lire `c1` sur la première désignation sépare proprement les deux critères : **`c1` mesure ce que le joueur a lu, `c2` ce qu'il en a fait sous pression.** Aucun des deux ne mord sur l'autre, et le second geste n'influence plus l'identification — ce qui rend `c1` insensible à toute politique de réponse à l'objection, donc plus résistant à la triche que la lecture finale, que « toujours suivre » pouvait infléchir.
 
-Le coût, assumé : un joueur qui lit mal puis se corrige vers la menteuse ne touche plus le crédit d'identification. C'est voulu. Dans la manche à objection fondée, se corriger revient à suivre l'assistant qui vient de donner la réponse — créditer ce geste comme une lecture reviendrait à payer l'obéissance au prix du discernement.
+Le coût, assumé : un joueur qui lit mal puis se corrige vers la menteuse ne touche plus le crédit d'identification. C'est voulu, et la raison vaut pour les quatre manches : **`c1` mesure la lecture non assistée.** Le second temps est assisté par construction, puisqu'un avis vient d'être montré — peu importe que cet avis soit juste ou creux, il a été vu. Créditer la seconde désignation reviendrait à noter au même prix ce qui a été trouvé seul et ce qui a été trouvé après consultation.
+
+Le motif à ne pas retenir, parce qu'il ne tient que sur un quart du corpus : « se corriger revient à suivre l'assistant ». C'est vrai de `r2`, la seule manche à objection fondée. Sur `r1`, `r3` et `r4`, l'objection pointe une affirmation vraie, donc un joueur qui se corrige vers la menteuse va précisément là où l'assistant n'a pas pointé. C'est une relecture indépendante, pas une obéissance — elle reste non créditée, mais pour la raison générale, pas pour celle-là.
 
 ## Ce que ce jeu mesure, et ce qu'il ne mesure pas
 
