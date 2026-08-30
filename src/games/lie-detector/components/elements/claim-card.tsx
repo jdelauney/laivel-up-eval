@@ -81,9 +81,11 @@ export const ClaimCard = ({
 
   const body = (
     <>
-      <p className="text-plane-foreground text-sm leading-relaxed">{text}</p>
+      <p className="text-plane-foreground text-sm leading-snug sm:leading-relaxed">
+        {text}
+      </p>
       <div>
-        <p className="mt-3 flex items-center gap-1.5 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
+        <p className="mt-1 flex items-center gap-1.5 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em] sm:mt-3">
           {mark}
           <span>{stateLabel}</span>
           {yours ? (
@@ -103,7 +105,7 @@ export const ClaimCard = ({
   )
 
   const shell = [
-    'flex h-full flex-col justify-between gap-4 bg-plane p-4 text-left',
+    'flex h-full flex-col justify-between gap-1 bg-plane p-2 text-left sm:gap-4 sm:p-4',
     yours ? 'ring-1 ring-plane-foreground/45 ring-inset' : '',
   ].join(' ')
 

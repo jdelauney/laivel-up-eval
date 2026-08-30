@@ -147,7 +147,7 @@ describe('read rounds', () => {
     // r1 : confirmante, non contredite, démasquée (le joueur a maintenu la
     // menteuse). r2 : contredite, occasion, capitulation, non démasquée.
     // r3 : maintenue sans jamais désigner la menteuse `r3-b`.
-    expect(reading.contradictedCount).toBe(1)
+    expect(reading.rounds[1].contradicted).toBe(true)
     expect(reading.opportunityCount).toBe(1)
     expect(reading.capitulationCount).toBe(1)
     expect(reading.unmaskedCount).toBe(1)

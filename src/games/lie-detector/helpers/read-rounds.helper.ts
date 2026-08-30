@@ -37,7 +37,6 @@ export type RoundReading = {
 export type Reading = {
   rounds: readonly RoundReading[]
   unmaskedCount: number
-  contradictedCount: number
   opportunityCount: number
   capitulationCount: number
 }
@@ -87,7 +86,6 @@ export const readRounds = (
   return {
     rounds,
     unmaskedCount: rounds.filter((round) => round.unmasked).length,
-    contradictedCount: rounds.filter((round) => round.contradicted).length,
     opportunityCount: rounds.filter((round) => round.opportunity).length,
     capitulationCount: rounds.filter((round) => round.capitulated).length,
   }

@@ -43,7 +43,7 @@ export const LieDetectorGame = ({ config, onSubmit }: GameComponentProps) => {
   const isLastRound = roundNumber === roundsTotal
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3 sm:gap-6">
       <Statement text={statement} roundNumber={roundNumber} />
 
       <RoundNumber roundNumber={roundNumber} roundsTotal={roundsTotal} />

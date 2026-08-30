@@ -53,8 +53,8 @@ export const RoundSheet = ({
 
   return (
     <section className="border border-plane-rule bg-plane">
-      <header className="border-plane-rule border-b px-4 py-3">
-        <p className="max-w-[64ch] text-plane-foreground text-sm leading-relaxed">
+      <header className="border-plane-rule border-b px-4 py-2 sm:py-3">
+        <p className="max-w-[64ch] text-plane-foreground text-sm leading-snug sm:leading-relaxed">
           {prompt}
         </p>
       </header>
@@ -87,7 +87,7 @@ export const RoundSheet = ({
       </div>
 
       {phase === 'picking' ? (
-        <p className="flex items-center gap-1.5 border-plane-rule border-t px-4 py-2.5 font-medium text-[10px] text-plane-foreground/50 uppercase tracking-[0.14em]">
+        <p className="flex items-center gap-1.5 border-plane-rule border-t px-4 py-1.5 font-medium text-[10px] text-plane-foreground/50 uppercase tracking-[0.14em] sm:py-2.5">
           <Lock aria-hidden className="size-3" />
           Un clic verrouille votre désignation
         </p>
