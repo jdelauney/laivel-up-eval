@@ -1,114 +1,135 @@
 # Tournée navigateur — `hint-budget`
 
-30/08/2026, reprise après revue. Chromium via Playwright CLI, sur `npm run dev` (port 5183), aux deux gabarits `1440×900` et `390×844`. Le harnais est hors du dépôt, comme pour les tournées précédentes.
+30/08/2026, refaite intégralement après la tâche 1 (réécriture des `causes[].text`) et les corrections de revue déjà fusionnées sur la branche (alternance inversée, textes d'indices réécrits, `c1`/`c2` corrigés). Chromium via Playwright CLI (`node` + le paquet `playwright` du projet), sur `npm run dev` (port 5173), aux deux gabarits `1440×900` et `390×844`. Le harnais qui a piloté cette tournée est resté hors du dépôt (script jetable, supprimé après capture), comme pour les tournées précédentes.
 
-**Correction du 30/08, après revue.** La tournée précédente prenait ses captures mobiles en viewport (`fullPage: false`) à `scrollY = 0`, alors que la grille cadrage/marché commence sous le pli aux deux gabarits (voir « Point 3 ») : ces captures n'en montraient aucun pixel, et le README l'affirmait pourtant visible au premier rendu. **Toutes les captures qui appuient une mesure de contenu sont désormais prises en page pleine (`fullPage: true`)** ; une seule capture reste en viewport, à l'ouverture, pour montrer honnêtement ce qu'un joueur voit sans défiler — qui est précisément le sujet du « Point 3 ». Chaque capture et chaque mesure part de `window.scrollTo(0, 0)`, `window.scrollY` vérifié à `0` avant toute lecture.
+**Pourquoi une reprise complète plutôt qu'un correctif.** Deux revues indépendantes ont déjà sanctionné une tournée de ce jeu pour des preuves qui n'ouvraient pas la région qu'elles prétendaient mesurer. La tournée précédente (celle que ce fichier remplace) documentait un sens d'alternance qui n'est plus celui du code (`cadrageFirst` a été inversé une deuxième fois depuis), des textes d'indices et de causes qui ne sont plus ceux du corpus, et aucune capture de `s2`. Rejouer entièrement plutôt que corriger une ligne à la fois évite de répéter cette faute.
+
+**Méthode de mesure.** Chaque capture et chaque mesure part de `window.scrollTo(0, 0)`, `window.scrollY` **vérifié explicitement à 0** juste avant — le script lève une erreur s'il ne l'est pas. Toutes les captures qui appuient une mesure de contenu sont en page pleine (`fullPage: true`) ; deux captures par gabarit (`*-0-s1-viewport-sans-defilement.png`) restent en viewport, explicitement labellisées, pour montrer ce qu'un joueur voit sans défiler.
 
 ## Le parcours joué
 
-Session posée directement sur `g2-1` en écrivant `{"playerName":"QA Reviewer","groupIndex":1,"gameIndex":0,"submissions":[]}` dans `laivel-eval.session` puis en cliquant « Reprendre ». Comme pour `lie-detector`, la tête de page affiche « Situation 1 sur 20 » au lieu de 3 : artefact de `progress.submitted + 1` compté à zéro dans une session forgée, pas un défaut de `hint-budget` — et sans lien avec le libellé interne du jeu, qui affiche désormais « Incident » (voir « Point 8 »).
+Session posée directement sur `g2-1` en écrivant `{"playerName":"QA Reviewer","groupIndex":1,"gameIndex":0,"submissions":[]}` dans `laivel-eval.session`, puis en cliquant « Reprendre ». Comme pour les tournées précédentes, la tête de page affiche « Situation 1 sur 20 » et « 0/20 SITUATIONS » plutôt qu'une position cohérente : artefact de `progress.submitted + 1` compté à zéro dans une session forgée sans historique de soumissions — pas un défaut de `hint-budget`, et sans rapport avec son propre libellé interne, qui affiche « Incident 1 sur 3 », « Incident 2 sur 3 », « Incident 3 sur 3 ».
 
-Trois situations jouées, dans l'ordre : `s1` en entier (cadrage, un achat, cinq achats, tranche fausse, révélation), `s2` minimalement (une tranche, sans cadrage ni achat, pour atteindre `s3` et vérifier l'alternance de parité — voir « Point 1 »), `s3` ouverte puis jouée jusqu'à un achat et une lecture retenue, capturée sous `grayscale(1)`.
+Trois situations jouées, dans l'ordre :
+
+- **`s1`, en entier** : mesure de l'ordre des panneaux et des arrêts de tabulation à l'ouverture, cadre déposé (deux lectures retenues) et un indice acheté, les cinq indices achetés, puis une tranche **délibérément fausse** (la première cause du panneau, jamais garantie réelle) pour observer le relevé complet (indices + pénalité).
+- **`s2`, à vide** : aucun cadrage, aucun achat, tranche immédiate — pour observer l'ordre inversé des panneaux et la **surtaxe d'aveugle** au relevé (pénalité de tranche fausse *et* surtaxe d'aveugle cumulées, aucun indice acheté).
+- **`s3`, partiellement** : ouverture mesurée, un cadre déposé (une lecture retenue) et un indice acheté, capturée sous `grayscale(1)`.
 
 ## Ce qui est capturé
 
+16 fichiers, 8 par gabarit, tous relus image par image après capture :
+
 | Fichier | État |
 | --- | --- |
-| `desktop-0-s1-viewport-sans-defilement.png` · `mobile-0-…` | Ce qu'un joueur voit **sans défiler**, à l'ouverture de `s1` — capture en viewport, pas en page pleine |
-| `desktop-1-s1-ouverture.png` · `mobile-1-…` | `s1` ouverte, rien cliqué — page pleine |
-| `desktop-2-s1-cadre-depose-un-achat.png` · `mobile-2-…` | Le cadre déposé (une lecture retenue), un indice acheté — page pleine |
-| `desktop-3-s1-cinq-achats.png` · `mobile-3-…` | Les cinq indices achetés : le relevé plafonné-et-replié — page pleine |
-| `desktop-4-s1-revelation.png` · `mobile-4-…` | La révélation de `s1`, après une tranche volontairement fausse — page pleine |
-| `desktop-5-s3-ouverture.png` · `mobile-5-…` | `s3` ouverte, second corpus, cadrage en tête à nouveau (alternance) — page pleine |
-| `desktop-6-s3-desature.png` · `mobile-6-…` | `s3`, une lecture retenue et un indice acheté, sous `grayscale(1)` — page pleine |
+| `{gabarit}-0-s1-viewport-sans-defilement.png` | Ce qu'un joueur voit **sans défiler**, à l'ouverture de `s1` — viewport, pas page pleine |
+| `{gabarit}-1-s1-ouverture.png` | `s1` ouverte, rien cliqué — page pleine |
+| `{gabarit}-2-s1-cadre-depose-un-achat.png` | Cadre déposé (deux lectures retenues), un indice acheté — page pleine |
+| `{gabarit}-3-s1-cinq-achats.png` | Les cinq indices achetés : le relevé plafonné-et-replié — page pleine |
+| `{gabarit}-4-s1-revelation.png` | Révélation de `s1`, après une tranche volontairement fausse — page pleine |
+| `{gabarit}-5-s2-ouverture.png` | `s2` ouverte : le cadrage en tête cette fois (alternance inversée) — page pleine |
+| `{gabarit}-6-s3-ouverture.png` | `s3` ouverte : le marché en tête à nouveau — page pleine |
+| `{gabarit}-7-s3-desature.png` | `s3`, une lecture retenue et un indice acheté, sous `grayscale(1)` — page pleine |
 
-Douze fichiers numérotés, tous vérifiés contenir ce que ce tableau leur attribue — relu image par image après capture, pas supposé.
+Dimensions PNG lues à l'octet, corroborant les hauteurs de document mesurées en DOM (§ Point 3) : `desktop-1` 1440×1510, `desktop-3` 1440×1473, `mobile-1` 390×2280, `mobile-3` 390×2161. `desktop-0`/`mobile-0` sont bien en viewport (1440×900, 390×844), pas en page pleine.
 
-## Point 1 — la parité des deux gestes, au gabarit mobile
+## Point 1 — position et lisibilité du cadrage et du marché, aux deux gabarits
 
-**Corrigé pour de vrai, sur les trois canaux demandés — avec une limite assumée, écrite ci-dessous plutôt que déclarée acquise.**
+**Desktop (`sm:` et au-delà) : parité par écran exacte.** `hint-budget-game.tsx` pose `grid-cols-1 sm:grid-cols-2` : les deux panneaux sont deux frères d'une même rangée CSS Grid, dont le sommet et le pied sont identiques par construction (`align-items: stretch`). Mesuré, sommet des deux panneaux (`getBoundingClientRect().top` :
 
-Le motif précédent (`grid-cols-2` sans repli, y compris à 390px) tenait la parité **visuelle** par une tautologie : deux panneaux frères d'une même rangée CSS Grid partagent nécessairement sommet et pied (`align-items: stretch`), quelle que soit la largeur de leurs colonnes. Il ne tenait ni la **lisibilité** (chaque colonne à ~170px forçait une lecture de cadrage sur sept lignes d'environ quatorze caractères, mesuré sur `mobile-6-s3-desature.png` de la tournée précédente) ni le **clavier** (le marché restait structurellement six arrêts de tabulation derrière le cadrage, dans toutes les situations, sans exception).
-
-**Ce qui change :**
-
-1. **Lisibilité.** `hint-budget-game.tsx` passe de `grid-cols-2` à `grid-cols-1 sm:grid-cols-2` — le même point de rupture que `CutPanel` applique déjà à ses causes (`cut-panel.tsx:34`), qui contredisait l'ancien motif. Sous 640px, chaque panneau prend la largeur pleine ; visible sur `mobile-1-s1-ouverture.png` : chaque lecture de cadrage et chaque indice se lisent sur deux à trois lignes normales, plus aucune ne se replie caractère par caractère.
-2. **Absence de biais systématique de *position*, faute de parité par écran — mais l'ancien sens du biais de *verdict* n'était pas neutre, corrigé au tour 2 de revue.** Un empilement à une colonne impose un ordre par construction — c'est la contrainte que la phase 3 nommait déjà comme non résoluble par la seule mise en page. La réponse retenue au tour 1 : l'ordre DOM des deux panneaux **alterne selon la parité de la situation**, cadrage en tête sur `s1` et `s3`, marché en tête sur `s2` — si bien qu'aucun des deux gestes n'est *toujours* en tête sur l'ensemble d'une partie. **Ce que cette mesure ne disait pas** : `c2` note l'ordre à un seuil de majorité (2 situations sur 3), et cadrage-en-tête-deux-fois-sur-trois faisait tenir `c2` à un joueur mobile purement passif, sans qu'il ait choisi de cadrer avant de demander. Le sens de l'alternance est inversé au tour 2 : `cadrageFirst = (situationNumber - 1) % 2 !== 0` place le marché en tête sur `s1` et `s3`, le cadrage en tête sur `s2` seulement — la passivité manque désormais `c2` au lieu de le tenir. Aucune alternance ne rend le verdict neutre pour un nombre impair de situations et un seuil de majorité ; celle-ci choisit délibérément qui elle défavorise.
-3. **Clavier**, mesuré par comptage réel des arrêts de tabulation (`Tab` piloté) **au sens du tour 1** — la table ci-dessous n'a pas été rejouée après l'inversion du 30/08 (tour 2) faute d'outillage navigateur dans ce lot ; elle documente la méthode et reste correcte en valeur absolue (la distance entre panneaux ne dépend que du nombre de champs de chacun, pas du sens de l'alternance), mais les situations associées à « en tête » sont désormais inversées : `s1` et `s3` ont le marché en tête, `s2` le cadrage.
-
-   | Situation (sens du tour 1, à inverser) | Panneau en tête | Arrêts jusqu'à l'autre panneau |
-   | --- | --- | --- |
-   | `s1` | Le cadrage | 6 (cinq lectures + « Transmettre ce cadre ») |
-   | `s2` | L'assistant | 5 (cinq boutons « Acheter ») |
-
-   La distance elle-même reste asymétrique (6 contre 5, parce que le cadrage porte cinq cases **et** un bouton de dépôt, le marché seulement cinq boutons) — ce n'est pas une parité de comptage exacte, seulement l'absence de biais systématique de position. Une reprise de tournée est nécessaire pour recapturer ce tableau dans le bon sens ; consignée comme point non levé dans `phase-5.md`.
-
-**Ce que ça ne résout pas, et qui reste vrai** : sur un même écran, l'un des deux panneaux est nécessairement rendu avant l'autre dans le DOM — la parité *par situation* qu'un empilement à une colonne interdit structurellement. Aucun motif d'interface propre à ce seul jeu (onglets, accordéon, bascule) n'a été introduit pour la simuler : le mandat de la phase l'interdit, et l'alternance était la réponse la moins coûteuse qui reste dans le vocabulaire déjà posé par `CutPanel`. Consigné aussi dans `phase-5.md` et dans la fiche `.impeccable`.
-
-Sur desktop (`sm:` et au-delà), la grille à deux colonnes s'applique toujours et la parité par écran, elle, tient exactement — mesuré ci-dessous, Point 3.
-
-## Point 2 — la densité des trois inventaires (plus le rapport)
-
-Inchangé depuis la tournée précédente sur le fond, revérifié après le passage à `grid-cols-1 sm:grid-cols-2` :
-
-1. **Le marché ne peut que rétrécir**, le relevé des achats se plafonne à deux entrées visibles et se replie derrière `<details>` — visible sur `desktop-3-s1-cinq-achats.png` (« VOIR 3 INDICES DE PLUS »). Vérifié en DOM que les deux entrées visibles portent bien deux indices distincts (`h1`, `h2`), pas une lecture erronée d'une capture compressée.
-2. **La grille des causes ne montre plus de trou** : chaque `CauseOption` porte son propre filet plutôt qu'un fond de conteneur partagé, inchangé depuis la passe précédente.
-
-## Point 3 — l'action de trancher reste-t-elle atteignable sans défilement ?
-
-**Non, aux deux gabarits, dès l'ouverture d'une situation — assumé, et désormais couvert par un défaut de backlog propre à ce cas.**
-
-Mesuré à l'ouverture de `s1`, page pleine, `scrollY = 0` vérifié :
-
-| Gabarit | `scrollHeight` | `clientHeight` | Dépassement à l'ouverture | Sommet du panneau des causes |
-| --- | --- | --- | --- | --- |
-| Desktop 1440×900 | 1510 | 900 | 610px | 1177px (277px sous le pli) |
-| Mobile 390×844 | 2280 | 844 | 1436px | 1741px (897px sous le pli) |
-
-Le dépassement desktop a reculé par rapport à la tournée précédente (697px), la consigne ayant perdu une phrase (voir « Point 8 »). Le dépassement mobile a **augmenté** (1346px → 1436px) : conséquence directe et assumée du passage à une colonne unique sur les deux panneaux du Point 1, qui ajoute de la hauteur au document pour gagner en lisibilité — l'arbitrage inverse de celui du Point 1.
-
-Après cinq achats, mesuré page pleine :
-
-| Gabarit | `scrollHeight` à l'ouverture | `scrollHeight` après cinq achats | Delta |
+| Situation | Sommet cadrage | Sommet marché | Écart |
 | --- | --- | --- | --- |
-| Desktop | 1510 | 1473 | -37px |
-| Mobile | 2280 | 2142 | -138px |
+| `s1` | 647 | 647 | 0 |
+| `s2` | 494 | 494 | 0 |
+| `s3` | 516,75 | 516,75 | 0 |
 
-**Acheter n'aggrave donc jamais ce défilement** — le relevé plafonné-et-replié du Point 2 compense plus que ce que le marché perd, aux deux gabarits.
+**Mobile (390px) : empilement à une colonne, pas de parité par écran.** Un panneau est nécessairement au-dessus de l'autre. Mesuré :
 
-**Ce qui est nouveau dans cette tournée** : le geste hors écran à l'ouverture n'est pas l'action de passage de la révélation (`aidd_docs/backlog/defects/la-revelation-pousse-l-action-hors-de-l-ecran.md`, qui couvre `lie-detector` et `defect-hunt`, un autre état et un autre geste) — c'est le panneau des causes lui-même, l'action de **trancher**, dès l'ouverture, avant tout cadrage ou tout achat. Le ticket existant ne couvre pas ce cas ; un défaut propre a été ouvert : `aidd_docs/backlog/defects/l-ouverture-de-hint-budget-pousse-le-tranchage-hors-de-l-ecran.md`. Non corrigé dans cette passe — la densité du corpus (rapport + deux colonnes + trois causes) est un plancher fixé en phase 4, que cette passe ne peut pas réduire sans rouvrir le corpus, comme la fiche `phase-5.md` le consignait déjà pour le défaut voisin.
+| Situation | Sommet cadrage | Sommet marché | Écart vertical |
+| --- | --- | --- | --- |
+| `s1` | 1337,25 | 872,25 | 465 |
+| `s2` | 631,5 | 1022,25 | 390,75 |
+| `s3` | 1071 | 586 | 485 |
 
-`desktop-4-s1-revelation.png` et `mobile-4-s1-revelation.png` montrent, vérifié pixel par pixel, la phase `revealed` : la cause réelle porte un disque plein et l'étiquette « CAUSE RÉELLE », les quatre autres un cercle fin et « ÉCARTÉE », chacune avec sa vérification ; le pied de la révélation lit « INDICES 75 · TRANCHE FAUSSE +40 · TOTAL 115 » sur ce lot (`s1`, tranchée sur `s1-c-tls`, fausse, après cinq achats — pas de surtaxe d'aveugle puisque des indices ont été achetés). Le bouton « Incident suivant » est présent sous le relevé, mesuré à desktop 1774px et mobile 2457px — sous le pli aux deux gabarits, la même famille de défaut que le ticket voisin couvre déjà pour cet état-là.
+**Lisibilité, aux deux gabarits** : vérifiée sur `mobile-1-s1-ouverture.png` — chaque lecture de cadrage et chaque indice tiennent sur une à deux lignes normales, aucun repli caractère par caractère. Les cinq nouvelles longueurs de causes (tâche 1) restent lisibles sur `mobile-6-s3-ouverture.png` et `desktop-4-s1-revelation.png` : trois lignes au plus par carte, pas de débordement.
 
-## Point 4 — le prix avant le clic
+## Point 2 — l'ordre réel des deux panneaux dans chacune des trois situations
 
-Confirmé, aux deux gabarits, sur `desktop-1-s1-ouverture.png` et `mobile-1-s1-ouverture.png` : chaque `HintCard` non achetée affiche `ACHETER · <coût>` en clair, sans survol ni dépliage. Une fois acheté, le prix reste lisible à côté d'un cadenas, vérifié en DOM sur les cinq indices de `s1` (`desktop-3-s1-cinq-achats.png`) : deux visibles, trois repliés, chacun avec son propre prix et son propre texte, aucune duplication ni omission.
+`cadrageFirst = (situationNumber - 1) % 2 !== 0` — mesuré en DOM (`querySelectorAll('section')`, position de l'en-tête « Le cadrage » contre « L'assistant »), aux deux gabarits identiquement (l'ordre DOM ne dépend pas de la largeur) :
 
-## Point 5 — la conséquence se tait
+| Situation | Panneau en tête (DOM) | Vérifié sur |
+| --- | --- | --- |
+| `s1` | **Le marché** | `desktop-1`, `mobile-1` |
+| `s2` | **Le cadrage** | `desktop-5`, `mobile-5` |
+| `s3` | **Le marché** | `desktop-6`, `mobile-6` |
 
-Confirmé. Ni `wrongCutPenalty` (40) ni `blindCutSurcharge` (30) ne figurent nulle part avant la tranche — vérifié sur `desktop-1` à `desktop-3` et verrouillé par un test (`hint-budget-game.test.tsx`, « announces no consequence before cutting »). Les deux montants n'apparaissent qu'au relevé de la révélation, et seulement ceux qui s'appliquent.
+Aucun des deux gestes n'est en tête sur les trois situations : le marché deux fois, le cadrage une fois — exactement l'inverse de la répartition qui faisait tenir `c2` à un joueur passif avant le tour 2 de revue (cadrage en tête deux fois sur trois). Confirmé visuellement : `desktop-1` et `mobile-1` (« L'ASSISTANT » à gauche/en haut, « LE CADRAGE » à droite/en bas), `desktop-5` (« LE CADRAGE » à gauche), `desktop-6`/`mobile-6` (« L'ASSISTANT » de nouveau en tête).
 
-## Point 6 — les deux natures de lecture de cadrage
+## Point 3 — l'action de trancher : position à l'ouverture et après cinq achats
 
-Confirmé, structurellement et visuellement. `FramingLine` ne reçoit que `id` et `text` — jamais `established`. Verrouillé par un test qui compare l'arbre rendu de deux configurations où seule l'identité de la lecture établie change.
+Mesuré sur `s1`, `scrollY = 0` vérifié, page pleine :
+
+| Gabarit | `scrollHeight` | `clientHeight` | Dépassement | Sommet du panneau des causes | Sous le pli de |
+| --- | --- | --- | --- | --- | --- |
+| Desktop, ouverture | 1510 | 900 | 610px | 1164px | 264px |
+| Desktop, après 5 achats | 1473 | 900 | 573px | 1126,75px | 226,75px |
+| Mobile, ouverture | 2280 | 844 | 1436px | 1728px | 884px |
+| Mobile, après 5 achats | 2161 | 844 | 1317px | 1609,5px | 765,5px |
+
+**Trancher reste hors d'écran sans défilement, aux deux gabarits, dès l'ouverture** — inchangé depuis la dernière tournée, toujours couvert par `aidd_docs/backlog/defects/l-ouverture-de-hint-budget-pousse-le-tranchage-hors-de-l-ecran.md`, non corrigé par ce lot (la densité du corpus est un plancher de phase 4).
+
+**Acheter n'aggrave jamais ce défilement, aux deux gabarits** : desktop −37px (1510 → 1473), mobile −119px (2280 → 2161). Le delta mobile diffère de celui de la tournée précédente (−138px) : attendu, et non une régression — la tâche 1 a changé la longueur des cinq `causes[].text` de `s1` (pour fermer le canal de rang de longueur, cf. le commit dédié), ce qui déplace de quelques caractères le nombre de lignes que certaines cartes du panneau des causes occupent avant la révélation. Les deux tournées mesurent honnêtement deux corpus différents.
+
+## Point 4 — le nombre d'arrêts de tabulation pour atteindre chaque panneau
+
+Mesuré par une marche `Tab` continue depuis le focus initial de la page (rien cliqué avant), en comptant le pas auquel le focus entre pour la première fois dans la section portant l'en-tête « Le cadrage » puis « L'assistant ». Identique aux deux gabarits — l'ordre de tabulation suit le DOM, pas la largeur de viewport.
+
+| Situation | 1er arrêt dans marché | 1er arrêt dans cadrage | Panneau atteint en premier |
+| --- | --- | --- | --- |
+| `s1` | 1 | 6 | Marché (5 arrêts d'avance) |
+| `s2` | 8 | 2 | Cadrage (6 arrêts d'avance) |
+| `s3` | 2 | 7 | Marché (5 arrêts d'avance) |
+
+L'écart de +1 sur `s2`/`s3` par rapport à `s1` (le premier panneau à 2 plutôt qu'à 1) vient d'un arrêt de tabulation supplémentaire commun aux deux : à partir de la deuxième situation, la consigne se replie derrière un bouton natif « Revoir la consigne » (`<details><summary>`, visible sur `desktop-5`, `desktop-7`), qui est lui-même un arrêt de tabulation avant les deux panneaux. Le panneau en tête change bien d'une situation à l'autre (marché sur `s1`/`s3`, cadrage sur `s2`), mais la **distance** entre les deux panneaux reste asymétrique dans les deux sens (5 puis 6 arrêts) : ce n'est pas une parité de comptage au clavier, seulement l'absence d'un panneau systématiquement le plus loin sur l'ensemble d'une partie.
+
+## Point 5 — la révélation, avec son relevé chiffré
+
+**`s1` — cinq indices achetés, tranche fausse** (`desktop-4-s1-revelation.png`, `mobile-4-s1-revelation.png`) :
+
+> INDICES 75 · TRANCHE FAUSSE +40 · TOTAL 115
+
+Vérifié : 5+10+15+20+25 = 75 (les cinq indices), +40 la pénalité de tranche fausse, pas de surtaxe d'aveugle puisque des indices ont été achetés. Vérifié au pixel : la cause réelle (« L'horloge du serveur de production avait pris du retard. ») porte le disque plein et « CAUSE RÉELLE » ; la cause cliquée à tort (« Le certificat TLS du reverse proxy vient d'expirer. ») porte désormais un cercle plus épais et **« ÉCARTÉE — TRANCHÉE »**, distincte des deux autres causes simplement « ÉCARTÉE » — la marque ajoutée par le correctif W6 de cette même série de commits, visible en tournée réelle pour la première fois.
+
+**`s2` — aucun cadrage, aucun achat, tranche à l'aveugle** :
+
+> INDICES 0 · TRANCHE FAUSSE +40 · AVEUGLE +30 · TOTAL 70
+
+Vérifié : 0 indice acheté, +40 la pénalité de tranche fausse, +30 la surtaxe d'aveugle (`blindCutSurcharge`), cumulées puisqu'aucun indice n'a été acheté avant de trancher. `30 < 40` et surtout `30 <= max(cost) = 25` n'est **pas** le cas ici — `blindCutSurcharge` (30) reste strictement supérieur au coût du plus cher des cinq indices de `s2` (25), la garantie que le schéma refuse de charger sans elle.
+
+## Point 6 — l'affichage identique des deux natures de lecture
+
+Vérifié en DOM sur les cinq boutons du panneau « Le cadrage » de `s1` : même `className`, aucun attribut `data-*` distinctif entre une lecture établie et une supposition (échantillon relevé par le script, cinq boutons, une seule classe partagée). Confirme structurellement ce que `hint-budget-game.test.tsx` verrouille déjà (« renders an established reading and a supposition with exactly the same structure »).
 
 ## Point 7 — l'état sans la couleur
 
-Confirmé, capturé sous `grayscale(1)` (`desktop-6-s3-desature.png`, `mobile-6-s3-desature.png`), page pleine cette fois — la tournée précédente le capturait en viewport à `scrollY = 0`, qui sur mobile n'en montrait aucun pixel. La case de cadrage retenue reste identifiable par son remplissage plein, l'indice acheté par son cadenas et son texte déjà révélé.
+`desktop-7-s3-desature.png`, `mobile-7-s3-desature.png` (`grayscale(1)`, page pleine) : la lecture de cadrage retenue reste identifiable par sa case pleine (carré noir), l'indice acheté par son cadenas et son texte déjà révélé — vérifié visuellement sous désaturation complète.
 
-## Point 8 — l'affordance morte après la tranche, et le libellé « Situation »
+## Point 8 — ce que la tâche 1 a changé, vérifié à l'écran
 
-Deux correctifs de cette passe, tous deux vérifiés en DOM plutôt que par capture seule :
+Les nouveaux textes de `s1-c-clock`, `s1-c-tls`, `s1-c-header`, `s1-c-secret`, `s1-c-cdn`, `s3-c-parallel`, `s3-c-env`, `s3-c-node`, `s3-c-timezone` (rang de longueur descendant de la cause réelle : 2 · 3 · 4, cf. le commit dédié) sont lisibles sans repli sur `desktop-4-s1-revelation.png` et `mobile-6-s3-ouverture.png` : trois lignes au plus par carte de cause, aux deux gabarits. La question de `g2-1-c1` (« Les incidents ont-ils été résolus… ») n'est pas affichée pendant la partie — conforme à « un jeu ne dit jamais ce qu'il note » — donc rien à en vérifier à l'écran ; seule sa formulation dans `config/course.json` change.
 
-1. **Affordances mortes.** `HintMarket` ne recevait pas `interactive` : après la révélation, chaque indice non acheté gardait un bouton « ACHETER » d'apparence active dont le clic ne faisait plus rien. `FramingLine` avait le même défaut quand aucun cadre n'avait été déposé. Les deux boutons portent désormais l'attribut `disabled` une fois la situation révélée — vérifié par un test (`hint-budget-game.test.tsx`, « disables every unbought hint button and every framing reading once the situation is revealed »).
-2. **Collision de libellé.** La coquille du parcours affiche son propre « Situation 1 sur 20 » (le compte des vingt jeux), et le jeu affichait un second « Situation 1 sur 3 » à ~250px d'écart avec un dénominateur contradictoire. Renommé en « Incident 1 sur 3 » et « Incident suivant », visible sur toutes les captures de cette tournée — les six autres jeux du parcours nomment chacun leur propre unité (« Manche », « Tour », « Étape », « Extrait »).
+## Ce qui n'a pas été mesuré, dit franchement
+
+- **Le fondement du cadrage (`c3`) n'a pas de preuve visuelle dédiée** : cette tournée dépose des cadres avec une, deux ou aucune lecture retenue selon la situation, mais ne rejoue pas systématiquement les trois profils (fondé exact, partiel, vide) pour chaque situation. Couvert par les tests (`evaluator.test.ts`, `hint-budget-run.test.ts`), pas par une capture dédiée ici.
+- **`s2`, mesure de la position du panneau des causes et du dépassement** : non reprise (seule `s1` a servi de base à cette mesure, comme pour la tournée précédente). Rien n'indique qu'elle différerait significativement, la densité du corpus étant la même aux trois situations, mais ce n'est pas mesuré.
+- **Le décompte des situations résolues et le score final** ne sont jamais affichés pendant la partie ; cette tournée ne les a donc pas cherchés à l'écran, conformément à « un jeu ne dit jamais ce qu'il note ».
 
 ## Verdict
 
-**Un problème structurel résolu sur les trois canaux demandés, avec sa limite assumée par écrit** : la lisibilité mobile (Point 1) est corrigée en substance — plus de lecture repliée caractère par caractère — et le biais de *position* (visuel comme clavier) est réparti par alternance plutôt que par une parité par écran que l'empilement à une colonne rend structurellement impossible sans motif d'interface propre à ce jeu. **Correction du tour 2** : le sens de cette alternance favorisait un joueur passif sur le *verdict* de `c2` (2 cadrages en tête sur 3, exactement le seuil de majorité) ; il est inversé pour que la passivité manque `c2` au lieu de le tenir — aucune alternance ne rend ce verdict neutre sur un nombre impair de situations, celle-ci choisit qui elle défavorise plutôt que de prétendre à une neutralité impossible.
+**Ce que cette tournée établit, mesuré et vérifié au pixel ou en DOM** : la parité desktop est exacte (écart de sommet nul sur les trois situations) ; l'alternance mobile fait bien alterner le panneau en tête (marché deux fois, cadrage une fois) sans jamais atteindre une parité de comptage au clavier (5 puis 6 arrêts) ; l'ouverture pousse toujours le panneau des causes sous le pli, aux deux gabarits, et les cinq achats réduisent toujours ce dépassement plutôt que de l'aggraver ; le relevé de révélation est exact au centime près, sur une tranche fausse comme sur une tranche à l'aveugle ; la marque « ÉCARTÉE — TRANCHÉE » du correctif W6 est visible et distincte des trois autres cartes écartées à l'écran, pas seulement dans le code.
 
-**Un arbitrage assumé et chiffré** : la lisibilité mobile coûte 90px de dépassement documentaire supplémentaire à l'ouverture (1346px → 1436px), sur un défaut déjà non corrigé et désormais mieux nommé — un second défaut de backlog couvre spécifiquement le panneau des causes hors écran à l'ouverture, distinct de celui déjà suivi pour la révélation.
+**Ce qu'elle infirme d'une affirmation précédente** : le delta de hauteur documentaire mobile après cinq achats n'est plus −138px mais **−119px**, parce que le corpus de causes a changé sous ce lot (tâche 1). Ni l'ancienne ni la nouvelle mesure n'était fausse en son temps ; c'est le document mesuré qui a changé.
 
-**Deux correctifs mineurs mais vérifiés en test** : les affordances mortes après révélation, et la collision de libellé avec la coquille du parcours.
+**Ce qu'elle ne prétend toujours pas** : une parité par écran au gabarit mobile (structurellement hors de portée d'un empilement à une colonne sans motif d'interface propre à ce seul jeu, que le mandat du produit interdit) ; que « trancher reste atteignable sans défilement » soit tenu (mesuré non tenu, dès l'ouverture, aux deux gabarits — défaut de backlog existant, non corrigé ici).
 
-Revalidé après les correctifs : `npm run lint` (Biome, aucun problème), `npm run typecheck` (muet), `npm run test` (73 fichiers, 650 tests, aucune régression).
+Revalidé après les correctifs de ce lot : `npm run typecheck` (muet), `npx biome check src __tests__ config` (aucun problème), `npm run test` (73 fichiers, 661 tests, aucune régression).
