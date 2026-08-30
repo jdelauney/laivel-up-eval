@@ -29,10 +29,15 @@ const PURCHASED_LOG_CAP = 2
  * en particulier au gabarit mobile, est le travail de la phase 5.
  *
  * La consigne annonce ce cadre — que le cadre se transmet une seule fois,
- * que chaque indice a un prix affiché, que l'ordre des deux gestes est
- * libre — jamais ce qui est noté : ni les seuils, ni le fait qu'une tranche
- * fausse ou aveugle coûte davantage. `DESIGN.md`, « Un jeu ne dit jamais ce
- * qu'il note. »
+ * que chaque indice a un prix affiché — jamais ce qui est noté : ni les
+ * seuils, ni le fait qu'une tranche fausse ou aveugle coûte davantage.
+ * `DESIGN.md`, « Un jeu ne dit jamais ce qu'il note. »
+ *
+ * Elle ne dit plus non plus **que l'ordre des deux gestes est libre**, et ce
+ * silence est délibéré depuis le premier tour de revue. La phrase était
+ * exacte — l'écran laisse bien l'ordre au joueur — mais elle rassurait à
+ * contresens sur la dimension exacte que `c2` mesure. Se taire sur ce qui
+ * est noté est une chose ; orienter dans le sens inverse en est une autre.
  */
 export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
