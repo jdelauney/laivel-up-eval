@@ -82,6 +82,16 @@ const liesUnmaskedAtLeast = (
  * le seuil d'occasions n'a pas assez démontré, sur le même principe que
  * `kinds-found-including` chez `defect-hunt`, où un critère sans matière
  * ressort manqué plutôt que satisfait par défaut.
+ *
+ * `minOpportunities: 2` est la valeur maximale sûre sur le corpus actuel de
+ * `config/course.json`. Raison structurelle, pas empirique : `r2` porte
+ * l'unique objection fondée du corpus, donc y désigner juste ne crée aucune
+ * occasion (la première désignation vise déjà la cible de l'objection).
+ * Un joueur à trois bonnes premières désignations sur quatre a donc au pire
+ * deux occasions hors `r2` — le plancher de 2 tombe exactement sur ce sol.
+ * À 3, des lecteurs légitimes échoueraient faute de matière, pas faute de
+ * tenue. Toucher au corpus (déplacer l'objection fondée, ajouter une
+ * manche) invalide ce calcul et doit le refaire avant de relever le seuil.
  */
 const heldChancesAtLeast = (
   opportunityCount: number,
