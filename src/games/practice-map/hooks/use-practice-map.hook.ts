@@ -45,6 +45,15 @@ export type Marker = { id: string; label: string; marker: string }
 /** Un pas de déplacement au clavier, identique sur les deux axes. */
 const NUDGE_STEP = 0.1
 
+/**
+ * Le milieu géométrique du plan, sur les deux axes. C'est là — et nulle
+ * part ailleurs — que l'annonce en mots bascule d'un pôle à l'autre, parce
+ * que c'est là que la croix est tracée à l'écran. Le seuil de notation
+ * (`highRigorFrom`) ne doit jamais servir à formuler ce que le joueur lit
+ * ou entend : il est localisable en deux flèches sinon.
+ */
+const PLANE_MIDPOINT = 0.5
+
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value))
 
 /**
@@ -202,14 +211,30 @@ export const usePracticeMap = (
    * La position en mots : deux crans nommés par axe, tirés des pôles de la
    * configuration, jamais un nombre — un joueur au clavier ne doit pas
    * obtenir une précision que le joueur à la souris n'a pas.
+   *
+   * **Les deux axes basculent au milieu géométrique du plan, `0.5`, et
+   * jamais à `highRigorFrom`.** Correction du 31/08, sur constat critique
+   * de la revue indépendante. L'axe d'intensité basculait déjà à `0.5` ;
+   * l'axe de rigueur basculait au seuil de notation, ce qui le rendait
+   * localisable au clavier en deux flèches depuis le centre — le mot
+   * changeait entre `0.6` et `0.7` alors que la croix est tracée à `0.5`.
+   * La revue a chiffré l'exploit sur le corpus réel : sept jetons alignés
+   * à une rigueur de `0.75`, intensités étalées, sans lire un libellé,
+   * tiennent `c2` dans 47,7 % des cas contre 13,3 % au hasard — au-dessus
+   * même des 43,75 % que `plan.md` cite comme le coût inacceptable de
+   * vraies cellules de dépôt.
+   *
+   * L'annonce dit désormais exactement ce que la croix montre, et rien de
+   * plus : `DESIGN.md`, « Un jeu ne dit jamais ce qu'il note. » Le seuil
+   * de notation ne sort d'aucune surface visible ni audible.
    */
   const positionLabel = (intensity: number, rigor: number): string => {
     const intensityWord =
-      intensity < 0.5 ? parsed.poles.intensityLow : parsed.poles.intensityHigh
+      intensity < PLANE_MIDPOINT
+        ? parsed.poles.intensityLow
+        : parsed.poles.intensityHigh
     const rigorWord =
-      rigor < parsed.highRigorFrom
-        ? parsed.poles.rigorLow
-        : parsed.poles.rigorHigh
+      rigor < PLANE_MIDPOINT ? parsed.poles.rigorLow : parsed.poles.rigorHigh
     return `${intensityWord}, ${rigorWord}`
   }
 

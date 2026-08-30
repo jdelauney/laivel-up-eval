@@ -276,6 +276,37 @@ describe('use practice map', () => {
     expect(result.current.positionLabel(0.9, 0.9)).not.toMatch(/[0-9]/)
   })
 
+  /**
+   * Régression du 31/08, sur constat critique de la revue indépendante.
+   * L'annonce basculait le mot de rigueur à `highRigorFrom`, le seuil de
+   * notation, et non au milieu géométrique où la croix est tracée. Deux
+   * flèches depuis le centre le localisaient, et sept jetons alignés juste
+   * au-dessus tenaient `c2` dans 47,7 % des cas contre 13,3 % au hasard.
+   *
+   * Le fixture commun porte `highRigorFrom: 0.5`, qui coïncide avec le
+   * milieu : c'est précisément pourquoi rien n'attrapait la fuite. Ce test
+   * dissocie les deux valeurs, seul moyen de distinguer les deux règles.
+   */
+  it('flips the announced word at the geometric midpoint, never at the scoring threshold', () => {
+    // `p3` se tient en `rigorFrom: 0.6`, `p1` en `rigorTo: 0.2` : le seuil
+    // de `0.6` garde donc le corpus conforme aux refus de répartition, tout
+    // en le dissociant du milieu.
+    const { result } = renderGame({ ...baseConfig(), highRigorFrom: 0.6 })
+
+    const below = result.current.positionLabel(0.5, 0.49)
+    const atMidpoint = result.current.positionLabel(0.5, 0.5)
+    const betweenMidpointAndThreshold = result.current.positionLabel(0.5, 0.55)
+    const atThreshold = result.current.positionLabel(0.5, 0.6)
+
+    // Le mot bascule au milieu, pas au seuil.
+    expect(below).not.toBe(atMidpoint)
+    // Et il ne rebascule pas au seuil : entre le milieu et le seuil, puis
+    // au seuil, l'annonce est identique. Aucun pas de clavier ne trahit
+    // `highRigorFrom`.
+    expect(betweenMidpointAndThreshold).toBe(atMidpoint)
+    expect(atThreshold).toBe(atMidpoint)
+  })
+
   it('locks hold, place, nudge, release and submit once revealed', () => {
     const { result } = renderGame()
 

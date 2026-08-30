@@ -105,7 +105,9 @@ journey
 
 > Les seuils se calent au jugé ; ce qui se vérifie à froid, c'est qu'un joueur au hasard ne les tient pas.
 
-1. Consigner en commentaire du fichier de fixtures les probabilités d'un placement uniforme au hasard : `c1` (quatre pratiques en zone) quasi nulle — l'espérance est de 0,41 pratique en zone sur sept ; `c2` environ 13 % ; `c3` (six relations sur sept) 6,25 %. Les deux derniers sont l'ordre de grandeur retenu chez `lie-detector` (15,6 %) et `hint-budget` (10,4 %).
+1. Consigner en commentaire du fichier de fixtures les probabilités d'un placement uniforme au hasard : `c1` (quatre pratiques en zone) quasi nulle — l'espérance est de 0,41 pratique en zone sur sept ; `c2` environ 13 % ; `c3` (six relations sur sept) **8,33 %**. Les deux derniers sont l'ordre de grandeur retenu chez `lie-detector` (15,6 %) et `hint-budget` (10,4 %).
+
+   > **Correction du 31/08, sur constat de la revue indépendante.** `c3` était annoncé à 6,25 %, valeur obtenue en traitant les sept relations comme indépendantes. Elles ne le sont pas : `p1` porte `o2`, `o5` et `o6` sur l'axe de rigueur et `o7` sur celui d'intensité, donc sa seule coordonnée tirée décide quatre relations. La valeur exacte est **8,33 %**, soit un douzième, recalculée puis confirmée par vingt millions de tirages. Un tiers d'écart, dans le sens du plus permissif — ce qui ne remet pas en cause le seuil, mais interdit de refaire ce raccourci sur un futur corpus.
 2. Vérifier ce relevé par un test, pas seulement par le calcul : le test de fixtures pose les sept jetons empilés au même point et sur une diagonale unique, et constate que les trois critères sont manqués dans les deux cas.
 
 ### `4)` Les fixtures et le test d'intégration

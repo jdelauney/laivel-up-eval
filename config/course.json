@@ -645,7 +645,7 @@
             },
             {
               "id": "g2-2-c2",
-              "question": "Une pratique de haute rigueur a-t-elle été située dans son quadrant ?",
+              "question": "Une pratique de haute rigueur a-t-elle été située là où elle se tient ?",
               "rule": {
                 "type": "high-rigor-zone-hit"
               },

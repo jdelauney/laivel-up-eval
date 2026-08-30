@@ -6,10 +6,18 @@ import type { PracticeMapConfig } from '../schema/config.schema'
  * le scoring : deux implémentations auraient divergé au premier ajustement
  * de règle.
  *
- * Aucune horloge, aucun aléa, aucun accès extérieur, aucun seuil : les
- * seuils sont déclarés dans le parcours et lus par les règles de
- * l'évaluateur, jamais ici — ce helper est aussi lu par l'écran, qui ne doit
- * rien savoir des seuils.
+ * Aucune horloge, aucun aléa, aucun accès extérieur, et **aucun seuil de
+ * critère** : les seuils de critère — combien de pratiques en zone, combien
+ * de relations tenues — sont déclarés dans le parcours et lus par les règles
+ * de l'évaluateur, jamais ici. Déplacer l'un d'eux ne touche pas ce fichier.
+ *
+ * Précision apportée le 31/08, la revue indépendante ayant relevé à raison
+ * que le commentaire disait « aucun seuil » alors que `config.highRigorFrom`
+ * est bien lu plus bas : c'est un seuil **de configuration**, qui définit ce
+ * qu'est une zone de haute rigueur, et non un seuil de notation. Il décrit
+ * le corpus, pas la barre à franchir. La distinction compte, parce que
+ * `highRigorFrom` ne doit jamais remonter jusqu'à une surface que le joueur
+ * lit ou entend — voir `PLANE_MIDPOINT` dans `use-practice-map.hook.ts`.
  */
 
 export type PlacementReading = {

@@ -19,9 +19,15 @@ import {
  * - `g2-2-c2` (au moins une pratique de haute rigueur dans sa propre zone) :
  *   environ 13 %, du même ordre que `lie-detector` (15,6 %) et
  *   `hint-budget` (10,4 %) ;
- * - `g2-2-c3` (six relations sur sept tenues) : chaque relation est tenue
- *   avec probabilité 1/2 sous deux tirages uniformes indépendants ; six sur
- *   sept indépendantes donne `(C(7,6) + C(7,7)) × (1/2)⁷ = 8/128 = 6,25 %`.
+ * - `g2-2-c3` (six relations sur sept tenues) : **8,33 %**, soit exactement
+ *   un douzième. Corrigé le 31/08 sur constat de la revue indépendante, qui
+ *   a recalculé la valeur exacte et l'a confirmée par vingt millions de
+ *   tirages. Le chiffre annoncé jusque-là — `(C(7,6) + C(7,7)) × (1/2)⁷ =
+ *   6,25 %` — supposait les sept relations **indépendantes**. Elles ne le
+ *   sont pas : `p1` porte à elle seule `o2`, `o5` et `o6` sur l'axe de
+ *   rigueur, plus `o7` sur celui d'intensité, de sorte que sa coordonnée
+ *   tirée décide quatre relations à la fois. Un tiers d'écart, dans le sens
+ *   du plus permissif.
  */
 
 const centerOf = (
