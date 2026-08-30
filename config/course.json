@@ -8,45 +8,73 @@
       "games": [
         {
           "id": "g1-1",
-          "type": "test-bench",
-          "label": "Ce code IA est-il fiable ?",
+          "type": "confidence-bet",
+          "label": "Quelle confiance accordez-vous à ce code ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Six extraits de code vous sont présentés un par un. Pour chacun, misez la confiance que vous accordez à son exactitude — pas ce que vous en feriez en revue — avant de voir le verdict : la mise se verrouille dès qu'elle est engagée, elle ne se reprend jamais. Sur un extrait sain, une mise haute rapporte ; sur un extrait défectueux, une mise basse rapporte. Certains extraits ne peuvent pas être tranchés avec ce qui est montré : s'en écarter y coûte, dans un sens comme dans l'autre.",
+            "stakes": [10, 30, 50, 70, 90],
+            "neutralStake": 50,
+            "startingCapital": 100,
+            "snippets": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "x1",
+                "label": "Bornage d'une valeur",
+                "language": "ts",
+                "code": "function clamp(value: number, min: number, max: number): number {\n  return Math.min(min, Math.max(max, value))\n}",
+                "nature": "flawed",
+                "reveal": "Ce code est défectueux : les deux bornes sont croisées. Avec `min` à 0, `max` à 10 et une valeur de 5, `Math.max(10, 5)` rend 10, puis `Math.min(0, 10)` rend 0 — la fonction rend la borne basse au lieu de la valeur."
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "x2",
+                "label": "Abonnement dans un effet",
+                "language": "tsx",
+                "code": "useEffect(() => {\n  const subscription = client.subscribe(options)\n  return () => subscription.unsubscribe()\n}, [client, options])",
+                "nature": "undecidable",
+                "reveal": "Cet extrait ne peut pas être tranché : si le parent reconstruit `options` à chaque rendu, l'abonnement se ferme et se rouvre en boucle ; si `options` est stable, l'extrait est exactement juste. Le parent n'est pas montré."
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "x3",
+                "label": "Regroupement par clé",
+                "language": "ts",
+                "code": "export function groupBy<T>(\n  items: readonly T[],\n  keyOf: (item: T) => string,\n): Map<string, T[]> {\n  const groups = new Map<string, T[]>()\n  for (const item of items) {\n    const key = keyOf(item)\n    const bucket = groups.get(key)\n    if (bucket === undefined) groups.set(key, [item])\n    else bucket.push(item)\n  }\n  return groups\n}",
+                "nature": "sound",
+                "reveal": "Ce code est fiable : la `Map` écarte d'emblée le piège des clés héritées du prototype, une clé comme `__proto__` ou `constructor` y est une clé comme une autre. Le seau est créé une seule fois, et la liste reçue n'est jamais mutée."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "x4",
+                "label": "Enregistrement d'un lot",
+                "language": "ts",
+                "code": "export async function saveAll(items: readonly Item[]): Promise<void> {\n  items.forEach(async (item) => {\n    await persist(item)\n  })\n}",
+                "nature": "flawed",
+                "reveal": "Ce code est défectueux : `forEach` jette la promesse que lui rend son callback. `saveAll` se résout avant le premier enregistrement, et un échec de `persist` part en rejet non traité. Un `for...of` avec `await`, ou un `Promise.all`, ferait le travail."
+              },
+              {
+                "id": "x5",
+                "label": "Découpage d'une liste en morceaux",
+                "language": "ts",
+                "code": "export function chunk<T>(items: readonly T[], size: number): T[][] {\n  if (size < 1) throw new RangeError('la taille doit valoir au moins 1')\n  const chunks: T[][] = []\n  for (let index = 0; index < items.length; index += size) {\n    chunks.push(items.slice(index, index + size))\n  }\n  return chunks\n}",
+                "nature": "sound",
+                "reveal": "Ce code est fiable : la taille nulle ou négative est rejetée avant la boucle, ce qui ferme la boucle infinie ; `slice` borne de lui-même le dernier morceau, et l'entrée n'est jamais mutée."
+              },
+              {
+                "id": "x6",
+                "label": "Application d'une remise",
+                "language": "ts",
+                "code": "export function applyDiscount(order: Order): Order {\n  const discount = computeDiscount(order)\n  return { ...order, total: roundMoney(order.total - discount) }\n}",
+                "nature": "undecidable",
+                "reveal": "Cet extrait ne peut pas être tranché : il est juste ou faux d'un centime selon la façon dont `computeDiscount` et `roundMoney` arrondissent, et selon qu'une remise supérieure au total est possible. Ni l'un ni l'autre n'est montré."
               }
             ]
           },
           "criteria": [
             {
               "id": "g1-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La confiance engagée sur les extraits défectueux est-elle restée sous 30 % en moyenne ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "mean-stake-on-flawed-below",
+                "threshold": 30
               },
               "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 2
-                },
                 {
                   "dimension": "verification",
                   "weight": 2
@@ -55,15 +83,41 @@
             },
             {
               "id": "g1-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "La confiance engagée sur les extraits sains a-t-elle dépassé 70 % en moyenne ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "mean-stake-on-sound-above",
+                "threshold": 70
               },
               "mapping": [
                 {
-                  "dimension": "intervention",
-                  "weight": 1
-                },
+                  "dimension": "verification",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "id": "g1-1-c3",
+              "question": "La calibration globale atteint-elle son seuil ?",
+              "rule": {
+                "type": "calibration-at-least",
+                "threshold": 0.5
+              },
+              "mapping": [
+                {
+                  "dimension": "verification",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "id": "g1-1-c4",
+              "question": "La confiance est-elle restée dans la bande d'incertitude sur chaque extrait qu'on ne peut pas trancher ?",
+              "rule": {
+                "type": "stake-within-band-on-undecidable",
+                "from": 40,
+                "to": 60
+              },
+              "mapping": [
                 {
                   "dimension": "verification",
                   "weight": 1
