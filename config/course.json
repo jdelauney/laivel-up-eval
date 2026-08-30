@@ -262,7 +262,7 @@
                     "id": "r1-d",
                     "text": "Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une seule fois.",
                     "lying": false,
-                    "verification": "C'est le cran haut de l'échelle de pilotage du contexte : un contexte transférable à quelqu'un d'autre."
+                    "verification": "Se vérifie en donnant le même fichier à un nouveau venu humain, sans rien y ajouter : s'il y trouve ce qu'il cherchait, le texte a servi aux deux publics sans être réécrit."
                   }
                 ],
                 "objection": {

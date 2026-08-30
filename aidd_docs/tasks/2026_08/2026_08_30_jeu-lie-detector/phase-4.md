@@ -70,9 +70,11 @@ Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une r
 | `r1-a` | « Un fichier de contexte versionné profite à toute personne qui utilise l'assistant sur ce dépôt, pas seulement à celle qui l'a écrit. » | non | « Il est lu depuis le dépôt : quiconque le clone l'obtient, sans avoir rien à reconfigurer. » |
 | `r1-b` | « Un contexte trop long finit par diluer ce qui compte : il occupe la fenêtre sans rendre les instructions importantes plus saillantes. » | non | « L'effet est documenté et mesuré sur les longues fenêtres, où une instruction placée au milieu est moins suivie qu'en tête ou en fin. » |
 | `r1-c` | « Une fois le contexte posé, l'assistant s'y conforme sans qu'on ait à le vérifier : c'est ce qui le distingue d'un prompt. » | **oui** | « Un contexte oriente, il ne contraint pas. Ce qui contraint est exécutable : un hook, un test, une commande qui échoue. Le contexte réduit la fréquence des écarts, il ne les supprime pas, et la vérification reste due. » |
-| `r1-d` | « Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une seule fois. » | non | « C'est le cran haut de l'échelle de pilotage du contexte : un contexte transférable à quelqu'un d'autre. » |
+| `r1-d` | « Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une seule fois. » | non | « Se vérifie en donnant le même fichier à un nouveau venu humain, sans rien y ajouter : s'il y trouve ce qu'il cherchait, le texte a servi aux deux publics sans être réécrit. » |
 
 > `objection` → cible `r1-b`, **creuse** : « Je pense que c'est celle sur la dilution qui ment. Les modèles récents tiennent des fenêtres de plusieurs centaines de milliers de jetons : la longueur du contexte n'est plus un facteur. »
+
+**Correction du 30/08, après le challenge.** La `verification` de `r1-d` invoquait le référentiel du produit (« le cran haut de l'échelle de pilotage du contexte ») au lieu de nommer un contrôle : la story exige une phrase qui dit à quoi l'affirmation se vérifie, pas à quoi elle se rattache. Réécrite sur le ton des vérifications du corpus (« Se vérifie en… »), sans toucher au `text` de l'affirmation, sous garde-fou de longueur.
 
 ### Manche 2 — `r2` · la vérification
 
