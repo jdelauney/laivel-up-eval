@@ -12,8 +12,6 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
-import { buildLieDetectorAnswer } from '@/games/lie-detector/actions/build-lie-detector-answer.action'
-import { lieDetectorConfigSchema } from '@/games/lie-detector/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
 import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
@@ -21,6 +19,7 @@ import { FixedClock } from '@/infrastructure/clock/fixed.adapter'
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
+import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 
 /**
@@ -111,20 +110,9 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
   /**
    * `g1-3` porte lie-detector depuis la phase 4 de son propre plan : ce test
    * mesure `parallele`, jamais `verification`, donc n'importe quelle trace
-   * conforme suffit — ici, la première affirmation de chaque manche,
-   * désignée et maintenue.
+   * conforme suffit — voir `defaultLieDetectorAnswer`.
    */
-  if (game.type === 'lie-detector') {
-    const config = lieDetectorConfigSchema.parse(game.config)
-    return buildLieDetectorAnswer(
-      config,
-      config.rounds.map((round) => ({
-        roundId: round.id,
-        firstPickId: round.claims[0].id,
-        finalPickId: round.claims[0].id,
-      })),
-    )
-  }
+  if (game.type === 'lie-detector') return defaultLieDetectorAnswer(game.config)
   return { selected: [] }
 }
 
