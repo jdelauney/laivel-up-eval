@@ -72,3 +72,11 @@ journey
 | 1 | Un cadrage exact mais posé après un achat ne fait pas compter la situation pour le critère de cadrage |
 | 1 | Un critère dont le `rule.type` est inconnu lève une erreur nommée qui cite le type et le jeu |
 | 2 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
+
+## Correction du 30/08, tour 2 de revue — `c2` n'avait pas de plancher de contenu
+
+La scission de `c2` en deux règles (documentée dans `plan.md`) a isolé l'ordre du fondement, mais a laissé `framedFirst` se définir uniquement par `attempt.framing !== null && attempt.framing.afterHints === 0`, sans jamais vérifier que le cadrage retient quoi que ce soit. `framingEntrySchema` autorise explicitement `retainedIds: []` (« un cadrage qui ne retient rien reste un cadrage posé »), ce qui était juste pour le schéma de trace — un joueur peut légitimement transmettre un cadre vide — mais faux pour ce que `framed-first-at-least` en tirait : trois clics sur « Transmettre ce cadre », zéro lecture, zéro seconde de réflexion, tenaient `c2` 3/3.
+
+Erreur assumée, pas une rustine à contourner en silence : ne rien transmettre n'est pas contextualiser, quel que soit le moment où ce rien est déposé. Le correctif porte dans `read-situations.helper.ts`, pas dans l'écran — `framedFirst` exige désormais un cadrage déposé, avant tout achat, **et non vide** (`attempt.framing.retainedIds.length > 0`). Un joueur qui coche au hasard puis dépose tiendra tout de même `c2` (il a cadré en premier) mais manquera `c3` (rien n'appuie sa sélection au hasard sur le rapport) — c'est exactement ce que la scission de `c2` cherchait à rendre lisible : il a bien cadré en premier, mal.
+
+Testé : le profil « cadrage vide posé en premier » est ajouté aux profils de `hint-budget-run.test.ts` (W9 de la revue 2), avec l'assertion qu'il ne tient aucun des trois critères.

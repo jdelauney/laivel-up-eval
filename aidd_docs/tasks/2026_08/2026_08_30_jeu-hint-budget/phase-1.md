@@ -135,3 +135,22 @@ journey
 | 3 | Un cadrage exact posé après un achat rend `framingGrounded: true` et `framedFirst: false`, donc `framedAndGrounded: false` |
 | 3 | Une tranche fausse sans aucun indice coûte strictement plus qu'une tranche fausse après l'achat de l'indice le plus cher de la situation |
 | 4 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
+
+## Correction du 30/08, tour 2 de revue — le graphe d'élimination des causes
+
+Deux tours de revue ont montré le même motif sur `c1` : une consigne d'écriture du corpus ferme un canal de fuite (l'indice le plus cher paraphrase la cause réelle, tour 1) et en découvre aussitôt un autre (le même indice l'écarte plutôt que de la nommer, mais élimine quatre causes sur cinq — la délégation totale reste possible, tour 2). Une note dans un fichier de phase ne borne rien : c'est le contrat qui doit rendre la fuite inexprimable, pas une relecture du corpus au prochain tour.
+
+`config.schema.ts` gagne deux champs :
+
+- `causeSchema.ruledOutByReport: boolean` — le rapport gratuit écarte-t-il déjà cette cause ;
+- `hintSchema.eliminates: string[]` — les identifiants de causes que le texte de cet indice écarte par leur nom.
+
+Et cinq refus au chargement, en plus des neuf déjà posés :
+
+1. un `eliminates` qui référence une cause absente de la situation est une référence pendante ;
+2. la cause `actual` n'est jamais `ruledOutByReport`, et n'apparaît dans le `eliminates` d'aucun indice — le rapport et les indices écartent des alternatives, jamais ne confirment ou ne nomment la bonne réponse ;
+3. après le rapport seul, il doit rester au moins trois causes en lice ;
+4. **aucun indice pris seul ne peut, combiné au rapport, ramener le champ en dessous de deux causes** — le refus qui ferme la délégation totale : sans lui, acheter le seul indice qui élimine tout le reste et trancher par élimination tient le critère de frugalité sans lecture ni cadrage ;
+5. **un chemin frugal doit exister** : au moins une combinaison d'au plus `floor(hints.length / 2)` indices doit, avec le rapport, ramener le champ à exactement une cause — sans ce refus, le précédent pourrait rendre une situation ingagnable sous le seuil de frugalité.
+
+Testé dans `config.schema.test.ts`, sous `describe('the cause-elimination graph', …)` : chacun des cinq refus sur son propre cas, dont la preuve directe qu'un indice qui écarterait seul les deux causes non réelles d'une situation à trois causes est refusé au chargement. Testé aussi au niveau du corpus réel dans `hint-budget-run.test.ts` : aucun indice réel, pris seul, ne ramène une situation à moins de deux causes ; une combinaison de deux indices existe dans chacune des trois situations qui ramène le champ à la seule cause réelle.

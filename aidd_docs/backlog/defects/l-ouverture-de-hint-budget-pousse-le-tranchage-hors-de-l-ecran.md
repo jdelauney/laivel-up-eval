@@ -17,11 +17,11 @@ Relevé pendant la tournée navigateur du 30/08 (`aidd_docs/tasks/2026_08/2026_0
 
 ## Ce que ce défaut n'est pas
 
-`aidd_docs/backlog/defects/la-revelation-pousse-l-action-hors-de-l-ecran.md` couvre un défaut voisin mais distinct : chez `lie-detector` et `defect-hunt`, c'est l'**état de révélation** qui pousse l'**action de passage** hors de l'écran. Ici, c'est l'**ouverture** de la situation — avant tout achat, avant tout cadrage — qui pousse le **tranchage**, le geste que `g2-1-c1` note (`frugal-solves-at-least` lit `solved`), hors de l'écran. Deux moments différents, deux gestes différents ; le ticket existant ne cite pas `hint-budget` et son Impact s'appuie explicitly sur le fait qu'aucun critère ne dépend du geste retardé, ce qui ne vaut pas ici sans nuance : `trancher` est bien celui que `c1` observe (indirectement, via `solved`), même si sa position à l'écran ne change rien à son verdict une fois posé.
+`aidd_docs/backlog/defects/la-revelation-pousse-l-action-hors-de-l-ecran.md` couvre un défaut voisin mais distinct : chez `lie-detector` et `defect-hunt`, c'est l'**état de révélation** qui pousse l'**action de passage** hors de l'écran. Ici, c'est l'**ouverture** de la situation — avant tout achat, avant tout cadrage — qui pousse le **tranchage**, le geste que `g2-1-c1` note (`frugal-solves-at-least` lit `solved`), hors de l'écran. Deux moments différents, deux gestes différents ; le ticket existant ne cite pas `hint-budget` et son Impact s'appuie explicitement sur le fait qu'aucun critère ne dépend du geste retardé, ce qui ne vaut pas ici sans nuance : `trancher` est bien celui que `c1` observe (indirectement, via `solved`), même si sa position à l'écran ne change rien à son verdict une fois posé.
 
 ## Expected
 
-`DESIGN.md`, section « La surface d'un jeu » : la densité d'un écran ne doit pas retarder le geste central au point de le rendre introuvable sans exploration.
+Aucune règle de `DESIGN.md` ne couvre exactement ce cas — l'action primaire d'un écran, poussée hors du premier rendu par la densité du contenu, avant tout geste du joueur. La règle réelle la plus proche, `DESIGN.md:74` (section « La surface d'un jeu »), porte sur un relevé qui s'allonge en cours de partie (« Un relevé qui s'allonge ne pousse jamais la décision courante hors de l'écran ») : elle est **tenue** ici, pas enfreinte — la tournée mesure que les cinq achats *réduisent* la hauteur du document (`qa/README.md`, « Point 3 »). Ce défaut porte sur un moment différent, l'ouverture, qu'aucune règle écrite ne couvre encore. Deux suites possibles : soit l'admettre comme un cas non couvert et laisser au produit le choix d'écrire une règle dédiée, soit le rattacher formellement à la règle voisine si l'intention est de l'étendre à l'ouverture — mais pas lui prêter une citation qui n'existe pas.
 
 ## Actual
 
@@ -44,7 +44,7 @@ Le panneau des causes — l'unique action primaire de l'écran — n'est visible
 
 Un joueur qui ouvre une situation ne voit ni les causes, ni le geste qui les tranche, sans défiler d'abord — sur mobile, largement plus d'un écran de défilement. Contrairement au défaut de révélation, où le joueur a déjà lu ce qu'il lui reste à faire, ici rien à l'écran n'indique qu'un geste de tranchage attend en dessous avant que le joueur n'ait lu le rapport, le cadrage et le marché.
 
-Le verdict n'est pas faussé : aucun critère ne lit la position d'un bouton, seulement s'il a été cliqué et quand (`afterHints`). Ce n'est donc pas un défaut de mesure, mais le même principe transverse que le ticket voisin enfreint sous une autre forme : un écran dense retarde le geste qu'il doit provoquer.
+Sur le geste que ce défaut couvre : la position du panneau des causes ne change pas le verdict de `c1` une fois la tranche posée — `solved` ne lit que la cause tranchée, jamais où se trouvait le bouton. **Correction du 30/08, tour 2 de revue (W8)** : la version précédente généralisait à « aucun critère ne lit la position d'un bouton », ce qui est faux ailleurs dans ce même jeu — `c2` (`framed-first-at-least`) lit `afterHints`, une position dans le déroulé qui dépend directement de l'ordre dans lequel le joueur rencontre le cadrage et le marché, donc de leur position à l'écran (`phase-5.md`, correction du tour 2, sur l'alternance). Ce n'est donc pas un défaut de mesure sur le geste que ce ticket couvre, mais le même principe transverse que le ticket voisin enfreint sous une autre forme : un écran dense retarde le geste qu'il doit provoquer.
 
 ## Ce que la correction ne doit pas être
 
