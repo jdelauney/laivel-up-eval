@@ -48,7 +48,7 @@ export const OnboardingView = () => {
   })
 
   return (
-    <div className="grid gap-10 md:grid-cols-[minmax(11rem,16rem)_1fr] md:gap-12">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-10 md:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] md:gap-12">
       <div className="md:pt-1">
         <p className="mb-3 font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
           Le parcours
