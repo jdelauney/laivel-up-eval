@@ -123,6 +123,18 @@ journey
 2. `claim-card.tsx`, `round-sheet.tsx` : la carte d'affirmation, l'en-tête de la feuille et le bandeau de verrou se resserrent sous `sm` (padding, espacement, interlignage), desktop inchangé (vérifié, aucune régression visuelle).
 3. Remesurer à `scrollY = 0` vérifié, joindre la preuve à `qa/`, corriger les mesures de la tâche 5 et du point 3 (`qa/README.md`) qui portaient la même contamination.
 
+## L'exception de la première manche sur mobile, et pourquoi elle est tenue
+
+**Arbitrage du 30/08, pris après la deuxième mesure.** À `390×844` et `scrollY = 0`, la première manche place ses quatre affirmations à 606 / 703 / 801 / 899 : la quatrième et le verrou débordent. Les trois manches suivantes tiennent, verrou compris, avec 9 pixels de marge. L'écart entre les deux vient d'une seule chose : à `r1`, la consigne est dépliée en entier, et elle coûte environ 200 pixels.
+
+Le budget ne permet pas les deux. Le chrome du parcours — barre, rampe, situation, titre — occupe le haut de l'écran et n'appartient pas à ce jeu ; le resserrement des cartes est déjà allé au bout de ce qu'il pouvait donner sans rendre le texte moins lisible que le reste de l'écran.
+
+Ce qui a été tranché, et dans ce sens : **la règle du jeu se lit en entier avant la première décision.** Un joueur qui découvre la mécanique après avoir joué `r1` ne joue pas la même manche que les autres, et `r1` cesserait de mesurer la même chose pour tout le monde. La comparaison sans défilement est un moyen ; la mesure comparable est la fin.
+
+L'alternative écartée : replier la consigne dès `r1` derrière un résumé d'une ligne. Le verrou de la désignation est bien annoncé indépendamment de la consigne, à chaque manche, donc le coût du geste resterait couvert — mais le cadre du jeu, lui, ne le serait plus, et `DESIGN.md` demande qu'il soit annoncé, pas qu'il soit disponible.
+
+Ce que cela coûte, énoncé sans arrondi : sur mobile, à la première manche, le joueur défile une fois pour voir sa quatrième affirmation. Le critère de la tâche 2 n'est pas atteint là, et le tableau ci-dessous le dit au lieu de le contourner.
+
 ## Test acceptance criteria
 
 | Task | Acceptance criteria |
