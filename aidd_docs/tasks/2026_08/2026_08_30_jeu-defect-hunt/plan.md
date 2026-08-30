@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu defect-hunt se joue de bout en bout à la place du placeholder g1-2, mesure une revue de code sous chronomètre sur la dimension verification, et n'oblige aucun contrat existant à bouger."
-status: pending
+status: implemented
 ---
 
 # Plan: Le jeu `defect-hunt`, la revue à l'aveugle sous chronomètre
@@ -9,7 +9,7 @@ status: pending
 
 | Field | Value |
 | --- | --- |
-| **Goal** | Mesurer si un joueur lit réellement le code qu'on lui donne — en lui annonçant seulement le nombre de défauts, jamais leur nature, sans aucune liste de choix, et sous un temps qui se voit |
+| **Goal** | Mesurer si un joueur lit réellement le code qu'on lui donne — sans lui dire combien de défauts il porte ni de quelle nature, sans aucune liste de choix, et sous un temps qui se voit |
 | **Source** | `aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md` · `aidd_docs/backlog/epics/parcours-couvrant-les-axes.md` · `config/signature.json` |
 
 ## Phases
@@ -39,4 +39,4 @@ status: pending
 | **Le nombre de défauts n'est pas annoncé**, et le barème le remplace : +1 par ligne fautive marquée, −1 par ligne saine marquée, 0 pour une ligne laissée de côté | Décision produit du 30/08, prise après la revue du candidat. Un compte annoncé donne une règle d'arrêt, et le joueur apprend à jouer le nombre plutôt qu'à lire — le profil qui trouve tout puis s'arrête au compte annoncé sortait mieux noté que le relecteur exhaustif. Le point négatif rend le marquage au hasard perdant sans qu'aucun compte n'ait à être donné, et le zéro sur une ligne laissée de côté fait que ne pas savoir n'est jamais puni : seule l'affirmation fausse l'est. Le critère qui comptait séparément les faux positifs disparaît — le barème les fait déjà payer un par un, et le garder les punirait deux fois pour la même marque |
 | Le seuil du score net est **3 sur 5**, pas 4 | À 4, un relecteur qui trouve les cinq défauts n'a droit qu'à une seule marque discutable. À 3, il en a deux, ce qui correspond exactement à la tolérance que la rédaction du corpus vise. Le critère de couverture (80 %) tient l'autre bout : on ne peut pas atteindre 3 en marquant trois lignes au hasard |
 | Chaque ligne fautive du corpus porte une **instruction complète** : aucun défaut n'est posé à l'intérieur d'un appel ou d'un bloc qui s'étale sur plusieurs lignes | Trouvé à la relecture du premier corpus livré, qui posait l'injection au milieu d'un appel sur trois lignes et la fuite de ressource au milieu d'un bloc de quatre. Un joueur qui lit juste mais clique la ligne voisine payait alors deux fois — un faux positif **et** un défaut manqué — et le jeu mesurait la devinette du découpage plutôt que la lecture. Le garde-fou est un test d'intégration sur l'équilibre des parenthèses et des accolades de chaque ligne fautive, pour que le prochain corpus ne puisse pas rouvrir le trou |
-| La frontière avec `confidence-bet` est tenue : la dépendance hallucinée appartient à **ce** jeu | Tranché en phase 4 du plan `confidence-bet` : une dépendance hallucinée ne se juge pas dans les lignes montrées, ce qui est mot pour mot la définition de l'indécidable chez le voisin. Ici, où le nombre de défauts est annoncé, l'appel est fermé et le défaut redevient trouvable |
+| La frontière avec `confidence-bet` est tenue : la dépendance hallucinée appartient à **ce** jeu | Tranché en phase 4 du plan `confidence-bet` : une dépendance hallucinée ne se juge pas dans les lignes montrées, ce qui est mot pour mot la définition de l'indécidable chez le voisin. Ici, où le joueur balaie tout l'extrait ligne à ligne plutôt que de trancher un verdict global, l'appel est fermé et le défaut redevient trouvable |

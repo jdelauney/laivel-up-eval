@@ -37,7 +37,7 @@ status: done
 
 ```mermaid
 flowchart TD
-  A[le jeu s ouvre] --> B[le chronomètre part, le nombre de défauts est annoncé]
+  A[le jeu s ouvre] --> B[le chronomètre part, le barème est annoncé, jamais le nombre]
   B --> C[le joueur lit l extrait, ligne à ligne]
   C --> D[il marque une ligne qu il juge fautive]
   D --> E{il en marque d autres}
@@ -57,7 +57,7 @@ title: Test scope
 ---
 journey
   section Setup
-    monter le jeu sur une configuration de cinq défauts avec un chronomètre figé => la consigne, le nombre annoncé, l extrait et le temps sont à l écran: 5: browser
+    monter le jeu sur une configuration de cinq défauts avec un chronomètre figé => la consigne, l extrait et le temps sont à l écran, et aucun compte de défauts: 5: browser
   section Happy path
     marquer quatre lignes fautives puis rendre la revue => la révélation montre quatre trouvés, un manqué, et la trace soumise porte les quatre lignes et la durée: 5: browser
   section Edge case - la marque se reprend avant le rendu
@@ -82,7 +82,7 @@ journey
 ┌──────────────────────────────────────────────────────────────────┐
 │ (1) Consigne                                                      │
 ├──────────────────────────────────────────────────────────────────┤
-│ (2) Bandeau d'état : 0 marquée · 5 à trouver  │  02:41 restant    │
+│ (2) Bandeau de tête : l'extrait, sa langue    │  02:41 restant    │
 ├──────────────────────────────────────────────────────────────────┤
 │ (3) L'extrait, ligne à ligne                                      │
 │   ┌───┬────┬─────────────────────────────────────────────────┐    │
@@ -112,8 +112,8 @@ Après le rendu, le même écran bascule :
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-1. Consigne : le cadre du jeu — le nombre annoncé, l'absence de liste, le coût d'une marque posée à côté, le temps qui court sans interrompre.
-2. Bandeau d'état : marques posées sur nombre annoncé, et le temps. Seule région annoncée.
+1. Consigne : le cadre du jeu — l'absence de liste, le barème (+1 / −1 / 0), le fait que le joueur rend quand il l'estime fini, le temps qui court sans interrompre. **Jamais le nombre de défauts.**
+2. Bandeau de tête : l'intitulé de l'extrait, sa langue, et le temps. Le compte de marques posées descend au pied, avec l'action : c'est ce que le joueur produit, pas ce que le jeu lui donne. Seule région annoncée.
 3. L'extrait : le moment focal, chaque ligne est une cible.
 4. Gouttière de marque : l'état marqué d'une ligne, porté par un signe, jamais par la seule couleur.
 5. L'action qui verrouille la revue et arrête le chronomètre.
@@ -149,13 +149,13 @@ Après le rendu, le même écran bascule :
 2. Avant le rendu : `toggleLine(line)` pose ou retire une marque. Après le rendu : il ne fait rien. Le verrou tient par l'absence de chemin, pas par une garde décorative.
 3. `submitReview()` fige la durée par `readElapsedSeconds()`, construit la trace par l'action, la garde en mémoire, arrête le chronomètre, et bascule sur la révélation. Il ne soumet pas encore.
 4. `advance()` appelle `onSubmit` avec la trace figée, **une seule fois**, protégé par une `ref` comme dans `useConfidenceBet`.
-5. Exposer pour l'écran : la consigne, l'extrait découpé en lignes, le nombre annoncé (`defects.length`), le nombre de marques posées, le budget, le temps écoulé, le dépassement, l'état de rendu, et une fois rendu, la lecture de la revue et les révélations dans l'ordre déclaré.
+5. Exposer pour l'écran : la consigne, l'extrait découpé en lignes, le nombre de marques posées, le budget, le temps écoulé, le dépassement, l'état de rendu, et une fois rendu, la lecture de la revue et les révélations dans l'ordre déclaré.
 6. Le hook n'expose **jamais** la nature d'un défaut ni sa ligne avant le rendu. Ce qui n'est pas exposé ne peut pas fuiter à l'écran.
 
 ### `4)` Les composants
 
 1. `elements/code-line.tsx` — une ligne : son numéro, son code en monospace, et son état. Avant le rendu c'est un contrôle bascule ; après, une ligne figée qui porte son verdict en texte — trouvé, manqué, marquée à côté — et jamais par la seule couleur.
-2. `elements/hunt-status.tsx` — marques posées, nombre annoncé, et le temps. Le dépassement s'écrit en toutes lettres. Seule région `aria-live="polite"` de l'écran, et elle n'annonce que le compte, pas chaque battement de seconde.
+2. `elements/hunt-status.tsx` — marques posées et le temps. Le dépassement s'écrit en toutes lettres. Seule région `aria-live="polite"` de l'écran, et elle n'annonce que le compte, pas chaque battement de seconde.
 3. `elements/defect-reveal.tsx` — un défaut : sa ligne, sa nature, sa phrase. N'existe qu'après le rendu.
 4. `composites/reviewed-snippet.tsx` — l'extrait ligne à ligne, sans coloration syntaxique. Aucune dépendance nouvelle : une coloration jugerait à la place du joueur, exactement comme chez `confidence-bet`.
 5. `composites/defect-hunt-game.tsx` — la racine, purement d'assemblage. Elle bascule d'un bloc à l'autre au rendu.
@@ -176,7 +176,7 @@ Après le rendu, le même écran bascule :
 1. Tester l'action : tri croissant, trace refusée sur un doublon, revue vide acceptée.
 2. Tester le chronomètre sur horloge simulée (`vi.useFakeTimers`) : il avance, il s'arrête, il dépasse sans se bloquer, et `readElapsedSeconds()` rend la durée du geste et non celle du dernier battement.
 3. Tester le hook : bascule d'une marque, verrou au rendu, soumission unique, et le fait que la nature d'un défaut n'est pas exposée avant le rendu.
-4. Tester l'écran : le nombre annoncé est à l'écran, aucune nature de défaut n'y figure avant le rendu, et une ligne se marque au clavier seul.
+4. Tester l'écran : aucun compte de défauts et aucune nature n'y figurent avant le rendu, et une ligne se marque au clavier seul.
 
 ## Test acceptance criteria
 

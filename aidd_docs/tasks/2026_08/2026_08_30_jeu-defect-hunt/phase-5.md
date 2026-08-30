@@ -58,7 +58,7 @@ Si un joueur peut déduire de l'écran **où** chercher plutôt que **lire pour 
 
 ```mermaid
 flowchart TD
-  A[le joueur arrive sur le jeu] --> B[il lit la consigne : le nombre annoncé, l absence de liste, le temps qui court]
+  A[le joueur arrive sur le jeu] --> B[il lit la consigne : le barème, l absence de liste, le temps qui court]
   B --> C[l extrait occupe le centre, chaque ligne se donne comme une cible]
   C --> D[il marque, il démarque, le compte suit]
   D --> E[le temps se lit sans qu il ait à le chercher]
@@ -76,7 +76,7 @@ title: Test scope
 ---
 journey
   section Setup
-    monter le jeu sur la configuration du parcours => la consigne, le nombre annoncé, l extrait et le temps sont à l écran: 5: browser
+    monter le jeu sur la configuration du parcours => la consigne, l extrait et le temps sont à l écran, et aucun compte de défauts: 5: browser
   section Happy path
     lire l extrait, marquer quatre lignes, rendre la revue => le code reste le contenu le plus lisible, et le verdict se pose sur les lignes déjà lues: 5: browser
   section Edge case - le clavier atteint le rendu
@@ -99,7 +99,7 @@ journey
 ┌──────────────────────────────────────────────────────────────────┐
 │ (1) Consigne                                                      │
 ├──────────────────────────────────────────────────────────────────┤
-│ (2) Bandeau d'état : 0 marquée · 5 à trouver  │  02:41 restant    │
+│ (2) Bandeau de tête : l'extrait, sa langue    │  02:41 restant    │
 ├──────────────────────────────────────────────────────────────────┤
 │ (3) L'extrait, ligne à ligne                                      │
 │   ┌───┬────┬─────────────────────────────────────────────────┐    │
