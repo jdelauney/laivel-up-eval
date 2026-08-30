@@ -150,8 +150,8 @@ Et sept refus au chargement, en plus des neuf déjà posés :
 1. un `eliminates` qui référence une cause absente de la situation est une référence pendante ;
 2. la cause `actual` n'est jamais `ruledOutByReport`, et n'apparaît dans le `eliminates` d'aucun indice — le rapport et les indices écartent des alternatives, jamais ne confirment ou ne nomment la bonne réponse ;
 3. après le rapport seul, il doit rester au moins trois causes en lice ;
-4. **aucun indice pris seul ne peut, combiné au rapport, ramener le champ en dessous de deux causes** — le refus qui ferme la délégation totale : sans lui, acheter le seul indice qui élimine tout le reste et trancher par élimination tient le critère de frugalité sans lecture ni cadrage ;
-5. **un chemin frugal doit exister** : au moins une combinaison d'au plus `floor(hints.length / 2)` indices doit, avec le rapport, ramener le champ à exactement une cause — sans ce refus, le précédent pourrait rendre une situation ingagnable sous le seuil de frugalité ;
+4. **le plancher de deux causes** : même en achetant *tous* les indices, au moins deux causes restent debout, dont la réelle ;
+5. **un chemin frugal doit exister** : au moins une combinaison d'au plus `floor(hints.length / 2)` indices doit ramener le champ **à ce plancher de deux** — sans ce refus, le plancher pourrait rendre une situation impossible à resserrer sous le seuil de frugalité ;
 6. **deux indices n'écartent jamais la même cause encore en lice** — la règle porte sur les causes qui décident quelque chose, donc sans exception. Le doublon reste permis sur une cause que le rapport a déjà écartée : il ne fuite rien et paie deux fois la même information, ce qui *est* le mécanisme de l'achat gaspillé ;
 7. **au moins un indice vise une cause déjà écartée par le rapport** — sans lui, lire le rapport n'a aucune conséquence économique, tous les achats se valent, et l'inattention ne coûte rien.
 
@@ -162,3 +162,15 @@ Et sept refus au chargement, en plus des neuf déjà posés :
 Avec exactement une élimination par indice, aucun indice n'est plus *à propos* de la bonne réponse : la confirmation devient inexprimable plutôt qu'interdite par un commentaire. Le refus 4 en devient d'ailleurs inatteignable en pratique — une élimination unique sur au moins trois causes en lice laisse toujours deux debout — mais il reste posé comme énoncé explicite de l'invariant.
 
 Testé dans `config.schema.test.ts`, sous `describe('the cause-elimination graph', …)` : chacun des refus sur son propre cas, cardinalité comprise dans les deux sens (zéro élimination, et plus d'une). Testé aussi au niveau du corpus réel dans `hint-budget-run.test.ts` : aucun indice réel ne partage plus de vingt caractères consécutifs avec la cause réelle de sa situation — mesure étendue du seul indice le plus cher à **tous** les indices, parce qu'un garde-fou posé sur la seule position que le défaut venait de quitter ne garde rien. La mesure porte sur la cause réelle seule, jamais sur toutes les causes : un indice qui écarte une cause doit en parler, et partage donc légitimement des phrases entières avec elle.
+
+### Le plancher de deux causes, posé au tour 4
+
+Les refus 1 à 5 de la version précédente formaient un théorème que personne n'avait vu : cardinalité exacte, cause réelle jamais éliminée, pas deux indices sur la même cause en lice, et un chemin frugal ramenant le champ à **exactement une** cause. Ensemble, ils forçaient les indices à couvrir toutes les causes en lice sauf la réelle. Or les `label` sont publics avant l'achat, par conception — c'est ce qui permet de savoir quel achat sera gaspillé.
+
+Conséquence : lire les cinq intitulés, barrer les causes qu'ils nomment, et la survivante **était** la réponse. Vérifié sur les trois situations du corpus : `s1-c-clock`, `s2-c-rounding`, `s3-c-parallel`, chaque fois l'unique cause jamais visée, chaque fois la réelle. Coût zéro, aucune lecture, aucun cadrage, `c1` tenu 3/3 — un critère qui pèse 2 des 4 points du jeu.
+
+Le correctif du tour 3, celui qui a rendu les indices purement éliminatifs, est précisément ce qui a rendu ce complément lisible : la confirmation fermée, la soustraction ouverte.
+
+Le refus 4 change donc de nature. Il ne dit plus « aucun indice **pris seul** ne descend sous deux causes » — énoncé qui, depuis la cardinalité exacte, ne pouvait plus rejeter aucune configuration que les autres refus acceptaient, et que le tour 4 a relevé comme sans pouvoir de porte. Il dit désormais : **même en achetant tous les indices, deux causes restent debout.** Le complément cesse d'être un singleton, le balayage des intitulés ne rend jamais mieux qu'un pile ou face, et la discrimination finale revient au symptôme et au rapport — c'est-à-dire à une lecture, ce que le jeu prétend mesurer.
+
+Le refus 5 suit : le chemin frugal vise le plancher de deux, plus l'unicité.

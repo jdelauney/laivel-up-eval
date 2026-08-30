@@ -439,7 +439,29 @@ describe('hint-budget in the course', () => {
    * conjoint (deux indices sur cinq, sous le seuil de frugalité) ramène le
    * champ à la seule cause réelle.
    */
-  it('carries, for every situation, a two-hint combination that narrows the field to the actual cause alone', () => {
+  it('never lets any purchase, even buying every hint, narrow the field below two causes', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const everyEliminationIds = new Set([
+        ...situation.causes
+          .filter((cause) => cause.ruledOutByReport)
+          .map((cause) => cause.id),
+        ...situation.hints.flatMap((hint) => hint.eliminates),
+      ])
+      const standing = situation.causes.filter(
+        (cause) => !everyEliminationIds.has(cause.id),
+      )
+
+      expect(
+        standing.length,
+        `${situation.id} ne laisse que ${standing.length} cause(s) debout après tous les achats`,
+      ).toBeGreaterThanOrEqual(2)
+      expect(standing.some((cause) => cause.actual)).toBe(true)
+    })
+  })
+
+  it('carries, for every situation, a purchase path that narrows the field to the last two causes', () => {
     const config = realG2_1Config()
 
     config.situations.forEach((situation) => {
@@ -467,12 +489,12 @@ describe('hint-budget in the course', () => {
           .map((cause) => cause.id)
           .filter((id) => !coveredIds.has(id))
 
-        return remaining.length === 1 && remaining[0] === actualCauseId
+        return remaining.length === 2 && remaining.includes(actualCauseId)
       })
 
       expect(
         narrowingPairs.length,
-        `${situation.id} n'offre aucune paire d'indices qui isole la cause réelle`,
+        `${situation.id} n'offre aucune paire d'indices qui ramène le champ aux deux dernières causes`,
       ).toBeGreaterThan(0)
     })
   })

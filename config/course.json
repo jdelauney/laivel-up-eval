@@ -427,7 +427,8 @@
                 "report": [
                   "La même clé secrète signe les jetons en local et en production.",
                   "Le certificat TLS du reverse proxy a été renouvelé la semaine dernière et reste valide huit mois.",
-                  "Le jeton qui échoue a été émis quatre minutes avant l'appel, largement dans sa fenêtre de validité de quinze minutes."
+                  "Le jeton qui échoue a été émis quatre minutes avant l'appel, largement dans sa fenêtre de validité de quinze minutes.",
+                  "Chaque appel reçoit un refus calculé à la volée, jamais deux fois la même réponse servie à l'identique."
                 ],
                 "framings": [
                   {
@@ -480,10 +481,10 @@
                   },
                   {
                     "id": "s1-h4",
-                    "label": "Vérifier si la réponse transite par le cache CDN",
+                    "label": "Demander la clé de signature effectivement chargée en production",
                     "cost": 20,
-                    "text": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas le cache qui sert une version périmée.",
-                    "eliminates": ["s1-c-cdn"]
+                    "text": "La clé chargée au démarrage correspond à celle du coffre de secrets : ce n'est pas la clé de signature.",
+                    "eliminates": ["s1-c-secret"]
                   },
                   {
                     "id": "s1-h5",
@@ -576,10 +577,10 @@
                   },
                   {
                     "id": "s2-h2",
-                    "label": "Compter combien de fois le total est calculé dans la chaîne de facturation",
+                    "label": "Rechercher une remise appliquée sur les lignes concernées",
                     "cost": 10,
-                    "text": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas un double calcul.",
-                    "eliminates": ["s2-c-double"]
+                    "text": "Aucune ligne de cette facture ne porte de remise, simple ou double : ce n'est pas une remise.",
+                    "eliminates": ["s2-c-discount"]
                   },
                   {
                     "id": "s2-h3",
@@ -693,10 +694,10 @@
                   },
                   {
                     "id": "s3-h3",
-                    "label": "Vérifier l'intégrité du cache de dépendances de l'agent CI",
+                    "label": "Comparer les versions mineures de Node résolues de part et d'autre",
                     "cost": 15,
-                    "text": "Le cache est reconstruit à l'identique du poste local, sans corruption détectée : ce n'est pas le cache.",
-                    "eliminates": ["s3-c-cache"]
+                    "text": "Les deux environnements résolvent la même version mineure : ce n'est pas la version de Node.",
+                    "eliminates": ["s3-c-node"]
                   },
                   {
                     "id": "s3-h4",
@@ -760,7 +761,7 @@
               "rule": {
                 "type": "frugal-solves-at-least",
                 "share": 0.5,
-                "threshold": 2
+                "threshold": 3
               },
               "mapping": [
                 {

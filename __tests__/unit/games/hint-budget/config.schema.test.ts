@@ -54,7 +54,7 @@ const situation = (
   ],
   hints: overrides.hints ?? [
     hint(`${id}-h1`, 5, [`${id}-c1`]),
-    hint(`${id}-h2`, 10, [`${id}-c3`]),
+    hint(`${id}-h2`, 10, [`${id}-c4`]),
     hint(`${id}-h3`, 15, [`${id}-c4`]),
     hint(`${id}-h4`, 20, [`${id}-c4`]),
   ],

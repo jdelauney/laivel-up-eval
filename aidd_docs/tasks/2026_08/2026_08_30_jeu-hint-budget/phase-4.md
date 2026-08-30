@@ -70,7 +70,7 @@ Les règles d'écriture, qu'aucun test ne peut rattraper :
 5. La cause réelle **ne tombe pas au même rang** dans les trois situations, et l'ensemble des rangs des lectures établies **diffère** d'une situation à l'autre. Les deux se vérifient par test.
 6. Ni le symptôme, ni le rapport, ni une lecture de cadrage ne dit ce qui est noté.
 7. **Corrigé le 30/08, après revue — règle ajoutée : le texte d'une cause ne trahit jamais laquelle est réelle par sa forme.** Le corpus initial faisait de la cause `actual` le texte le plus long des cinq, dans les trois situations, avec une marge considérable (135 vs 62/52/52/44 caractères sur `s1`, par exemple) : « trancher la cause la plus longue, n'acheter aucun indice, ne rien cadrer » tenait `c1` 3/3 sans lire une ligne. Les cinq `causes[].text` d'une situation restent désormais à moins d'un quart d'écart entre le plus long et le plus court (`longest - shortest <= longest / 4`, le même seuil que `lie-detector` applique à ses affirmations), et la cause réelle n'est jamais ni la plus longue ni la plus courte. L'explication causale complète — qui, elle, peut varier en longueur sans trahir rien — vit dans `verification`, montrée seulement à la révélation, jamais dans `text`.
-8. **Corrigé le 30/08, tour 2 de revue — règle ajoutée : le rang de longueur de la cause réelle diffère d'une situation à l'autre, pas seulement les extrêmes.** La règle 7 fermait les deux extrêmes (jamais la plus longue, jamais la plus courte), mais un canal résiduel restait ouvert : la cause réelle occupait le même rang intermédiaire (le 2ᵉ plus court) dans deux situations sur trois — assez pour qu'une politique « trancher la 2ᵉ plus courte » gagne 3/3 sans lire une ligne, à 1/125 de probabilité par hasard. Le garde-fou est étendu au balayage complet du rang plutôt qu'aux seuls extrêmes (`hint-budget-run.test.ts`, « never lets the actual cause land on the same length rank »). Sur le corpus livré, les rangs de longueur de la cause réelle valent `2 · 3 · 4` — trois valeurs distinctes.
+8. **Corrigé le 30/08, tour 2 de revue — règle ajoutée : le rang de longueur de la cause réelle diffère d'une situation à l'autre, pas seulement les extrêmes.** La règle 7 fermait les deux extrêmes (jamais la plus longue, jamais la plus courte), mais un canal résiduel restait ouvert : la cause réelle occupait le même rang intermédiaire (le 2ᵉ plus court) dans deux situations sur trois — assez pour qu'une politique « trancher la 2ᵉ plus courte » gagne 3/3 sans lire une ligne, à 1/125 de probabilité par hasard. Le garde-fou est étendu au balayage complet du rang plutôt qu'aux seuls extrêmes (`hint-budget-run.test.ts`, « never lets a "cut the k-th longest cause" policy solve more than one of the three situations, for every k » — titre corrigé au tour 4, la version citée ici auparavant n'existait dans aucun fichier de test). Sur le corpus livré, les rangs de longueur de la cause réelle valent `2 · 3 · 4` — trois valeurs distinctes.
 9. **Ajoutée le 30/08, tour 2 de revue — le graphe d'élimination des causes, en contrat plutôt qu'en consigne.** Les deux tours de revue ont montré le même motif sur ce point précis : fermer un canal de fuite en ouvre un autre, parce qu'une consigne d'écriture ne borne rien de mécanique. `config.schema.ts` porte désormais le graphe en dur (`causeSchema.ruledOutByReport`, `hintSchema.eliminates`, sept refus au chargement — détail dans `phase-1.md`).
 
    **Complété le 30/08, tour 3 de revue.** L'économie décrite ici était arithmétiquement impossible : elle annonçait « deux indices visent des causes déjà écartées, trois visent les causes encore en lice », alors que cinq causes dont une réelle et deux écartées par le rapport ne laissent que **deux** causes en lice. Cinq indices à cible unique et distincte réclamaient cinq cibles valides pour quatre existantes — impossible par principe des tiroirs. L'économie tenue, et vérifiée par test :
@@ -134,11 +134,18 @@ Sur ce corpus, **aucune politique aveugle ne tient `c1` ni `c3`.** Une seule en 
 
 Le tableau ci-dessus répond à « une politique mécanique gagne-t-elle ». Il ne répond pas à « quelle est la part de chance ». Mesuré sur le corpus du tour 3, contre `c1`, qui pèse 2 des 4 points du jeu :
 
-| Politique | `c1` |
-| --- | --- |
-| Rang fixe, rien lu — **aveugle au sens strict** | **0 %** |
-| Lit le rapport, n'achète rien, devine parmi les 3 survivants | **25,9 %** |
-| Achète deux indices à positions fixes, puis déduit | 66,7 % (paire `h1` + `h4`) |
+**Recalculé au tour 4, après le plancher de deux causes et le passage du seuil de `c1` à 3 sur 3.** Les chiffres du tour 3 sont conservés en seconde colonne : ils disaient vrai d'un corpus où les indices pouvaient isoler la cause réelle.
+
+| Politique | `c1` aujourd'hui | `c1` au tour 3 |
+| --- | --- | --- |
+| Rang fixe, rien lu — **aveugle au sens strict** | **0 %** | 0 % |
+| Balayage des intitulés : barrer les causes nommées, trancher la survivante | **12,5 %** | **100 %** |
+| Lit le rapport, n'achète rien, devine parmi les survivants | **3,7 %** | 25,9 % |
+| Achète deux indices à positions fixes, puis déduit | 12,5 % | 66,7 % |
+
+Le balayage des intitulés est la fuite que le tour 4 a trouvée, et elle valait certitude : les refus d'alors forçaient les indices à couvrir toutes les causes en lice sauf la réelle, et les intitulés — publics avant l'achat — publiaient ce complément. Le plancher de deux causes le ramène à un pile ou face par situation, donc à 12,5 % sur trois situations exigées.
+
+Les quatre politiques passent désormais sous les 15,6 % retenus chez `lie-detector`. Le prix payé est nommé : `c1` n'a plus de marge d'erreur, une situation manquée le fait tomber.
 
 La troisième ligne **n'est pas une politique aveugle** : déduire la survivante exige de lire les éliminations des deux indices achetés et les cinq causes. C'est le jeu joué correctement, et son taux élevé dit seulement que le jeu est gagnable quand on le joue. Elle figure ici parce qu'elle se mémorise depuis une soluce — la seule parade tenable étant que les positions de la paire utile diffèrent d'une situation à l'autre (`{1,4}`, `{2,5}`, `{3,4}`), ce qui fait qu'aucune paire fixe n'est utile plus d'une fois.
 
@@ -193,3 +200,26 @@ La troisième ligne **n'est pas une politique aveugle** : déduire la survivante
 - Retenir toutes les lectures de chaque situation ne satisfait plus « aucun » critère de cadrage — c'était vrai du critère combiné d'origine. Depuis la scission, ce profil satisfait `c2` (l'ordre : il cadre en premier) et manque `c3` (le fondement : il retient plus que ce que le rapport établit). C'est exactement le décalage que la scission corrige — voir le tableau de politiques aveugles ci-dessus et `hint-budget-run.test.ts`, « satisfies the order criterion but sinks the grounding criterion ».
 - Deux garde-fous de longueur ajoutés à `hint-budget-run.test.ts`, sur le modèle de `lie-detector-run.test.ts:398,417` : la cause réelle n'est jamais le texte le plus long ni le plus court de sa situation, et l'écart entre le plus long et le plus court reste sous un quart du plus long.
 - Un garde-fou de recouvrement ajouté : la plus longue sous-chaîne commune entre l'indice le plus cher et (le texte de la cause réelle + sa vérification) reste sous 20 caractères, dans les trois situations — casse si un futur indice paraphrase la réponse plutôt que de l'entourer.
+
+## L'économie du tour 4 : le plancher de deux causes
+
+L'encadré du tour 3 est périmé. Il décrivait deux indices utiles par situation et un champ ramené à une seule cause — c'est exactement ce qui rendait la réponse lisible par soustraction. La structure tenue :
+
+```
+5 causes = 1 réelle + 2 écartées par le rapport + 2 encore en lice
+5 indices, chacun écarte exactement 1 cause non réelle :
+   1 utile     -> l'une des deux causes encore en lice
+   4 gaspillés -> les 2 causes déjà écartées par le rapport
+Acheter TOUS les indices laisse encore 2 causes debout :
+   la réelle, et l'autre cause encore en lice
+```
+
+Le geste décisif n'est donc plus un achat mais une lecture : entre les deux dernières causes, c'est le symptôme et le rapport qui tranchent. Les trois discriminations, chacune inférentielle et jamais énoncée comme une exclusion :
+
+| Situation | Les deux dernières | Ce qui départage, dans le rapport |
+| --- | --- | --- |
+| `s1` | horloge du serveur · cache CDN | « chaque appel reçoit un refus calculé à la volée, jamais deux fois la même réponse servie à l'identique » — un cache resservirait la même |
+| `s2` | arrondi par ligne · double calcul du total | « l'écart n'apparaît que sur les lignes dont la quantité comporte une décimale » — un double calcul frapperait toutes les lignes |
+| `s3` | parallélisme sans isolation · cache de dépendances corrompu | « l'échec ne porte jamais sur les mêmes tests d'une exécution à l'autre » — un cache corrompu échouerait de façon déterministe |
+
+C'est la part du corpus que le contrat ne peut pas vérifier : le schéma garantit qu'il **reste** deux causes, pas que le rapport permette de les départager. La qualité de ces trois inférences reste éditoriale. Le plafond d'exploitation, lui, est mécanique : sans la lecture, le mieux qu'une politique obtienne est un pile ou face par situation.

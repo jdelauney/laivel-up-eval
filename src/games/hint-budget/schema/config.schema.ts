@@ -383,36 +383,45 @@ export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
         })
       }
 
-      // Le refus qui ferme la délégation totale : aucun indice, pris seul
-      // avec le rapport, ne peut ramener le champ des causes en jeu sous
-      // deux — sinon acheter ce seul indice et trancher par élimination
-      // tient le critère de frugalité sans une seule ligne lue.
-      situation.hints.forEach((hint, hintIndex) => {
-        const coveredIds = new Set([...ruledOutByReportIds, ...hint.eliminates])
-        const remainingAfterHint = situation.causes.filter(
-          (cause) => !coveredIds.has(cause.id),
-        ).length
+      // **Le plancher de deux causes, posé au tour 4 de revue.** Il remplace
+      // le refus « aucun indice pris seul ne ramène le champ sous deux »,
+      // qui ne pouvait plus rien rejeter depuis la cardinalité exacte, et
+      // qui ne protégeait de toute façon pas de la vraie fuite.
+      //
+      // Celle-ci : les refus précédents forçaient les indices à couvrir
+      // toutes les causes en lice sauf la réelle, et les `label` sont
+      // publics avant l'achat. Lire les cinq intitulés, barrer les causes
+      // qu'ils nomment, et la survivante *était* la réponse — sans lire une
+      // ligne, sans acheter, sans cadrer. Le correctif du tour 3, qui a rendu
+      // les indices purement éliminatifs, est précisément ce qui a rendu ce
+      // complément lisible : la confirmation fermée, la soustraction ouverte.
+      //
+      // Le plancher casse le complément : au moins deux causes restent
+      // debout même en achetant tout. Le balayage des intitulés ne rend donc
+      // jamais mieux qu'un pile ou face, et la discrimination finale revient
+      // au symptôme et au rapport — c'est-à-dire à une lecture, ce que le jeu
+      // prétend mesurer.
+      const everyEliminationIds = new Set([
+        ...ruledOutByReportIds,
+        ...situation.hints.flatMap((hint) => hint.eliminates),
+      ])
+      const standingCauses = situation.causes.filter(
+        (cause) => !everyEliminationIds.has(cause.id),
+      )
 
-        if (remainingAfterHint >= 2) return
-
+      if (standingCauses.length < 2) {
         context.addIssue({
           code: 'custom',
-          path: [
-            'situations',
-            situationIndex,
-            'hints',
-            hintIndex,
-            'eliminates',
-          ],
-          message: `l'indice « ${hint.id} » de la situation « ${situation.id} », combiné au rapport, ramène seul le champ à ${remainingAfterHint} cause(s) : aucun indice ne peut, pris seul, trancher une situation`,
+          path: ['situations', situationIndex, 'hints'],
+          message: `dans la situation « ${situation.id} », acheter tous les indices ne laisse que ${standingCauses.length} cause(s) debout : il en faut au moins deux, sinon la cause réelle est le complément de ce que les intitulés annoncent, lisible sans rien acheter`,
         })
-      })
+      }
 
-      // Le refus qui garde le jeu gagnable frugalement : sans lui, le refus
-      // précédent pourrait rendre toute situation ingagnable sous le seuil
-      // de frugalité du parcours. Une combinaison d'au plus la moitié des
-      // indices (arrondie au sol) doit exister qui, avec le rapport, ramène
-      // le champ à exactement une cause.
+      // Le refus qui garde le jeu gagnable frugalement, recalé sur le
+      // plancher : une combinaison d'au plus la moitié des indices (arrondie
+      // au sol) doit ramener le champ **au plancher de deux**, jamais à une.
+      // Sans lui, le plancher pourrait rendre une situation impossible à
+      // resserrer sous le seuil de frugalité du parcours.
       const maxFrugalHints = Math.floor(situation.hints.length / 2)
       const hasFrugalPath = combinationsUpTo(
         situation.hints.length,
@@ -426,7 +435,7 @@ export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
         ])
         return (
           situation.causes.filter((cause) => !coveredIds.has(cause.id))
-            .length === 1
+            .length === 2
         )
       })
 
@@ -434,7 +443,7 @@ export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
         context.addIssue({
           code: 'custom',
           path: ['situations', situationIndex, 'hints'],
-          message: `aucune combinaison d'au plus ${maxFrugalHints} indice(s) ne permet, avec le rapport, de trancher la situation « ${situation.id} » à une seule cause : le seuil de frugalité serait ingagnable`,
+          message: `aucune combinaison d'au plus ${maxFrugalHints} indice(s) ne ramène la situation « ${situation.id} » aux deux dernières causes : le seuil de frugalité serait ingagnable`,
         })
       }
     })

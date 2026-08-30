@@ -49,7 +49,7 @@ const situation = (id: string) => ({
   ],
   hints: [
     hint(`${id}-h1`, 5, [`${id}-c1`]),
-    hint(`${id}-h2`, 10, [`${id}-c3`]),
+    hint(`${id}-h2`, 10, [`${id}-c4`]),
     hint(`${id}-h3`, 15, [`${id}-c4`]),
     hint(`${id}-h4`, 20, [`${id}-c4`]),
     hint(`${id}-h5`, 25, [`${id}-c4`]),
@@ -238,7 +238,7 @@ describe('hint-budget evaluator', () => {
       ...situation('s1'),
       hints: [
         hint('s1-h1', 5, ['s1-c1']),
-        hint('s1-h2', 10, ['s1-c3']),
+        hint('s1-h2', 10, ['s1-c4']),
         hint('s1-h3', 15, ['s1-c4']),
         hint('s1-h4', 20, ['s1-c4']),
       ],
