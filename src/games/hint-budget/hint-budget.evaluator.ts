@@ -29,6 +29,7 @@ const frugalRuleSchema = z.object({
   share: z.number().positive(),
   threshold: z.number(),
 })
+const framedFirstRuleSchema = z.object({ threshold: z.number() })
 const groundedRuleSchema = z.object({ threshold: z.number() })
 
 class UnknownRuleError extends Error {
@@ -60,10 +61,30 @@ const frugalSolvesAtLeast = (
 }
 
 /**
- * Le compte de situations cadrées d'entrée ET fondées atteint au moins
- * `threshold`. Le compte vient de `Reading.groundedFramingCount`, qui
- * n'agrège que `framedAndGrounded` : cadrer d'entrée sans fonder, ou fonder
- * après un achat, ne contribue pas.
+ * Le compte de situations cadrées **d'entrée** — le cadre posé avant tout
+ * achat — atteint au moins `threshold`. Ne lit que `SituationReading.framedFirst` :
+ * l'ordre, rien que l'ordre. `g2-1-c2`.
+ *
+ * Correction du 30/08, après revue : jusque-là une seule règle
+ * (`grounded-framings-at-least`) exigeait l'ordre ET le fondement à la fois,
+ * sous une question affichée qui ne parlait que d'ordre. Un joueur qui posait
+ * un cadrage exact en premier lieu, mais incomplet, lisait « manqué » sur un
+ * critère que sa question ne laissait pas deviner. Décision produit : deux
+ * règles, chacune sur une seule dimension.
+ */
+const framedFirstAtLeast = (
+  framedFirstCount: number,
+  rule: CriterionRule,
+): boolean => {
+  const { threshold } = framedFirstRuleSchema.parse(rule)
+  return framedFirstCount >= threshold
+}
+
+/**
+ * Le compte de situations dont le cadrage est **fondé** — il retient
+ * exactement l'ensemble des lectures établies, ni plus ni moins — atteint au
+ * moins `threshold`, sans égard à l'ordre où il a été posé. Ne lit que
+ * `SituationReading.framingGrounded`. `g2-1-c3`.
  */
 const groundedFramingsAtLeast = (
   groundedFramingCount: number,
@@ -82,12 +103,13 @@ export class HintBudgetEvaluator implements GameEvaluator {
     const parsedConfig = hintBudgetConfigSchema.parse(config)
     const trace = parseHintBudgetTrace(answer, parsedConfig)
 
-    // Les situations sont lues une seule fois : les deux règles lisent la
+    // Les situations sont lues une seule fois : les trois règles lisent la
     // même lecture, jamais un recalcul propre à chacune.
     const reading = readSituations(parsedConfig, trace)
 
     const verdictInputs: VerdictInputs = {
       situations: reading.situations,
+      framedFirstCount: reading.framedFirstCount,
       groundedFramingCount: reading.groundedFramingCount,
     }
 
@@ -101,6 +123,8 @@ export class HintBudgetEvaluator implements GameEvaluator {
     switch (rule.type) {
       case 'frugal-solves-at-least':
         return frugalSolvesAtLeast(inputs.situations, rule)
+      case 'framed-first-at-least':
+        return framedFirstAtLeast(inputs.framedFirstCount, rule)
       case 'grounded-framings-at-least':
         return groundedFramingsAtLeast(inputs.groundedFramingCount, rule)
       default:
@@ -112,5 +136,6 @@ export class HintBudgetEvaluator implements GameEvaluator {
 /** Tout ce qu'une règle peut lire, et rien de plus. */
 type VerdictInputs = {
   situations: readonly SituationReading[]
+  framedFirstCount: number
   groundedFramingCount: number
 }

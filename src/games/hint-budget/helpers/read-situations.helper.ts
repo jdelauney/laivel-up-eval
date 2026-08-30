@@ -19,23 +19,37 @@ export type SituationReading = {
   hintsTotal: number
   // Aucun indice acheté dans cette situation.
   blindCut: boolean
-  // Un cadrage a été posé, et il l'a été avant le premier achat.
+  // Un cadrage a été posé, et il l'a été avant le premier achat. Lu seul par
+  // `framed-first-at-least` (`g2-1-c2`) : l'ordre, rien que l'ordre.
   framedFirst: boolean
   // Le cadrage retient exactement l'ensemble des lectures établies — toutes,
-  // et aucune autre. La version faible (« au moins une établie, aucune
-  // supposée ») laissait passer la sélection d'une seule ligne au hasard,
-  // trop peu cher pour un critère qui pèse la moitié du jeu ; et un brief
-  // partiel est du contexte manquant, mesuré au même titre qu'un contexte
-  // faux.
+  // et aucune autre — quel que soit le moment où il a été posé. La version
+  // faible (« au moins une établie, aucune supposée ») laissait passer la
+  // sélection d'une seule ligne au hasard, trop peu cher pour un critère qui
+  // pèse un quart du jeu ; et un brief partiel est du contexte manquant,
+  // mesuré au même titre qu'un contexte faux. Lu seul par
+  // `grounded-framings-at-least` (`g2-1-c3`) : le fondement, rien que le
+  // fondement.
+  //
+  // Correction du 30/08, après revue : `c2` mesurait à la fois l'ordre et le
+  // fondement sous une question qui ne parlait que d'ordre (« posé avant le
+  // premier indice »). Un joueur qui cadrait bien en premier, mais de façon
+  // imparfaite, se voyait déclaré « manqué » sur un critère que sa question
+  // affichée ne laissait pas deviner. `framedFirst` et `framingGrounded`
+  // étaient déjà deux champs distincts ici ; seul l'agrégat en amont les
+  // recombinait. Scindés en deux règles, chacun se lit maintenant seul.
   framingGrounded: boolean
-  // Les deux à la fois, le seul cas qui vaut quelque chose au scoring.
-  framedAndGrounded: boolean
   hintCost: number
   cost: number
 }
 
 export type Reading = {
   situations: readonly SituationReading[]
+  // Le compte de situations cadrées d'entrée, sans égard au fondement — lu
+  // par `framed-first-at-least`.
+  framedFirstCount: number
+  // Le compte de situations dont le cadrage est fondé, sans égard à l'ordre
+  // où il a été posé — lu par `grounded-framings-at-least`.
   groundedFramingCount: number
   totalCost: number
 }
@@ -65,8 +79,6 @@ const readSituation = (
     establishedIds.length === retainedIds.length &&
     establishedIds.every((id, index) => id === retainedIds[index])
 
-  const framedAndGrounded = framedFirst && framingGrounded
-
   const hintById = new Map(situation.hints.map((hint) => [hint.id, hint]))
   const hintCost = attempt.boughtHintIds.reduce(
     (total, hintId) => total + (hintById.get(hintId)?.cost ?? 0),
@@ -92,7 +104,6 @@ const readSituation = (
     blindCut,
     framedFirst,
     framingGrounded,
-    framedAndGrounded,
     hintCost,
     cost,
   }
@@ -130,8 +141,10 @@ export const readSituations = (
 
   return {
     situations,
+    framedFirstCount: situations.filter((situation) => situation.framedFirst)
+      .length,
     groundedFramingCount: situations.filter(
-      (situation) => situation.framedAndGrounded,
+      (situation) => situation.framingGrounded,
     ).length,
     totalCost: situations.reduce(
       (total, situation) => total + situation.cost,

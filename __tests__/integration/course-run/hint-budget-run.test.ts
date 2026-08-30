@@ -204,7 +204,7 @@ describe('hint-budget in the course', () => {
     expect([...dimensions]).toEqual(['pilotage-contexte'])
   })
 
-  it('satisfies both criteria for a profile that frames grounded and first, then solves frugally', () => {
+  it('satisfies all three criteria for a profile that frames grounded and first, then solves frugally', () => {
     const dimension = pilotageContexteDimension(
       playG2_1(frugalFramerAttempts(realG2_1Config())),
     )
@@ -217,9 +217,10 @@ describe('hint-budget in the course', () => {
 
     expect(satisfiedByCriterion['g2-1-c1']).toBe(true)
     expect(satisfiedByCriterion['g2-1-c2']).toBe(true)
+    expect(satisfiedByCriterion['g2-1-c3']).toBe(true)
   })
 
-  it('sinks both criteria for the eager asker who never frames and buys every hint', () => {
+  it('sinks all three criteria for the eager asker who never frames and buys every hint', () => {
     const dimension = pilotageContexteDimension(
       playG2_1(eagerAskerAttempts(realG2_1Config())),
     )
@@ -232,9 +233,10 @@ describe('hint-budget in the course', () => {
 
     expect(satisfiedByCriterion['g2-1-c1']).toBe(false)
     expect(satisfiedByCriterion['g2-1-c2']).toBe(false)
+    expect(satisfiedByCriterion['g2-1-c3']).toBe(false)
   })
 
-  it('satisfies only the framing criterion for the spendthrift framer who frames well but buys every hint', () => {
+  it('satisfies the order and grounding criteria, but not frugality, for the spendthrift framer who frames well but buys every hint', () => {
     const dimension = pilotageContexteDimension(
       playG2_1(spendthriftFramerAttempts(realG2_1Config())),
     )
@@ -247,17 +249,30 @@ describe('hint-budget in the course', () => {
 
     expect(satisfiedByCriterion['g2-1-c1']).toBe(false)
     expect(satisfiedByCriterion['g2-1-c2']).toBe(true)
+    expect(satisfiedByCriterion['g2-1-c3']).toBe(true)
   })
 
-  it('sinks the framing criterion for the profile that retains every reading of every situation', () => {
+  /**
+   * Cocher toutes les lectures — établies et supposées — pose le cadre en
+   * premier (`afterHints: 0`) : l'ordre seul (`c2`) ressort donc satisfait.
+   * Mais le cadrage n'est pas fondé (`c3`) : il retient plus que ce que le
+   * rapport établit. C'est exactement le cas que la scission du 30/08
+   * corrige — sous l'ancienne règle unique, ce profil lisait « manqué » sur
+   * un critère dont la question affichée ne parlait que d'ordre.
+   */
+  it('satisfies the order criterion but sinks the grounding criterion for the profile that retains every reading of every situation', () => {
     const dimension = pilotageContexteDimension(
       playG2_1(checksEverythingAttempts(realG2_1Config())),
     )
-    const framingCriterion = dimension.contributions.find(
-      (contribution) => contribution.criterionId === 'g2-1-c2',
+    const satisfiedByCriterion = Object.fromEntries(
+      dimension.contributions.map((contribution) => [
+        contribution.criterionId,
+        contribution.satisfied,
+      ]),
     )
 
-    expect(framingCriterion?.satisfied).toBe(false)
+    expect(satisfiedByCriterion['g2-1-c2']).toBe(true)
+    expect(satisfiedByCriterion['g2-1-c3']).toBe(false)
   })
 
   it('solves at most one situation for the profile that always cuts the first declared cause', () => {
@@ -277,6 +292,85 @@ describe('hint-budget in the course', () => {
     )
 
     expect(new Set(ranks).size).toBe(ranks.length)
+  })
+
+  /**
+   * Garde-fou de corpus, sur le modèle de `lie-detector-run.test.ts:398` :
+   * une politique aveugle « trancher la cause la plus longue » (ou la plus
+   * courte) tenait `c1` 3/3 sans lire une ligne avant cette correction — la
+   * cause `actual` était le texte le plus long des cinq, dans les trois
+   * situations. Corrigé le 30/08, après revue : la longueur ne trahit plus
+   * rien.
+   */
+  it('never lets the actual cause be the longest or the shortest claim of its situation: form does not give it away', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const lengths = situation.causes.map((cause) => cause.text.length)
+      const actualLength = situation.causes.find((cause) => cause.actual)?.text
+        .length
+
+      expect(actualLength).not.toBe(Math.max(...lengths))
+      expect(actualLength).not.toBe(Math.min(...lengths))
+    })
+  })
+
+  /** Le second garde-fou, sur le modèle de `lie-detector-run.test.ts:417`. */
+  it('keeps each situation within a quarter of its longest cause claim: the set reads as homogeneous', () => {
+    const config = realG2_1Config()
+
+    config.situations.forEach((situation) => {
+      const lengths = situation.causes.map((cause) => cause.text.length)
+      const longest = Math.max(...lengths)
+      const shortest = Math.min(...lengths)
+
+      expect(longest - shortest).toBeLessThanOrEqual(longest / 4)
+    })
+  })
+
+  /**
+   * L'indice le plus cher (`h5`) est celui qui écarte le plus d'alternatives,
+   * jamais celui qui livre la réponse (`phase-4.md`, règle 4). `s1-h5`
+   * énonçait la cause réelle mot pour mot avant cette correction. Un simple
+   * compte de mots partagés tolérerait un vocabulaire technique commun
+   * (« horloge », « arrondi ») ; c'est la reprise d'une **phrase entière**
+   * qui trahissait la cause. Mesuré par la plus longue sous-chaîne commune.
+   */
+  it('keeps the priciest hint from echoing the actual cause as a near-verbatim phrase', () => {
+    const config = realG2_1Config()
+    const OVERLAP_LIMIT = 20
+
+    const longestCommonSubstring = (a: string, b: string): number => {
+      const table: number[][] = Array.from({ length: a.length + 1 }, () =>
+        new Array(b.length + 1).fill(0),
+      )
+      let longest = 0
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          if (a[i - 1] === b[j - 1]) {
+            table[i][j] = table[i - 1][j - 1] + 1
+            longest = Math.max(longest, table[i][j])
+          }
+        }
+      }
+      return longest
+    }
+
+    config.situations.forEach((situation) => {
+      const priciestHint = [...situation.hints].sort(
+        (a, b) => b.cost - a.cost,
+      )[0]
+      const actualCause = situation.causes.find((cause) => cause.actual)
+      if (actualCause === undefined) {
+        throw new Error(`${situation.id} has no actual cause`)
+      }
+
+      const overlap = longestCommonSubstring(
+        priciestHint.text,
+        `${actualCause.text} ${actualCause.verification}`,
+      )
+      expect(overlap).toBeLessThan(OVERLAP_LIMIT)
+    })
   })
 
   it('carries a corpus where the set of established framing ranks differs across the three situations', () => {

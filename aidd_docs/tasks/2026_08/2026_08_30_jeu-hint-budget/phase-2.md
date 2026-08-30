@@ -4,6 +4,8 @@ status: done
 
 # Instruction: L'évaluateur et ses deux règles
 
+**Correction du 30/08, après revue.** Cette phase a livré deux règles (`frugal-solves-at-least`, `grounded-framings-at-least`). La revue a montré que `grounded-framings-at-least` en portait en réalité deux à la fois — l'ordre (`framedFirst`) et le fondement (`framingGrounded`) — sous une seule question affichée qui ne parlait que d'ordre. Décision produit : une troisième règle déclarative, `framed-first-at-least`, lit l'ordre seul ; `grounded-framings-at-least` est conservée mais recentrée sur le seul fondement, sans plus jamais lire `framedFirst`. Le jeu porte donc trois règles, pas deux — cette page garde son contenu d'origine pour l'historique, `hint-budget.evaluator.ts` et ses tests portent la version courante.
+
 ## Architecture projection
 
 > Tree of the final files. ✅ create · ✏️ modify · ❌ delete

@@ -417,7 +417,7 @@
           "type": "hint-budget",
           "label": "Combien d'indices vous faut-il ?",
           "config": {
-            "statement": "Un rapport d'incident tient déjà quelques faits. Vous pouvez transmettre le cadre que vous en retenez, une seule fois — le dépôt se verrouille. Vous pouvez aussi interroger l'assistant : chaque indice affiche son prix avant l'achat. Les deux gestes se jouent dans l'ordre qui vous convient, avant de trancher une cause.",
+            "statement": "Un rapport d'incident tient déjà quelques faits. Vous pouvez transmettre le cadre que vous en retenez, une seule fois — le dépôt se verrouille. Vous pouvez aussi interroger l'assistant : chaque indice affiche son prix avant l'achat. Tranchez une cause quand vous êtes prêt.",
             "wrongCutPenalty": 40,
             "blindCutSurcharge": 30,
             "situations": [
@@ -473,7 +473,7 @@
                     "id": "s1-h3",
                     "label": "Comparer l'horloge du serveur de production à une source de temps de référence",
                     "cost": 15,
-                    "text": "Le serveur de production affiche une heure en avance de quatre minutes sur la source de référence."
+                    "text": "Le serveur de production accuse vingt minutes de retard sur la source de référence."
                   },
                   {
                     "id": "s1-h4",
@@ -485,21 +485,21 @@
                     "id": "s1-h5",
                     "label": "Demander un diagnostic complet de la chaîne d'authentification",
                     "cost": 25,
-                    "text": "Le serveur de production retarde son horloge : les jetons émis récemment lui paraissent invalides avant leur expiration réelle."
+                    "text": "Le diagnostic élimine le certificat, la clé de signature, l'en-tête et le cache : aucun jeton n'est accepté, quel que soit son instant d'émission."
                   }
                 ],
                 "causes": [
                   {
                     "id": "s1-c-tls",
-                    "text": "Le certificat TLS du reverse proxy a expiré.",
+                    "text": "Le certificat TLS du reverse proxy vient d'expirer.",
                     "actual": false,
                     "verification": "Le certificat a été renouvelé la semaine dernière et reste valide huit mois : ce n'est pas la cause."
                   },
                   {
                     "id": "s1-c-clock",
-                    "text": "L'horloge du serveur de production dérive de plusieurs minutes, ce qui fait paraître les jetons invalides avant leur expiration réelle.",
+                    "text": "L'horloge du serveur de production a pris du retard.",
                     "actual": true,
-                    "verification": "Confirmé : recaler l'horloge du serveur sur une source de temps de référence a fait disparaître les 401."
+                    "verification": "Confirmé : l'horloge du serveur de production accuse vingt minutes de retard sur la source de référence, ce qui fait paraître chaque jeton comme émis dans le futur. Recaler l'horloge sur la source de référence a fait disparaître les 401."
                   },
                   {
                     "id": "s1-c-header",
@@ -509,7 +509,7 @@
                   },
                   {
                     "id": "s1-c-secret",
-                    "text": "La clé secrète de signature diffère entre local et production.",
+                    "text": "La clé secrète de signature diffère entre environnements.",
                     "actual": false,
                     "verification": "La même clé secrète signe les jetons dans les deux environnements : ce n'est pas la cause."
                   },
@@ -585,7 +585,7 @@
                     "id": "s2-h5",
                     "label": "Demander un diagnostic complet du calcul du total",
                     "cost": 25,
-                    "text": "L'addition des montants déjà arrondis ligne par ligne accumule un écart d'arrondi sur les quantités fractionnaires, au lieu de recalculer le total à partir des quantités brutes."
+                    "text": "Le diagnostic élimine la TVA, le double calcul, la conversion de devise et la remise appliquée."
                   }
                 ],
                 "causes": [
@@ -597,19 +597,19 @@
                   },
                   {
                     "id": "s2-c-double",
-                    "text": "Le total est calculé deux fois, une fois côté serveur et une fois côté client, avec des résultats différents.",
+                    "text": "Le total de la facture est calculé deux fois séparément.",
                     "actual": false,
                     "verification": "Le total n'est calculé qu'une seule fois, côté serveur : ce n'est pas la cause."
                   },
                   {
                     "id": "s2-c-currency",
-                    "text": "La devise de certaines lignes est mal convertie.",
+                    "text": "La devise de certaines lignes de facture est mal convertie.",
                     "actual": false,
                     "verification": "Toutes les lignes de cette facture sont dans la même devise, sans conversion : ce n'est pas la cause."
                   },
                   {
                     "id": "s2-c-rounding",
-                    "text": "Chaque ligne arrondit son montant à deux décimales avant l'addition, ce qui accumule un écart d'arrondi sur les quantités fractionnaires.",
+                    "text": "Chaque ligne arrondit son montant avant l'addition totale.",
                     "actual": true,
                     "verification": "Confirmé : chaque ligne arrondit son montant avant l'addition, ce qui accumule un écart sur les quantités fractionnaires. Recalculer le total à partir des quantités brutes corrige l'écart."
                   },
@@ -685,25 +685,25 @@
                     "id": "s3-h5",
                     "label": "Demander un diagnostic complet de l'isolation des tests",
                     "cost": 25,
-                    "text": "Les tests partagent un état commun non réinitialisé entre eux ; exécutés en parallèle sur l'agent CI, ils interfèrent les uns avec les autres, ce qui n'arrive jamais en exécution séquentielle locale."
+                    "text": "Le diagnostic élimine la variable d'environnement, la version de Node, le cache et le fuseau horaire : rien ne diffère entre les deux environnements."
                   }
                 ],
                 "causes": [
                   {
                     "id": "s3-c-parallel",
-                    "text": "Les tests s'exécutent en parallèle sur l'agent CI, contrairement au poste local, et partagent un état non isolé entre eux.",
+                    "text": "Les tests s'exécutent en parallèle sans isolation d'état.",
                     "actual": true,
                     "verification": "Confirmé : isoler l'état entre les tests, ou désactiver le parallélisme sur l'agent CI, fait disparaître les échecs intermittents."
                   },
                   {
                     "id": "s3-c-env",
-                    "text": "Les tests dépendent d'une variable d'environnement absente sur l'agent CI.",
+                    "text": "Les tests dépendent d'une variable d'environnement absente en CI.",
                     "actual": false,
                     "verification": "Toutes les variables d'environnement requises sont bien présentes sur l'agent CI : ce n'est pas la cause."
                   },
                   {
                     "id": "s3-c-node",
-                    "text": "La version de Node installée sur l'agent CI diffère de celle utilisée en local.",
+                    "text": "La version de Node en CI diffère de celle en local.",
                     "actual": false,
                     "verification": "La version de Node de l'agent CI est identique à celle du poste local : ce n'est pas la cause."
                   },
@@ -715,7 +715,7 @@
                   },
                   {
                     "id": "s3-c-timezone",
-                    "text": "Le fuseau horaire de l'agent CI diffère de celui du poste local.",
+                    "text": "Le fuseau horaire de l'agent CI diffère du poste local.",
                     "actual": false,
                     "verification": "Les deux environnements partagent le même fuseau horaire : ce n'est pas la cause."
                   }
@@ -743,13 +743,27 @@
               "id": "g2-1-c2",
               "question": "Le contexte a-t-il été posé avant le premier indice ?",
               "rule": {
+                "type": "framed-first-at-least",
+                "threshold": 2
+              },
+              "mapping": [
+                {
+                  "dimension": "pilotage-contexte",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "id": "g2-1-c3",
+              "question": "Ce contexte était-il fondé sur le rapport ?",
+              "rule": {
                 "type": "grounded-framings-at-least",
                 "threshold": 2
               },
               "mapping": [
                 {
                   "dimension": "pilotage-contexte",
-                  "weight": 2
+                  "weight": 1
                 }
               ]
             }

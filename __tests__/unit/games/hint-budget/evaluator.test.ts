@@ -81,6 +81,11 @@ const groundedFramingOf = (situationId: string, afterHints: number) => ({
   afterHints,
 })
 
+/**
+ * Trois critères depuis la scission du 30/08, après revue : `c2` mesurait à
+ * la fois l'ordre et le fondement sous une question qui ne parlait que
+ * d'ordre. `c2` ne lit plus que l'ordre, `c3` reprend le fondement seul.
+ */
 const criteria: Criterion[] = [
   {
     id: 'c1',
@@ -92,8 +97,14 @@ const criteria: Criterion[] = [
   {
     id: 'c2',
     question: 'Le contexte a-t-il été posé avant le premier indice ?',
+    rule: { type: 'framed-first-at-least', threshold: 2 },
+    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+  },
+  {
+    id: 'c3',
+    question: 'Ce contexte était-il fondé sur le rapport ?',
     rule: { type: 'grounded-framings-at-least', threshold: 2 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
   },
 ]
 
@@ -108,15 +119,15 @@ const verdictOf = (
     .map((result) => result.satisfied)
 
 describe('hint-budget evaluator', () => {
-  it('accepts a configuration of three situations and two declarative criteria', () => {
+  it('accepts a configuration of three situations and three declarative criteria', () => {
     expect(config.situations).toHaveLength(3)
-    expect(criteria).toHaveLength(2)
+    expect(criteria).toHaveLength(3)
     expect(() =>
       verdictOf([attempt('s1'), attempt('s2'), attempt('s3')]),
     ).not.toThrow()
   })
 
-  it('satisfies both criteria when two situations are solved with at most two of five hints, framed grounded and first', () => {
+  it('satisfies all three criteria when two situations are solved with at most two of five hints, framed grounded and first', () => {
     expect(
       verdictOf([
         attempt('s1', {
@@ -129,7 +140,7 @@ describe('hint-budget evaluator', () => {
         }),
         attempt('s3', { boughtHintIds: [], cutCauseId: 's3-c1' }),
       ]),
-    ).toEqual([true, true])
+    ).toEqual([true, true, true])
   })
 
   it('misses the frugality criterion when every situation is solved after buying four of five hints', () => {
@@ -152,8 +163,13 @@ describe('hint-budget evaluator', () => {
     expect(frugality).toBe(false)
   })
 
-  it('misses the framing criterion when the exact framing is posted after the first purchase in every situation', () => {
-    const [, framingCriterion] = verdictOf([
+  /**
+   * Un cadrage exact mais posé après le premier achat manque l'ordre (`c2`)
+   * dans les trois situations, mais reste fondé (`c3`) : les deux règles
+   * sont indépendantes depuis la scission du 30/08.
+   */
+  it('misses the order criterion but satisfies the grounding criterion when the exact framing is posted after the first purchase in every situation', () => {
+    const [, orderCriterion, groundingCriterion] = verdictOf([
       attempt('s1', {
         boughtHintIds: ['s1-h1'],
         framing: groundedFramingOf('s1', 1),
@@ -168,17 +184,41 @@ describe('hint-budget evaluator', () => {
       }),
     ])
 
-    expect(framingCriterion).toBe(false)
+    expect(orderCriterion).toBe(false)
+    expect(groundingCriterion).toBe(true)
   })
 
-  it('misses the framing criterion when no framing is ever posted', () => {
-    const [, framingCriterion] = verdictOf([
+  it('misses both the order and the grounding criteria when no framing is ever posted', () => {
+    const [, orderCriterion, groundingCriterion] = verdictOf([
       attempt('s1'),
       attempt('s2'),
       attempt('s3'),
     ])
 
-    expect(framingCriterion).toBe(false)
+    expect(orderCriterion).toBe(false)
+    expect(groundingCriterion).toBe(false)
+  })
+
+  /**
+   * Un cadrage posé en premier, mais qui retient une lecture en moins que ce
+   * que le rapport établit, satisfait l'ordre (`c2`) sans satisfaire le
+   * fondement (`c3`) — le cas que la question affichée de `c2` masquait
+   * avant la scission.
+   */
+  it('satisfies the order criterion but misses the grounding criterion when the framing is posted first but incomplete', () => {
+    const partialFramingOf = (situationId: string) => ({
+      retainedIds: [`${situationId}-f1`],
+      afterHints: 0,
+    })
+
+    const [, orderCriterion, groundingCriterion] = verdictOf([
+      attempt('s1', { framing: partialFramingOf('s1') }),
+      attempt('s2', { framing: partialFramingOf('s2') }),
+      attempt('s3', { framing: partialFramingOf('s3') }),
+    ])
+
+    expect(orderCriterion).toBe(true)
+    expect(groundingCriterion).toBe(false)
   })
 
   /**

@@ -85,7 +85,6 @@ describe('read situations', () => {
     const s1 = reading.situations[0]
     expect(s1.framedFirst).toBe(true)
     expect(s1.framingGrounded).toBe(true)
-    expect(s1.framedAndGrounded).toBe(true)
   })
 
   it('reads an exact framing posted after a purchase as grounded but not first', () => {
@@ -102,7 +101,6 @@ describe('read situations', () => {
     const s1 = reading.situations[0]
     expect(s1.framedFirst).toBe(false)
     expect(s1.framingGrounded).toBe(true)
-    expect(s1.framedAndGrounded).toBe(false)
   })
 
   it('reads a partial framing, missing one established reading, as ungrounded', () => {
@@ -139,7 +137,6 @@ describe('read situations', () => {
     const s1 = reading.situations[0]
     expect(s1.framedFirst).toBe(false)
     expect(s1.framingGrounded).toBe(false)
-    expect(s1.framedAndGrounded).toBe(false)
   })
 
   it('reads a correct cut as solved', () => {
@@ -189,7 +186,14 @@ describe('read situations', () => {
     expect(blind.cost).toBeGreaterThan(afterPriciestHint.cost)
   })
 
-  it('aggregates the grounded-and-first framing count and the total cost across situations', () => {
+  /**
+   * `s1` cadre en premier, fondé. `s2` cadre en premier aussi, mais avec une
+   * lecture en moins : compté par `framedFirstCount` (ordre seul), pas par
+   * `groundedFramingCount` (fondement seul). Les deux comptes sont
+   * indépendants depuis la scission de `c2` en deux règles, le 30/08 après
+   * revue.
+   */
+  it('aggregates the framed-first count, the grounded count, and the total cost independently across situations', () => {
     const reading = readSituations(config, {
       attempts: [
         attempt('s1', {
@@ -203,6 +207,7 @@ describe('read situations', () => {
       ],
     })
 
+    expect(reading.framedFirstCount).toBe(2)
     expect(reading.groundedFramingCount).toBe(1)
     expect(reading.totalCost).toBe(0)
   })
