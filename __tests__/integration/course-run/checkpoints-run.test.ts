@@ -24,6 +24,7 @@ import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
+import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
 
 /**
  * Le jeu traverse le moteur de production : le vrai parcours, le vrai registre,
@@ -116,6 +117,13 @@ const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
    * trace conforme suffit — voir `defaultLieDetectorAnswer`.
    */
   if (game.type === 'lie-detector') return defaultLieDetectorAnswer(game.config)
+  /**
+   * `g2-2` porte practice-map depuis la phase 4 de son propre plan : ce test
+   * mesure `intervention`, jamais `pilotage-contexte`, donc n'importe quelle
+   * lecture conforme suffit — ici, chaque pratique posée au centre de sa
+   * propre zone.
+   */
+  if (game.type === 'practice-map') return correctPracticeMapAnswer(game.config)
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),

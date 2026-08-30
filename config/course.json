@@ -480,45 +480,163 @@
         },
         {
           "id": "g2-2",
-          "type": "test-bench",
+          "type": "practice-map",
           "label": "Où placez-vous ces pratiques ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Sept pratiques du parcours sont posées devant vous. Situez chacune sur ce plan, sans case prédéfinie : seule la position compte, jamais une déclaration. Vous pouvez déplacer un jeton autant de fois que vous le voulez ; la lecture se verrouille à la soumission, pas au dépôt.",
+            "highRigorFrom": 0.7,
+            "poles": {
+              "intensityLow": "vous le faites",
+              "intensityHigh": "l'agent le fait seul",
+              "rigorLow": "rien ne la vérifie",
+              "rigorHigh": "un garde-fou la tient sans vous"
+            },
+            "quadrants": {
+              "highRigorLowIntensity": "Outillé, à la main",
+              "highRigorHighIntensity": "Outillé, délégué",
+              "lowRigorLowIntensity": "À la main, sans filet",
+              "lowRigorHighIntensity": "Délégué, sans filet"
+            },
+            "practices": [
               {
                 "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "label": "Relancer le même prompt quand la réponse ne convient pas",
+                "shortLabel": "Relance identique",
+                "expected": {
+                  "intensityFrom": 0.5,
+                  "intensityTo": 0.75,
+                  "rigorFrom": 0,
+                  "rigorTo": 0.2
+                },
+                "marker": "Relancer à l'identique ne change rien à ce que le modèle reçoit : sans toucher au prompt ou au contexte, c'est la même demande posée une seconde fois."
               },
               {
                 "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "label": "Relire soi-même chaque diff avant de l'accepter",
+                "shortLabel": "Relire chaque diff",
+                "expected": {
+                  "intensityFrom": 0.35,
+                  "intensityTo": 0.65,
+                  "rigorFrom": 0.35,
+                  "rigorTo": 0.6
+                },
+                "marker": "Elle tient tant que la relecture porte sur le fond du changement ; confirmer seulement l'absence d'erreur de syntaxe n'est pas cette pratique."
               },
               {
                 "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "label": "Brancher une boucle qui relance l'agent tant que la commande du projet échoue",
+                "shortLabel": "Boucle de relance",
+                "expected": {
+                  "intensityFrom": 0.7,
+                  "intensityTo": 1,
+                  "rigorFrom": 0.75,
+                  "rigorTo": 1
+                },
+                "marker": "Celle-ci n'existe que si une commande du projet la relance sans vous ; sans cette commande, c'est une relance à la main."
               },
               {
                 "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "label": "Écrire le fichier de contexte du dépôt avant la première tâche",
+                "shortLabel": "Fichier contexte",
+                "expected": {
+                  "intensityFrom": 0,
+                  "intensityTo": 0.25,
+                  "rigorFrom": 0.7,
+                  "rigorTo": 0.95
+                },
+                "marker": "Le fichier vaut ce qu'il retient : un contexte qui ne dit que des généralités ne garde rien qu'un nouveau venu ne devine déjà."
+              },
+              {
+                "id": "p5",
+                "label": "Confier une tâche floue à un agent en autonomie, pull request comprise",
+                "shortLabel": "Tâche en autonomie",
+                "expected": {
+                  "intensityFrom": 0.8,
+                  "intensityTo": 1,
+                  "rigorFrom": 0,
+                  "rigorTo": 0.18
+                },
+                "marker": "L'autonomie se mesure à ce qui reste à vérifier après coup, jamais à ce qui a été délégué au départ."
+              },
+              {
+                "id": "p6",
+                "label": "Écrire la fonction soi-même sans rien demander",
+                "shortLabel": "Fonction soi-même",
+                "expected": {
+                  "intensityFrom": 0,
+                  "intensityTo": 0.2,
+                  "rigorFrom": 0.25,
+                  "rigorTo": 0.5
+                },
+                "marker": "Le piège symétrique de la délégation totale : écrire seul ne garantit rien tant que le résultat n'est pas ensuite vérifié comme n'importe quel autre code."
+              },
+              {
+                "id": "p7",
+                "label": "Poser un hook qui bloque le commit et rend la main",
+                "shortLabel": "Hook bloquant",
+                "expected": {
+                  "intensityFrom": 0.3,
+                  "intensityTo": 0.55,
+                  "rigorFrom": 0.62,
+                  "rigorTo": 0.85
+                },
+                "marker": "Un hook qui bloque puis rend la main diffère d'une boucle qui relance : il arrête, il ne reprend jamais le travail à votre place."
+              }
+            ],
+            "orderings": [
+              {
+                "id": "o1",
+                "axis": "rigor",
+                "higherId": "p3",
+                "lowerId": "p2"
+              },
+              {
+                "id": "o2",
+                "axis": "rigor",
+                "higherId": "p4",
+                "lowerId": "p1"
+              },
+              {
+                "id": "o3",
+                "axis": "intensity",
+                "higherId": "p5",
+                "lowerId": "p6"
+              },
+              {
+                "id": "o4",
+                "axis": "intensity",
+                "higherId": "p3",
+                "lowerId": "p7"
+              },
+              {
+                "id": "o5",
+                "axis": "rigor",
+                "higherId": "p7",
+                "lowerId": "p1"
+              },
+              {
+                "id": "o6",
+                "axis": "rigor",
+                "higherId": "p2",
+                "lowerId": "p1"
+              },
+              {
+                "id": "o7",
+                "axis": "intensity",
+                "higherId": "p1",
+                "lowerId": "p4"
               }
             ]
           },
           "criteria": [
             {
               "id": "g2-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Assez de pratiques sont-elles situées là où elles se tiennent ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "placements-in-zone-at-least",
+                "threshold": 4
               },
               "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2
-                },
                 {
                   "dimension": "pilotage-contexte",
                   "weight": 2
@@ -527,15 +645,25 @@
             },
             {
               "id": "g2-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Une pratique de haute rigueur a-t-elle été située là où elle se tient ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "high-rigor-zone-hit"
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
-                },
+                }
+              ]
+            },
+            {
+              "id": "g2-2-c3",
+              "question": "Les pratiques sont-elles situées les unes par rapport aux autres comme elles se tiennent ?",
+              "rule": {
+                "type": "orderings-held-at-least",
+                "threshold": 6
+              },
+              "mapping": [
                 {
                   "dimension": "pilotage-contexte",
                   "weight": 1
