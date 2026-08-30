@@ -38,13 +38,14 @@ const situation = (id: string) => ({
   hints: [
     hint(`${id}-h1`, 5, [`${id}-c1`]),
     hint(`${id}-h2`, 10, [`${id}-c3`]),
-    hint(`${id}-h3`, 15),
-    hint(`${id}-h4`, 20),
+    hint(`${id}-h3`, 15, [`${id}-c4`]),
+    hint(`${id}-h4`, 20, [`${id}-c4`]),
   ],
   causes: [
     cause(`${id}-c1`, false),
     cause(`${id}-c2`, true),
     cause(`${id}-c3`, false),
+    cause(`${id}-c4`, false, true),
   ],
 })
 
@@ -181,7 +182,7 @@ describe('use hint budget', () => {
     })
 
     expect(result.current.phase).toBe('revealed')
-    expect(result.current.revelation?.causes).toHaveLength(3)
+    expect(result.current.revelation?.causes).toHaveLength(4)
     expect(result.current.revelation?.cutCauseId).toBe('s1-c2')
   })
 

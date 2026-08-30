@@ -173,3 +173,11 @@ Le point non levé ci-dessus est fermé. La tournée navigateur a été rejouée
 Mesuré dans le bon sens cette fois (« Point 2 » et « Point 4 » de la nouvelle version) : le marché est en tête sur `s1` et `s3`, le cadrage sur `s2` — exactement l'inverse de ce que `qa/README.md` affirmait avant le tour 2. Les arrêts de tabulation confirment la même chose sans jamais atteindre une parité de comptage : 5 arrêts d'avance pour le marché sur `s1` et `s3`, 6 pour le cadrage sur `s2`. La parité desktop, elle, tient exactement sur les trois situations (écart de sommet nul, mesuré en DOM), pas seulement sur les deux jouées lors des tournées précédentes.
 
 Un résultat nouveau, honnête à consigner : le delta de hauteur documentaire mobile après cinq achats sur `s1` n'est plus −138px mais **−119px**, parce que la réécriture des `causes[].text` a changé de quelques caractères la hauteur de certaines cartes du panneau des causes avant la révélation. Ni l'ancienne ni la nouvelle mesure n'était fausse en son temps ; c'est le document mesuré qui a changé entre les deux tournées.
+
+## La tournée est à rejouer, tour 3 (30/08)
+
+**Point ouvert, écrit plutôt que laissé implicite.** La réécriture des quinze textes d'indices — passage à une élimination unique par indice, cf. `phase-1.md` et `phase-4.md` — change la hauteur du panneau du marché aux deux gabarits, et donc toutes les mesures de position rapportées dans `qa/README.md`. Les seize captures montrent un corpus qui n'existe plus.
+
+Ce qui reste vrai sans remesure : la structure de la surface n'a pas bougé (aucun composant, aucune classe de mise en page n'est touchée par ce lot), donc l'ordre DOM des deux panneaux, l'alternance et les comptes d'arrêts de tabulation tiennent. Ce qui est périmé : toutes les hauteurs, tous les deltas, et le delta mobile de −119px en particulier.
+
+La tournée est donc à rejouer intégralement avant la revue suivante, aux mêmes conditions que la précédente : Playwright, `1440×900` et `390×844`, captures en page pleine, `scrollY = 0` vérifié avant chaque lecture de position. Aucune mesure de l'ancienne tournée ne doit être recopiée dans la nouvelle.

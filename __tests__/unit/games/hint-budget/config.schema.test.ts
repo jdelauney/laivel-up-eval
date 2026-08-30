@@ -55,13 +55,14 @@ const situation = (
   hints: overrides.hints ?? [
     hint(`${id}-h1`, 5, [`${id}-c1`]),
     hint(`${id}-h2`, 10, [`${id}-c3`]),
-    hint(`${id}-h3`, 15),
-    hint(`${id}-h4`, 20),
+    hint(`${id}-h3`, 15, [`${id}-c4`]),
+    hint(`${id}-h4`, 20, [`${id}-c4`]),
   ],
   causes: overrides.causes ?? [
     cause(`${id}-c1`, false),
     cause(`${id}-c2`, true),
     cause(`${id}-c3`, false),
+    cause(`${id}-c4`, false, true),
   ],
 })
 
@@ -97,7 +98,12 @@ describe('hint-budget config schema', () => {
   it('rejects two hints sharing the same id within a situation, naming both', () => {
     const config = validConfig()
     config.situations[0] = situation('s1', {
-      hints: [hint('s1-h1', 5), hint('s1-h1', 10), hint('s1-h3', 15)],
+      hints: [
+        hint('s1-h1', 5, ['s1-c1']),
+        hint('s1-h1', 10, ['s1-c4']),
+        hint('s1-h3', 15, ['s1-c3']),
+        hint('s1-h4', 20, ['s1-c4']),
+      ],
     })
 
     const issue = firstIssue(config)
@@ -225,8 +231,8 @@ describe('hint-budget config schema', () => {
         hints: [
           hint('s1-h1', 5, ['introuvable']),
           hint('s1-h2', 10, ['s1-c3']),
-          hint('s1-h3', 15),
-          hint('s1-h4', 20),
+          hint('s1-h3', 15, ['s1-c1']),
+          hint('s1-h4', 20, ['s1-c4']),
         ],
       })
 
@@ -243,6 +249,7 @@ describe('hint-budget config schema', () => {
           cause('s1-c1', false),
           cause('s1-c2', true, true),
           cause('s1-c3', false),
+          cause('s1-c4', false, true),
         ],
       })
 
@@ -256,8 +263,9 @@ describe('hint-budget config schema', () => {
       config.situations[0] = situation('s1', {
         hints: [
           hint('s1-h1', 5, ['s1-c2']),
-          hint('s1-h2', 10),
-          hint('s1-h3', 15),
+          hint('s1-h2', 10, ['s1-c3']),
+          hint('s1-h3', 15, ['s1-c4']),
+          hint('s1-h4', 20, ['s1-c4']),
         ],
       })
 
@@ -274,6 +282,7 @@ describe('hint-budget config schema', () => {
           cause('s1-c1', false, true),
           cause('s1-c2', true),
           cause('s1-c3', false, true),
+          cause('s1-c4', false, true),
         ],
       })
 
@@ -283,34 +292,96 @@ describe('hint-budget config schema', () => {
     })
 
     /**
-     * La preuve directe qu'aucun indice, pris seul, ne peut trancher une
-     * situation : `s1-h1` écarte à lui seul les deux causes non réelles, ce
-     * qui ramènerait le champ à une — la délégation totale que l'épique
-     * interdit. Le refus la rend inexprimable au chargement.
+     * La preuve directe qu'aucun indice ne peut, à lui seul, trancher une
+     * situation. Le refus a changé de nature après la troisième revue : il
+     * portait d'abord sur le nombre de causes qu'un indice pouvait écarter
+     * d'un coup — `s1-h1` en écartait deux, ramenant le champ à une, la
+     * délégation totale que l'épique interdit. La cardinalité exacte de
+     * `eliminates` rend désormais ce cas inexprimable en amont, et ferme du
+     * même geste la fuite que le refus précédent laissait ouverte : un
+     * indice qui n'éliminait rien n'était borné par rien, et pouvait
+     * énoncer la cause réelle.
      */
-    it('rejects a single hint whose eliminates, combined with the report, would leave fewer than two causes', () => {
+    it('rejects a hint that eliminates more than one cause', () => {
       const config = validConfig()
       config.situations[0] = situation('s1', {
         hints: [
           hint('s1-h1', 5, ['s1-c1', 's1-c3']),
-          hint('s1-h2', 10),
-          hint('s1-h3', 15),
+          hint('s1-h2', 10, ['s1-c3']),
+          hint('s1-h3', 15, ['s1-c4']),
+          hint('s1-h4', 20, ['s1-c4']),
         ],
       })
 
       const issue = firstIssue(config)
       expect(issue.path).toEqual(['situations', 0, 'hints', 0, 'eliminates'])
-      expect(issue.message).toContain('s1-h1')
+    })
+
+    it('rejects a hint that eliminates nothing at all', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5, []),
+          hint('s1-h2', 10, ['s1-c3']),
+          hint('s1-h3', 15, ['s1-c4']),
+          hint('s1-h4', 20, ['s1-c4']),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints', 0, 'eliminates'])
+    })
+
+    /**
+     * Deux indices ne peuvent pas payer la même élimination utile. Le
+     * doublon reste permis sur une cause que le rapport a déjà écartée :
+     * c'est l'achat gaspillé, le prix de ne pas avoir lu le rapport.
+     */
+    it('rejects two hints eliminating the same cause still in play', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        hints: [
+          hint('s1-h1', 5, ['s1-c1']),
+          hint('s1-h2', 10, ['s1-c1']),
+          hint('s1-h3', 15, ['s1-c3']),
+          hint('s1-h4', 20, ['s1-c4']),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints', 1, 'eliminates'])
+      expect(issue.message).toContain('s1-c1')
+    })
+
+    it('rejects a situation where no hint targets a cause the report already ruled out', () => {
+      const config = validConfig()
+      config.situations[0] = situation('s1', {
+        causes: [
+          cause('s1-c1', false),
+          cause('s1-c2', true),
+          cause('s1-c3', false),
+          cause('s1-c4', false),
+        ],
+        hints: [
+          hint('s1-h1', 5, ['s1-c1']),
+          hint('s1-h2', 10, ['s1-c3']),
+          hint('s1-h3', 15, ['s1-c4']),
+        ],
+      })
+
+      const issue = firstIssue(config)
+      expect(issue.path).toEqual(['situations', 0, 'hints'])
+      expect(issue.message).toContain('s1')
     })
 
     it('rejects a situation where no combination of at most half its hints ever narrows the field to one cause', () => {
       const config = validConfig()
       config.situations[0] = situation('s1', {
         hints: [
-          hint('s1-h1', 5),
-          hint('s1-h2', 10),
-          hint('s1-h3', 15),
-          hint('s1-h4', 20),
+          hint('s1-h1', 5, ['s1-c4']),
+          hint('s1-h2', 10, ['s1-c4']),
+          hint('s1-h3', 15, ['s1-c4']),
+          hint('s1-h4', 20, ['s1-c4']),
         ],
       })
 

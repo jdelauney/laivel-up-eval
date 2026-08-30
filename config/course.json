@@ -466,31 +466,31 @@
                   },
                   {
                     "id": "s1-h2",
-                    "label": "Vérifier si la réponse transite par le cache CDN",
+                    "label": "Vérifier la date d'expiration du certificat TLS du reverse proxy",
                     "cost": 10,
+                    "text": "Le certificat présenté par le proxy est valide encore huit mois : ce n'est pas le certificat.",
+                    "eliminates": ["s1-c-tls"]
+                  },
+                  {
+                    "id": "s1-h3",
+                    "label": "Comparer la clé secrète de signature entre les deux environnements",
+                    "cost": 15,
+                    "text": "La même clé signe les jetons des deux côtés, au caractère près : ce n'est pas la clé de signature.",
+                    "eliminates": ["s1-c-secret"]
+                  },
+                  {
+                    "id": "s1-h4",
+                    "label": "Vérifier si la réponse transite par le cache CDN",
+                    "cost": 20,
                     "text": "La réponse est marquée non-cacheable et n'entre jamais dans le cache CDN : ce n'est pas le cache qui sert une version périmée.",
                     "eliminates": ["s1-c-cdn"]
                   },
                   {
-                    "id": "s1-h3",
-                    "label": "Comparer l'horloge du serveur de production à une source de temps de référence",
-                    "cost": 15,
-                    "text": "Le serveur de production accuse vingt minutes de retard sur la source de référence.",
-                    "eliminates": []
-                  },
-                  {
-                    "id": "s1-h4",
-                    "label": "Relire le journal d'émission et de validation du jeton en cause",
-                    "cost": 20,
-                    "text": "Le jeton a été émis à l'heure du client, puis rejeté par le serveur pour une date d'émission jugée future.",
-                    "eliminates": []
-                  },
-                  {
                     "id": "s1-h5",
-                    "label": "Demander un diagnostic complet de la chaîne d'authentification",
+                    "label": "Demander une vérification complète de la chaîne de certificats",
                     "cost": 25,
-                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni le certificat ni la clé de signature ne sont en cause.",
-                    "eliminates": ["s1-c-tls", "s1-c-secret"]
+                    "text": "La chaîne de certificats du proxy est complète et valide jusqu'à son terme : ce n'est pas le certificat.",
+                    "eliminates": ["s1-c-tls"]
                   }
                 ],
                 "causes": [
@@ -569,10 +569,10 @@
                 "hints": [
                   {
                     "id": "s2-h1",
-                    "label": "Vérifier le taux de TVA appliqué à chaque ligne",
+                    "label": "Vérifier la devise déclarée sur chaque ligne de la facture",
                     "cost": 5,
-                    "text": "Le taux de TVA est identique sur toutes les lignes de la facture : ce n'est pas la TVA qui creuse l'écart.",
-                    "eliminates": ["s2-c-vat"]
+                    "text": "Toutes les lignes sont libellées dans la même devise, sans conversion appliquée : ce n'est pas la devise.",
+                    "eliminates": ["s2-c-currency"]
                   },
                   {
                     "id": "s2-h2",
@@ -583,24 +583,24 @@
                   },
                   {
                     "id": "s2-h3",
-                    "label": "Comparer le total affiché à la somme des quantités brutes multipliées par le prix unitaire, sans arrondi intermédiaire",
+                    "label": "Vérifier si une remise s'applique à ce type de facture",
                     "cost": 15,
-                    "text": "Le total sans arrondi intermédiaire diffère de quelques centimes du total affiché, toujours dans le même sens.",
-                    "eliminates": []
+                    "text": "Aucune remise n'est configurée pour ce type de facture : ce n'est pas une remise.",
+                    "eliminates": ["s2-c-discount"]
                   },
                   {
                     "id": "s2-h4",
-                    "label": "Isoler l'arrondi appliqué à chaque ligne avant l'addition",
+                    "label": "Comparer la devise de facturation à celle des lignes concernées",
                     "cost": 20,
-                    "text": "Chaque ligne est arrondie à deux décimales avant d'être additionnée au total.",
-                    "eliminates": []
+                    "text": "La devise de facturation et celle des lignes concordent, sans taux appliqué : ce n'est pas la devise.",
+                    "eliminates": ["s2-c-currency"]
                   },
                   {
                     "id": "s2-h5",
-                    "label": "Demander un diagnostic complet du calcul du total",
+                    "label": "Vérifier le taux de TVA appliqué à chaque ligne",
                     "cost": 25,
-                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni la devise ni une remise ne sont en cause.",
-                    "eliminates": ["s2-c-currency", "s2-c-discount"]
+                    "text": "Le taux de TVA est identique sur toutes les lignes de la facture : ce n'est pas la TVA qui creuse l'écart.",
+                    "eliminates": ["s2-c-vat"]
                   }
                 ],
                 "causes": [
@@ -679,38 +679,38 @@
                 "hints": [
                   {
                     "id": "s3-h1",
-                    "label": "Vérifier l'intégrité du cache de dépendances de l'agent CI",
+                    "label": "Lister les variables d'environnement présentes sur l'agent CI",
                     "cost": 5,
+                    "text": "Toutes les variables requises par la suite sont présentes sur l'agent : ce n'est pas une variable absente.",
+                    "eliminates": ["s3-c-env"]
+                  },
+                  {
+                    "id": "s3-h2",
+                    "label": "Comparer la version de Node entre l'agent CI et le poste local",
+                    "cost": 10,
+                    "text": "Les deux environnements installent exactement la même version de Node : ce n'est pas la version.",
+                    "eliminates": ["s3-c-node"]
+                  },
+                  {
+                    "id": "s3-h3",
+                    "label": "Vérifier l'intégrité du cache de dépendances de l'agent CI",
+                    "cost": 15,
                     "text": "Le cache est reconstruit à l'identique du poste local, sans corruption détectée : ce n'est pas le cache.",
                     "eliminates": ["s3-c-cache"]
                   },
                   {
-                    "id": "s3-h2",
+                    "id": "s3-h4",
                     "label": "Comparer le fuseau horaire de l'agent CI à celui du poste local",
-                    "cost": 10,
+                    "cost": 20,
                     "text": "Les deux environnements sont configurés sur le même fuseau horaire : ce n'est pas le fuseau.",
                     "eliminates": ["s3-c-timezone"]
                   },
                   {
-                    "id": "s3-h3",
-                    "label": "Relancer la suite plusieurs fois de suite sur l'agent CI",
-                    "cost": 15,
-                    "text": "Le résultat change d'une exécution à l'autre, sans modification du code.",
-                    "eliminates": []
-                  },
-                  {
-                    "id": "s3-h4",
-                    "label": "Comparer le nombre de tests exécutés en parallèle dans les deux environnements",
-                    "cost": 20,
-                    "text": "L'agent CI exécute les tests sur plusieurs threads à la fois ; le poste local les exécute un par un.",
-                    "eliminates": []
-                  },
-                  {
                     "id": "s3-h5",
-                    "label": "Demander un diagnostic complet de l'isolation des tests",
+                    "label": "Demander la liste des variables lues au démarrage de la suite",
                     "cost": 25,
-                    "text": "Le diagnostic confirme ce que le rapport indique déjà : ni une variable d'environnement absente ni une version de Node différente ne sont en cause.",
-                    "eliminates": ["s3-c-env", "s3-c-node"]
+                    "text": "Chaque variable lue au démarrage est bien définie sur l'agent : ce n'est pas une variable absente.",
+                    "eliminates": ["s3-c-env"]
                   }
                 ],
                 "causes": [

@@ -29,12 +29,23 @@ export const hintSchema = z.object({
   cost: z.number().int().positive(),
   // Révélé à l'achat seulement.
   text: z.string().min(1),
-  // Les causes que le texte de cet indice écarte par leur nom — jamais la
-  // cause réelle. Un tableau vide est légitime : la plupart des indices
-  // apportent une mesure, pas une élimination nommée. C'est ce champ,
-  // structurel plutôt que déclaratif dans le texte, que les refus ci-dessous
-  // vérifient : le texte doit dire exactement ce que ce tableau déclare.
-  eliminates: z.array(z.string().min(1)),
+  // La cause, et l'unique cause, que le texte de cet indice écarte par son
+  // nom — jamais la cause réelle.
+  //
+  // **Exactement une, depuis la troisième revue du 30/08.** Le tableau était
+  // d'abord de taille libre, et un tableau vide y était déclaré légitime :
+  // « la plupart des indices apportent une mesure, pas une élimination
+  // nommée ». C'est précisément par là que la fuite est revenue. Un indice
+  // qui n'élimine rien n'était borné par rien, et trois d'entre eux
+  // énonçaient la cause réelle — `s1-h3` la donnait sur quatre-vingts
+  // caractères. Le contrat ne bornait qu'un seul côté : ce qu'un indice
+  // écarte, jamais ce qu'il confirme.
+  //
+  // En imposant exactement une élimination, aucun indice n'est plus *à
+  // propos* de la bonne réponse : la confirmation devient inexprimable au
+  // lieu d'être interdite par une consigne d'écriture. Un indice ne peut
+  // plus dire que « ce n'est pas X ».
+  eliminates: z.array(z.string().min(1)).length(1),
 })
 
 export const causeSchema = z.object({
@@ -119,11 +130,25 @@ const baseConfigSchema = z.object({
  * indice l'écarte plutôt que de la nommer, mais élimine quatre causes sur
  * cinq — la délégation totale reste possible, seul le mécanisme change).
  * Une note dans un fichier de phase ne borne rien : le contrat le doit.
+ * Un troisième tour a montré que le contrat ne bornait encore qu'un seul
+ * côté : ce qu'un indice **écarte**, jamais ce qu'il **confirme**. Les
+ * indices qui n'éliminaient rien n'étaient contraints par rien, et trois
+ * d'entre eux énonçaient la cause réelle. D'où `eliminates` de taille
+ * exactement un : aucun indice n'est plus à propos de la bonne réponse, et
+ * un indice ne peut dire que « ce n'est pas X ».
+ *
  * `causeSchema.ruledOutByReport` et `hintSchema.eliminates` rendent le
- * champ d'élimination explicite, et les cinq refus suivants rendent la
+ * champ d'élimination explicite, et les sept refus suivants rendent la
  * fuite inexprimable plutôt que de compter sur la relecture du corpus :
  * - un `eliminates` qui référence une cause absente de la situation est une
  *   référence pendante ;
+ * - deux indices n'écartent jamais la même cause **encore en lice** : la
+ *   règle porte sur les causes qui décident quelque chose, donc sans
+ *   exception. Un doublon sur une cause que le rapport a déjà écartée ne
+ *   fuite rien et paie deux fois la même information — c'est l'achat
+ *   gaspillé, le prix de ne pas avoir lu le rapport ;
+ * - au moins un indice vise une cause déjà écartée par le rapport, sinon
+ *   lire le rapport n'a aucune conséquence économique ;
  * - la cause `actual` n'est jamais `ruledOutByReport`, et n'apparaît dans le
  *   `eliminates` d'aucun indice — le rapport et les indices peuvent écarter
  *   des alternatives, jamais confirmer ou nommer la bonne réponse ;
@@ -296,6 +321,52 @@ export const hintBudgetConfigSchema = baseConfigSchema.superRefine(
             ],
             message: `l'indice « ${hint.id} » de la situation « ${situation.id} » écarte la cause réelle « ${actualCause.id} » : un indice ne peut jamais écarter la bonne cause`,
           })
+        })
+      }
+
+      // Deux indices d'une même situation n'écartent jamais la même cause
+      // **encore en lice**. La règle porte sur les causes qui décident
+      // quelque chose, et n'a donc pas d'exception : un doublon sur une
+      // cause que le rapport a déjà écartée ne fuite rien — le rapport
+      // l'annonçait gratuitement — et paie deux fois la même information.
+      // C'est le mécanisme même du jeu : l'achat gaspillé est le prix de ne
+      // pas avoir lu le rapport.
+      const liveEliminationSeen = new Map<string, string>()
+      situation.hints.forEach((hint, hintIndex) => {
+        const [targetId] = hint.eliminates
+        if (targetId === undefined || ruledOutByReportIds.has(targetId)) return
+
+        const firstHintId = liveEliminationSeen.get(targetId)
+        if (firstHintId === undefined) {
+          liveEliminationSeen.set(targetId, hint.id)
+          return
+        }
+
+        context.addIssue({
+          code: 'custom',
+          path: [
+            'situations',
+            situationIndex,
+            'hints',
+            hintIndex,
+            'eliminates',
+          ],
+          message: `les indices « ${firstHintId} » et « ${hint.id} » de la situation « ${situation.id} » écartent tous deux « ${targetId} », une cause encore en lice : deux indices ne peuvent pas payer la même élimination utile`,
+        })
+      })
+
+      // Au moins un indice vise une cause que le rapport a déjà écartée.
+      // Sans lui, le rapport gratuit n'a aucune conséquence économique :
+      // tous les achats se valent, et le joueur qui ne l'a pas lu ne paie
+      // jamais son inattention.
+      const hasWastedHint = situation.hints.some((hint) =>
+        hint.eliminates.some((causeId) => ruledOutByReportIds.has(causeId)),
+      )
+      if (!hasWastedHint) {
+        context.addIssue({
+          code: 'custom',
+          path: ['situations', situationIndex, 'hints'],
+          message: `aucun indice de la situation « ${situation.id} » ne vise une cause déjà écartée par le rapport : lire le rapport n'y coûte alors rien à ignorer`,
         })
       }
 

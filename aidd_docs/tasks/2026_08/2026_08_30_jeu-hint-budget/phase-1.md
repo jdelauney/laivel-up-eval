@@ -143,14 +143,22 @@ Deux tours de revue ont montré le même motif sur `c1` : une consigne d'écritu
 `config.schema.ts` gagne deux champs :
 
 - `causeSchema.ruledOutByReport: boolean` — le rapport gratuit écarte-t-il déjà cette cause ;
-- `hintSchema.eliminates: string[]` — les identifiants de causes que le texte de cet indice écarte par leur nom.
+- `hintSchema.eliminates` — **l'unique** identifiant de cause que le texte de cet indice écarte par son nom. La cardinalité exacte vient du tour 3 : voir ci-dessous.
 
-Et cinq refus au chargement, en plus des neuf déjà posés :
+Et sept refus au chargement, en plus des neuf déjà posés :
 
 1. un `eliminates` qui référence une cause absente de la situation est une référence pendante ;
 2. la cause `actual` n'est jamais `ruledOutByReport`, et n'apparaît dans le `eliminates` d'aucun indice — le rapport et les indices écartent des alternatives, jamais ne confirment ou ne nomment la bonne réponse ;
 3. après le rapport seul, il doit rester au moins trois causes en lice ;
 4. **aucun indice pris seul ne peut, combiné au rapport, ramener le champ en dessous de deux causes** — le refus qui ferme la délégation totale : sans lui, acheter le seul indice qui élimine tout le reste et trancher par élimination tient le critère de frugalité sans lecture ni cadrage ;
-5. **un chemin frugal doit exister** : au moins une combinaison d'au plus `floor(hints.length / 2)` indices doit, avec le rapport, ramener le champ à exactement une cause — sans ce refus, le précédent pourrait rendre une situation ingagnable sous le seuil de frugalité.
+5. **un chemin frugal doit exister** : au moins une combinaison d'au plus `floor(hints.length / 2)` indices doit, avec le rapport, ramener le champ à exactement une cause — sans ce refus, le précédent pourrait rendre une situation ingagnable sous le seuil de frugalité ;
+6. **deux indices n'écartent jamais la même cause encore en lice** — la règle porte sur les causes qui décident quelque chose, donc sans exception. Le doublon reste permis sur une cause que le rapport a déjà écartée : il ne fuite rien et paie deux fois la même information, ce qui *est* le mécanisme de l'achat gaspillé ;
+7. **au moins un indice vise une cause déjà écartée par le rapport** — sans lui, lire le rapport n'a aucune conséquence économique, tous les achats se valent, et l'inattention ne coûte rien.
 
-Testé dans `config.schema.test.ts`, sous `describe('the cause-elimination graph', …)` : chacun des cinq refus sur son propre cas, dont la preuve directe qu'un indice qui écarterait seul les deux causes non réelles d'une situation à trois causes est refusé au chargement. Testé aussi au niveau du corpus réel dans `hint-budget-run.test.ts` : aucun indice réel, pris seul, ne ramène une situation à moins de deux causes ; une combinaison de deux indices existe dans chacune des trois situations qui ramène le champ à la seule cause réelle.
+### La cardinalité exacte, ajoutée au tour 3
+
+`eliminates` était de taille libre, et un tableau vide y était **déclaré légitime** au motif que « la plupart des indices apportent une mesure, pas une élimination nommée ». C'est par là que la fuite est revenue : le contrat ne bornait qu'un côté — ce qu'un indice **écarte**, jamais ce qu'il **confirme**. Les six indices à `eliminates: []` n'étaient contraints par rien, et trois d'entre eux énonçaient la cause réelle, `s1-h3` sur quatre-vingts caractères consécutifs.
+
+Avec exactement une élimination par indice, aucun indice n'est plus *à propos* de la bonne réponse : la confirmation devient inexprimable plutôt qu'interdite par un commentaire. Le refus 4 en devient d'ailleurs inatteignable en pratique — une élimination unique sur au moins trois causes en lice laisse toujours deux debout — mais il reste posé comme énoncé explicite de l'invariant.
+
+Testé dans `config.schema.test.ts`, sous `describe('the cause-elimination graph', …)` : chacun des refus sur son propre cas, cardinalité comprise dans les deux sens (zéro élimination, et plus d'une). Testé aussi au niveau du corpus réel dans `hint-budget-run.test.ts` : aucun indice réel ne partage plus de vingt caractères consécutifs avec la cause réelle de sa situation — mesure étendue du seul indice le plus cher à **tous** les indices, parce qu'un garde-fou posé sur la seule position que le défaut venait de quitter ne garde rien. La mesure porte sur la cause réelle seule, jamais sur toutes les causes : un indice qui écarte une cause doit en parler, et partage donc légitimement des phrases entières avec elle.

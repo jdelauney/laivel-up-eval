@@ -450,28 +450,53 @@ describe('hint-budget in the course', () => {
       )
       const actualCauseId = actualCauseIdOf(situation)
 
-      const coveredIds = new Set([
-        ...ruledOutByReportIds,
-        ...situation.hints[0].eliminates,
-        ...situation.hints[1].eliminates,
-      ])
-      const remaining = situation.causes
-        .map((cause) => cause.id)
-        .filter((id) => !coveredIds.has(id))
+      // La paire utile n'occupe pas les mêmes positions d'une situation à
+      // l'autre — c'est voulu, sinon « acheter les indices 1 et 2 » gagnerait
+      // partout sans lire un mot. Le test la cherche donc au lieu de la
+      // supposer en tête de liste : il valide la propriété, pas un rang.
+      const pairs = situation.hints.flatMap((first, index) =>
+        situation.hints.slice(index + 1).map((second) => [first, second]),
+      )
 
-      expect(remaining).toEqual([actualCauseId])
+      const narrowingPairs = pairs.filter((pair) => {
+        const coveredIds = new Set([
+          ...ruledOutByReportIds,
+          ...pair.flatMap((hint) => hint.eliminates),
+        ])
+        const remaining = situation.causes
+          .map((cause) => cause.id)
+          .filter((id) => !coveredIds.has(id))
+
+        return remaining.length === 1 && remaining[0] === actualCauseId
+      })
+
+      expect(
+        narrowingPairs.length,
+        `${situation.id} n'offre aucune paire d'indices qui isole la cause réelle`,
+      ).toBeGreaterThan(0)
     })
   })
 
   /**
-   * L'indice le plus cher (`h5`) est celui qui écarte le plus d'alternatives,
-   * jamais celui qui livre la réponse (`phase-4.md`, règle 4). `s1-h5`
-   * énonçait la cause réelle mot pour mot avant cette correction. Un simple
-   * compte de mots partagés tolérerait un vocabulaire technique commun
-   * (« horloge », « arrondi ») ; c'est la reprise d'une **phrase entière**
-   * qui trahissait la cause. Mesuré par la plus longue sous-chaîne commune.
+   * Aucun indice n'énonce la cause réelle. Un simple compte de mots partagés
+   * tolérerait un vocabulaire technique commun (« horloge », « arrondi ») ;
+   * c'est la reprise d'une **phrase entière** qui trahit. Mesuré par la plus
+   * longue sous-chaîne commune.
+   *
+   * **Généralisé à tous les indices le 30/08, après la troisième revue.** La
+   * mesure ne portait que sur l'indice le plus cher, parce que c'est là que
+   * le premier tour avait trouvé la paraphrase. La phrase n'a pas disparu :
+   * elle a migré d'un cran, sur `s1-h3`, où elle a doublé de longueur
+   * (80 caractères) sans que ce test bouge. Un garde-fou posé sur la seule
+   * position que le défaut venait de quitter ne garde rien.
+   *
+   * La mesure porte sur la **cause réelle seule**, jamais sur toutes les
+   * causes : un indice qui écarte une cause doit en parler, et partage donc
+   * légitimement des phrases entières avec elle — jusqu'à 89 caractères sur
+   * le corpus livré. Étendre la limite à toutes les causes ferait échouer le
+   * corpus pour la raison exactement inverse de celle qu'on protège.
    */
-  it('keeps the priciest hint from echoing the actual cause as a near-verbatim phrase', () => {
+  it('keeps every hint from echoing the actual cause as a near-verbatim phrase', () => {
     const config = realG2_1Config()
     const OVERLAP_LIMIT = 20
 
@@ -492,19 +517,19 @@ describe('hint-budget in the course', () => {
     }
 
     config.situations.forEach((situation) => {
-      const priciestHint = [...situation.hints].sort(
-        (a, b) => b.cost - a.cost,
-      )[0]
       const actualCause = situation.causes.find((cause) => cause.actual)
       if (actualCause === undefined) {
         throw new Error(`${situation.id} has no actual cause`)
       }
+      const actualText = `${actualCause.text} ${actualCause.verification}`
 
-      const overlap = longestCommonSubstring(
-        priciestHint.text,
-        `${actualCause.text} ${actualCause.verification}`,
-      )
-      expect(overlap).toBeLessThan(OVERLAP_LIMIT)
+      situation.hints.forEach((hint) => {
+        const overlap = longestCommonSubstring(hint.text, actualText)
+        expect(
+          overlap,
+          `${hint.id} partage ${overlap} caractères consécutifs avec la cause réelle de ${situation.id}`,
+        ).toBeLessThan(OVERLAP_LIMIT)
+      })
     })
   })
 
