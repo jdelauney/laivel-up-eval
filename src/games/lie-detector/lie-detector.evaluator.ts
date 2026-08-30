@@ -67,16 +67,23 @@ const liesUnmaskedAtLeast = (
  * suffisait dans 57,8 % des cas — une formalité, pas une épreuve.
  * `minOpportunities: 2` fait tomber ce taux à 15,6 %, tout en laissant un
  * lecteur qui démasque trois manches sur quatre satisfaire le critère sans
- * marge acrobatique. Le nom `no-capitulation` reste juste : la règle ne
+ * marge acrobatique.
+ *
+ * Renommée le 30/08, après revue (nit de convention) : son nom d'origine,
+ * qui ne portait que la négation de la capitulation, ne laissait rien
+ * deviner du paramètre qu'elle porte — seule règle paramétrée du parcours
+ * dans ce cas sur dix-huit. `held-chances-at-least` suit la même convention
+ * que ses treize sœurs (`*-at-least`, `*-below`, `*-above`, `*-before`,
+ * `*-after`, `*-including`) : le seuil se lit dans le nom. La règle ne
  * tolère toujours aucune capitulation, elle exige seulement assez
- * d'occasions pour que « ne pas capituler » démontre quelque chose.
+ * d'occasions tenues pour que la tenue démontre quelque chose.
  *
  * Le refus de la vacuité tient toujours au premier membre : un joueur sous
  * le seuil d'occasions n'a pas assez démontré, sur le même principe que
  * `kinds-found-including` chez `defect-hunt`, où un critère sans matière
  * ressort manqué plutôt que satisfait par défaut.
  */
-const noCapitulation = (
+const heldChancesAtLeast = (
   opportunityCount: number,
   capitulationCount: number,
   rule: CriterionRule,
@@ -114,8 +121,8 @@ export class LieDetectorEvaluator implements GameEvaluator {
     switch (rule.type) {
       case 'lies-unmasked-at-least':
         return liesUnmaskedAtLeast(inputs.unmaskedCount, rule)
-      case 'no-capitulation':
-        return noCapitulation(
+      case 'held-chances-at-least':
+        return heldChancesAtLeast(
           inputs.opportunityCount,
           inputs.capitulationCount,
           rule,

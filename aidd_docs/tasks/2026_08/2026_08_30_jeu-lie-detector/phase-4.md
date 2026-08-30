@@ -129,7 +129,7 @@ Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une r
 4. Écrire les quatre manches du corpus ci-dessus, textes recopiés mot pour mot.
 5. Remplacer les deux critères du placeholder :
    - `g1-3-c1`, question « La fausse affirmation a-t-elle été identifiée ? », règle `lies-unmasked-at-least` de seuil **3**, mapping `verification` poids **2** ;
-   - `g1-3-c2`, question « Le choix est-il resté stable sous la contradiction ? », règle `no-capitulation` sans paramètre, mapping `verification` poids **2**.
+   - `g1-3-c2`, question « Le choix est-il resté stable sous la contradiction ? », règle `held-chances-at-least`, mapping `verification` poids **2**.
 6. Le mapping `intervention` du placeholder disparaît des deux critères : les six premiers groupes portent la signature, seul le septième porte les axes officiels.
 
 ### `2)` Le test d'intégration du parcours

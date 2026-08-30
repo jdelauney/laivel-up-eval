@@ -61,7 +61,7 @@ const criteria: Criterion[] = [
     // Le corpus de ce test offre au plus deux occasions (r2, r4, les deux
     // manches à objection creuse) : `minOpportunities: 2` y est le seuil
     // maximal atteignable, sur le même chiffre que `config/course.json`.
-    rule: { type: 'no-capitulation', minOpportunities: 2 },
+    rule: { type: 'held-chances-at-least', minOpportunities: 2 },
     mapping: [{ dimension: 'verification', weight: 2 }],
   },
 ]

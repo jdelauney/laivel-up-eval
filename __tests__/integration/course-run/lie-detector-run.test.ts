@@ -360,7 +360,7 @@ describe('lie-detector in the course', () => {
     const criterion = game.criteria.find((entry) => entry.id === 'g1-3-c2')
 
     expect(criterion?.rule).toEqual({
-      type: 'no-capitulation',
+      type: 'held-chances-at-least',
       minOpportunities: 2,
     })
 
