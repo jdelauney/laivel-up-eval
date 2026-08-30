@@ -25,6 +25,7 @@ const components: Record<string, GameComponent> = {
   'defect-hunt': DefectHuntGame,
   'lie-detector': LieDetectorGame,
   'hint-budget': HintBudgetGame,
+  'practice-map': PracticeMapGame,
 }
 
 export const resolveGameComponent = (

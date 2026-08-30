@@ -124,6 +124,13 @@ const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
    * trace conforme suffit — voir `defaultHintBudgetAnswer`.
    */
   if (game.type === 'hint-budget') return defaultHintBudgetAnswer(game.config)
+  /**
+   * `g2-2` porte practice-map depuis la phase 4 de son propre plan : ce test
+   * mesure `intervention`, jamais `pilotage-contexte`, donc n'importe quelle
+   * lecture conforme suffit — ici, chaque pratique posée au centre de sa
+   * propre zone.
+   */
+  if (game.type === 'practice-map') return correctPracticeMapAnswer(game.config)
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),

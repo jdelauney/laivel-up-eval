@@ -74,5 +74,11 @@ export const buildGameRegistry = (): GameRegistry => {
     answerSchema: hintBudgetAnswerSchema,
   })
 
+  registry.register('practice-map', {
+    evaluator: new PracticeMapEvaluator(),
+    configSchema: practiceMapConfigSchema,
+    answerSchema: practiceMapAnswerSchema,
+  })
+
   return registry
 }

@@ -30,6 +30,7 @@ import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
+import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
 
 /**
  * Le jeu traverse le moteur réel : le vrai registre, la vraie façade, la
@@ -690,6 +691,11 @@ describe('hint-budget in the course', () => {
           frugalFramerAttempts(hintBudgetConfigSchema.parse(game.config)),
         )
       }
+      // `g2-2`, le voisin de groupe, arrivé sur `main` pendant cette branche.
+      // Ce parcours ne mesure que `pilotage-contexte` chez `g2-1` : n'importe
+      // quelle lecture conforme suffit ici.
+      if (game.type === 'practice-map')
+        return correctPracticeMapAnswer(game.config)
       if (game.type === 'three-tracks') {
         const config = threeTracksConfigSchema.parse(game.config)
         return buildThreeTracksAnswer(
