@@ -137,4 +137,36 @@ describe('lie-detector config schema', () => {
 
     expect(firstIssue(config).path).toEqual(['rounds'])
   })
+
+  it('accepts a claim text at exactly the 135-character mobile layout budget', () => {
+    const config = validConfig()
+    config.rounds[0] = round('r1', 'r1-b', {
+      claims: [
+        claim('r1-a', 'A'.repeat(135), false),
+        claim('r1-b', 'Affirmation B.', true),
+        claim('r1-c', 'Affirmation C.', false),
+        claim('r1-d', 'Affirmation D.', false),
+      ],
+    })
+
+    const parsed = lieDetectorConfigSchema.parse(config)
+    expect(parsed.rounds[0].claims[0].text).toHaveLength(135)
+  })
+
+  it('rejects a claim text past the 135-character mobile layout budget, naming the claim', () => {
+    const config = validConfig()
+    config.rounds[0] = round('r1', 'r1-b', {
+      claims: [
+        claim('r1-a', 'A'.repeat(136), false),
+        claim('r1-b', 'Affirmation B.', true),
+        claim('r1-c', 'Affirmation C.', false),
+        claim('r1-d', 'Affirmation D.', false),
+      ],
+    })
+
+    const issue = firstIssue(config)
+    expect(issue.path).toEqual(['rounds', 0, 'claims', 0, 'text'])
+    expect(issue.message).toContain('r1-a')
+    expect(issue.message).toContain('r1')
+  })
 })

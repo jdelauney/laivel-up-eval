@@ -9,6 +9,17 @@ import { z } from 'zod'
  * n'est montrée qu'à la révélation, jamais avant.
  */
 
+/**
+ * 135 caractères : le budget de mise en page mobile mesuré à 390×844, plus
+ * deux caractères. Le corpus le plus long tenu à cette mesure culmine à
+ * 133 (`r1-b`, `r2-a`) ; au-delà, une affirmation bascule de trois à
+ * quatre lignes en `text-sm leading-snug`, coûte environ 19px et double la
+ * marge de 9px qui séparait alors le verrou du bas de l'écran. Ce n'est
+ * pas une règle de rédaction : c'est ce budget-là, mesuré une fois, qui
+ * doit se casser au chargement plutôt que devant le jury.
+ */
+const CLAIM_TEXT_MAX_LENGTH = 135
+
 export const claimSchema = z.object({
   id: z.string().min(1),
   text: z.string().min(1),
@@ -49,7 +60,7 @@ const isObjectionFounded = (round: z.infer<typeof roundSchema>): boolean =>
   liarOf(round)?.id === round.objection.targetId
 
 /**
- * Six refus au chargement, plutôt qu'au verdict :
+ * Sept refus au chargement, plutôt qu'au verdict :
  * - deux manches de même `id` s'écraseraient silencieusement à la lecture ;
  * - deux affirmations de même `id` dans une manche rendraient une
  *   désignation ambiguë ;
@@ -59,6 +70,8 @@ const isObjectionFounded = (round: z.infer<typeof roundSchema>): boolean =>
  *   « démasquée » ?
  * - une `objection.targetId` absente des affirmations de sa manche viserait
  *   une cible qui n'existe pas ;
+ * - une affirmation qui dépasse `CLAIM_TEXT_MAX_LENGTH` casse la tenue
+ *   mobile mesurée du jeu — voir sa documentation ;
  * - le dernier refus est le garde-fou anti-triche du jeu : sans lui, une
  *   politique fixe gagne sans lire. Toutes les objections creuses, « ne
  *   jamais bouger » gagne sans lire ; toutes fondées, « toujours suivre »
@@ -120,6 +133,16 @@ export const lieDetectorConfigSchema = baseConfigSchema.superRefine(
           message: `l'objection de la manche « ${round.id} » vise « ${round.objection.targetId} », absente de son lot`,
         })
       }
+
+      round.claims.forEach((claim, claimIndex) => {
+        if (claim.text.length <= CLAIM_TEXT_MAX_LENGTH) return
+
+        context.addIssue({
+          code: 'custom',
+          path: ['rounds', roundIndex, 'claims', claimIndex, 'text'],
+          message: `l'affirmation « ${claim.id} » de la manche « ${round.id} » dépasse ${CLAIM_TEXT_MAX_LENGTH} caractères (${claim.text.length}) : au-delà de ce budget, mesuré sur le corpus tenu à 390×844, elle bascule sur une ligne de plus et casse la tenue mobile du jeu`,
+        })
+      })
     })
 
     const foundedCount = config.rounds.filter(isObjectionFounded).length

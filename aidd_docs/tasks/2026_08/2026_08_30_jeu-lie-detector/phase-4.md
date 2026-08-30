@@ -57,6 +57,10 @@ Deux garde-fous en sortent, tous deux mesurés sur `text.length` — les caract�
 
 Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une retouche future d'un seul mot peut rouvrir le trou : c'est le rôle des deux tests.
 
+**Ajout du 30/08, après revue (constat mobile).** Ces deux garde-fous bornent un écart *interne* à la manche : ils empêchent la menteuse de se trahir par sa forme, mais ne bornent aucune longueur absolue. Un corpus réécrit dans les clous du quart pouvait donc faire passer une affirmation de trois à quatre lignes sur mobile (390×844), ce qui coûte environ 19px — plus du double des 9px de marge mesurés sur ce même corpus — sans qu'aucun des deux tests ne rougisse. Un troisième garde-fou en sort, cette fois posé au schéma plutôt qu'au test d'intégration, pour être appris au chargement :
+
+3. Aucune affirmation ne dépasse **135 caractères** — le maximum du corpus actuel (133, `r1-b`/`r2-a`) plus deux. Refusé par `claimSchema` dans `config.schema.ts`, pas seulement testé ici : un auteur de parcours qui le dépasse doit l'apprendre au chargement, pas devant le jury.
+
 ### Manche 1 — `r1` · le contexte de projet
 
 > `prompt` : « Vous demandez à un assistant ce que change un fichier de contexte versionné dans le dépôt. Il répond ceci. »
