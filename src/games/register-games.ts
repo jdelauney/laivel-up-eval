@@ -7,6 +7,9 @@ import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.
 import { DefectHuntEvaluator } from '@/games/defect-hunt/defect-hunt.evaluator'
 import { defectHuntAnswerSchema } from '@/games/defect-hunt/schema/answer.schema'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { HintBudgetEvaluator } from '@/games/hint-budget/hint-budget.evaluator'
+import { hintBudgetAnswerSchema } from '@/games/hint-budget/schema/answer.schema'
+import { hintBudgetConfigSchema } from '@/games/hint-budget/schema/config.schema'
 import { LieDetectorEvaluator } from '@/games/lie-detector/lie-detector.evaluator'
 import { lieDetectorAnswerSchema } from '@/games/lie-detector/schema/answer.schema'
 import { lieDetectorConfigSchema } from '@/games/lie-detector/schema/config.schema'
@@ -63,6 +66,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new LieDetectorEvaluator(),
     configSchema: lieDetectorConfigSchema,
     answerSchema: lieDetectorAnswerSchema,
+  })
+
+  registry.register('hint-budget', {
+    evaluator: new HintBudgetEvaluator(),
+    configSchema: hintBudgetConfigSchema,
+    answerSchema: hintBudgetAnswerSchema,
   })
 
   registry.register('practice-map', {

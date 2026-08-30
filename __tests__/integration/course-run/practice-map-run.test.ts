@@ -23,6 +23,7 @@ import { FixedClock } from '@/infrastructure/clock/fixed.adapter'
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
+import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import {
@@ -272,6 +273,10 @@ describe('practice-map in the course', () => {
     if (game.type === 'practice-map') {
       return correctPracticeMapAnswer(game.config)
     }
+    // `g2-1`, le voisin de groupe, arrivé pendant cette branche. Ce parcours
+    // ne mesure que `pilotage-contexte` chez `g2-2` : n'importe quelle trace
+    // conforme suffit ici.
+    if (game.type === 'hint-budget') return defaultHintBudgetAnswer(game.config)
     if (game.type === 'three-tracks') {
       const config = threeTracksConfigSchema.parse(game.config)
       return buildThreeTracksAnswer(

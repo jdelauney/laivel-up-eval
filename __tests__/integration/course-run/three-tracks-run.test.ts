@@ -19,6 +19,7 @@ import { FixedClock } from '@/infrastructure/clock/fixed.adapter'
 import projectCourse from '../../../config/course.json'
 import projectGrid from '../../../config/grid.json'
 import projectSignature from '../../../config/signature.json'
+import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
@@ -114,6 +115,12 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
    * conforme suffit — voir `defaultLieDetectorAnswer`.
    */
   if (game.type === 'lie-detector') return defaultLieDetectorAnswer(game.config)
+  /**
+   * `g2-1` porte hint-budget depuis la phase 4 de son propre plan : ce test
+   * mesure `parallele`, jamais `pilotage-contexte`, donc n'importe quelle
+   * trace conforme suffit — voir `defaultHintBudgetAnswer`.
+   */
+  if (game.type === 'hint-budget') return defaultHintBudgetAnswer(game.config)
   /**
    * `g2-2` porte practice-map depuis la phase 4 de son propre plan : ce test
    * mesure `parallele`, jamais `pilotage-contexte`, donc n'importe quelle

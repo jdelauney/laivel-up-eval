@@ -414,45 +414,371 @@
       "games": [
         {
           "id": "g2-1",
-          "type": "test-bench",
+          "type": "hint-budget",
           "label": "Combien d'indices vous faut-il ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Un rapport d'incident tient déjà quelques faits. Vous pouvez transmettre le cadre que vous en retenez, une seule fois — le dépôt se verrouille. Vous pouvez aussi interroger l'assistant : chaque indice affiche son prix avant l'achat. Tranchez une cause quand vous êtes prêt.",
+            "wrongCutPenalty": 40,
+            "blindCutSurcharge": 30,
+            "situations": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "s1",
+                "symptom": "Une requête authentifiée renvoie 401 depuis le déploiement d'hier, alors qu'elle passe sans problème en local.",
+                "report": [
+                  "La même clé secrète signe les jetons en local et en production.",
+                  "Le certificat TLS du reverse proxy a été renouvelé la semaine dernière et reste valide huit mois.",
+                  "Le jeton qui échoue a été émis quatre minutes avant l'appel, largement dans sa fenêtre de validité de quinze minutes.",
+                  "Chaque appel reçoit un refus calculé à la volée, jamais deux fois la même réponse servie à l'identique."
+                ],
+                "framings": [
+                  {
+                    "id": "s1-f1",
+                    "text": "La même clé secrète signe les jetons dans les deux environnements.",
+                    "established": true,
+                    "refersTo": "s1-c-secret"
+                  },
+                  {
+                    "id": "s1-f2",
+                    "text": "Le certificat TLS du proxy a été renouvelé récemment et reste valide plusieurs mois.",
+                    "established": true,
+                    "refersTo": "s1-c-tls"
+                  },
+                  {
+                    "id": "s1-f3",
+                    "text": "Le proxy applique une limite de débit depuis sa dernière montée de version.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s1-f4",
+                    "text": "Les appels sortants passent par un tunnel réseau ajouté cette semaine.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s1-f5",
+                    "text": "Le service d'authentification a été migré vers un nouveau fournisseur hier.",
+                    "established": false,
+                    "refersTo": null
+                  }
+                ],
+                "hints": [
+                  {
+                    "id": "s1-h1",
+                    "label": "Vérifier l'en-tête Authorization envoyé par le client",
+                    "cost": 5,
+                    "text": "L'en-tête est bien formé, avec le schéma Bearer attendu : ce n'est pas l'en-tête qui bloque la requête.",
+                    "eliminates": ["s1-c-header"]
+                  },
+                  {
+                    "id": "s1-h2",
+                    "label": "Vérifier la date d'expiration du certificat TLS du reverse proxy",
+                    "cost": 10,
+                    "text": "Le certificat présenté par le proxy est valide encore huit mois : ce n'est pas le certificat.",
+                    "eliminates": ["s1-c-tls"]
+                  },
+                  {
+                    "id": "s1-h3",
+                    "label": "Comparer la clé secrète de signature entre les deux environnements",
+                    "cost": 15,
+                    "text": "La même clé signe les jetons des deux côtés, au caractère près : ce n'est pas la clé de signature.",
+                    "eliminates": ["s1-c-secret"]
+                  },
+                  {
+                    "id": "s1-h4",
+                    "label": "Demander la clé de signature effectivement chargée en production",
+                    "cost": 20,
+                    "text": "La clé chargée au démarrage correspond à celle du coffre de secrets : ce n'est pas la clé de signature.",
+                    "eliminates": ["s1-c-secret"]
+                  },
+                  {
+                    "id": "s1-h5",
+                    "label": "Demander une vérification complète de la chaîne de certificats",
+                    "cost": 25,
+                    "text": "La chaîne de certificats du proxy est complète et valide jusqu'à son terme : ce n'est pas le certificat.",
+                    "eliminates": ["s1-c-tls"]
+                  }
+                ],
+                "causes": [
+                  {
+                    "id": "s1-c-tls",
+                    "text": "Le certificat TLS du reverse proxy vient d'expirer.",
+                    "actual": false,
+                    "verification": "Le certificat a été renouvelé la semaine dernière et reste valide huit mois : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  },
+                  {
+                    "id": "s1-c-clock",
+                    "text": "L'horloge du serveur de production avait pris du retard.",
+                    "actual": true,
+                    "verification": "Confirmé : l'horloge du serveur de production accuse vingt minutes de retard sur la source de référence, ce qui fait paraître chaque jeton comme émis dans le futur. Recaler l'horloge sur la source de référence a fait disparaître les 401.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s1-c-header",
+                    "text": "Le client envoie un en-tête Authorization, mal formé.",
+                    "actual": false,
+                    "verification": "L'en-tête est conforme au schéma Bearer attendu : ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s1-c-secret",
+                    "text": "La clé secrète de signature diffère entre environnements.",
+                    "actual": false,
+                    "verification": "La même clé secrète signe les jetons dans les deux environnements : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  },
+                  {
+                    "id": "s1-c-cdn",
+                    "text": "Le cache CDN sert une version périmée de la réponse.",
+                    "actual": false,
+                    "verification": "Le rapport le dit sans le conclure : chaque appel reçoit un refus calculé à la volée, jamais deux fois la même réponse servie à l'identique. Un cache resservirait la même. Ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  }
+                ]
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "s2",
+                "symptom": "Un total de facture est faux d'un centime, sur certaines lignes seulement.",
+                "report": [
+                  "Toutes les lignes de cette facture sont exprimées dans la même devise, sans conversion appliquée.",
+                  "Aucune remise n'est configurée pour ce type de facture.",
+                  "L'écart n'apparaît que sur les lignes dont la quantité comporte une décimale, jamais sur les quantités entières."
+                ],
+                "framings": [
+                  {
+                    "id": "s2-f1",
+                    "text": "Le service de facturation a changé de bibliothèque de calcul la semaine dernière.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s2-f2",
+                    "text": "Toutes les lignes de cette facture sont dans la même devise, sans conversion appliquée.",
+                    "established": true,
+                    "refersTo": "s2-c-currency"
+                  },
+                  {
+                    "id": "s2-f3",
+                    "text": "Le format d'affichage des montants a changé avec la dernière version.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s2-f4",
+                    "text": "Aucune remise n'est configurée pour ce type de facture.",
+                    "established": true,
+                    "refersTo": "s2-c-discount"
+                  },
+                  {
+                    "id": "s2-f5",
+                    "text": "Le modèle de facture a été refait par l'assistant la semaine dernière.",
+                    "established": false,
+                    "refersTo": null
+                  }
+                ],
+                "hints": [
+                  {
+                    "id": "s2-h1",
+                    "label": "Vérifier la devise déclarée sur chaque ligne de la facture",
+                    "cost": 5,
+                    "text": "Toutes les lignes sont libellées dans la même devise, sans conversion appliquée : ce n'est pas la devise.",
+                    "eliminates": ["s2-c-currency"]
+                  },
+                  {
+                    "id": "s2-h2",
+                    "label": "Rechercher une remise appliquée sur les lignes concernées",
+                    "cost": 10,
+                    "text": "Aucune ligne de cette facture ne porte de remise, simple ou double : ce n'est pas une remise.",
+                    "eliminates": ["s2-c-discount"]
+                  },
+                  {
+                    "id": "s2-h3",
+                    "label": "Vérifier si une remise s'applique à ce type de facture",
+                    "cost": 15,
+                    "text": "Aucune remise n'est configurée pour ce type de facture : ce n'est pas une remise.",
+                    "eliminates": ["s2-c-discount"]
+                  },
+                  {
+                    "id": "s2-h4",
+                    "label": "Comparer la devise de facturation à celle des lignes concernées",
+                    "cost": 20,
+                    "text": "La devise de facturation et celle des lignes concordent, sans taux appliqué : ce n'est pas la devise.",
+                    "eliminates": ["s2-c-currency"]
+                  },
+                  {
+                    "id": "s2-h5",
+                    "label": "Vérifier le taux de TVA appliqué à chaque ligne",
+                    "cost": 25,
+                    "text": "Le taux de TVA est identique sur toutes les lignes de la facture : ce n'est pas la TVA qui creuse l'écart.",
+                    "eliminates": ["s2-c-vat"]
+                  }
+                ],
+                "causes": [
+                  {
+                    "id": "s2-c-vat",
+                    "text": "Le taux de TVA appliqué diffère d'une ligne à l'autre.",
+                    "actual": false,
+                    "verification": "Toutes les lignes portent le même taux de TVA : ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s2-c-double",
+                    "text": "Le total de la facture est recalculé deux fois de façon indépendante.",
+                    "actual": false,
+                    "verification": "Le rapport le dit sans le conclure : l'écart n'apparaît que sur les lignes dont la quantité comporte une décimale. Un total calculé deux fois serait faux partout, jamais sur ces lignes-là seulement. Ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s2-c-currency",
+                    "text": "La devise de certaines lignes de facture est mal convertie.",
+                    "actual": false,
+                    "verification": "Toutes les lignes de cette facture sont dans la même devise, sans conversion : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  },
+                  {
+                    "id": "s2-c-rounding",
+                    "text": "Chaque ligne arrondit son montant avant l'addition totale.",
+                    "actual": true,
+                    "verification": "Confirmé : chaque ligne arrondit son montant avant l'addition, ce qui accumule un écart sur les quantités fractionnaires. Recalculer le total à partir des quantités brutes corrige l'écart.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s2-c-discount",
+                    "text": "Une remise est appliquée deux fois sur certaines lignes.",
+                    "actual": false,
+                    "verification": "Aucune remise n'est configurée sur ce type de facture : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  }
+                ]
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "s3",
+                "symptom": "Une suite de tests passe en local et échoue en intégration continue, sans message utile.",
+                "report": [
+                  "Toutes les variables d'environnement requises par la suite sont bien présentes sur l'agent CI.",
+                  "La version de Node installée sur l'agent CI est strictement identique à celle du poste local.",
+                  "L'échec ne porte jamais sur les mêmes tests d'une exécution à l'autre."
+                ],
+                "framings": [
+                  {
+                    "id": "s3-f1",
+                    "text": "Le pipeline CI a été migré vers un nouveau fournisseur le mois dernier.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s3-f2",
+                    "text": "Le pipeline CI exécute les tests avec un compte de service aux permissions restreintes.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s3-f3",
+                    "text": "Toutes les variables d'environnement requises par la suite sont bien présentes sur l'agent CI.",
+                    "established": true,
+                    "refersTo": "s3-c-env"
+                  },
+                  {
+                    "id": "s3-f4",
+                    "text": "Les journaux de la CI sont tronqués au-delà d'une certaine taille.",
+                    "established": false,
+                    "refersTo": null
+                  },
+                  {
+                    "id": "s3-f5",
+                    "text": "La version de Node installée sur l'agent CI est strictement identique à celle du poste local.",
+                    "established": true,
+                    "refersTo": "s3-c-node"
+                  }
+                ],
+                "hints": [
+                  {
+                    "id": "s3-h1",
+                    "label": "Lister les variables d'environnement présentes sur l'agent CI",
+                    "cost": 5,
+                    "text": "Toutes les variables requises par la suite sont présentes sur l'agent : ce n'est pas une variable absente.",
+                    "eliminates": ["s3-c-env"]
+                  },
+                  {
+                    "id": "s3-h2",
+                    "label": "Comparer la version de Node entre l'agent CI et le poste local",
+                    "cost": 10,
+                    "text": "Les deux environnements installent exactement la même version de Node : ce n'est pas la version.",
+                    "eliminates": ["s3-c-node"]
+                  },
+                  {
+                    "id": "s3-h3",
+                    "label": "Comparer les versions mineures de Node résolues de part et d'autre",
+                    "cost": 15,
+                    "text": "Les deux environnements résolvent la même version mineure : ce n'est pas la version de Node.",
+                    "eliminates": ["s3-c-node"]
+                  },
+                  {
+                    "id": "s3-h4",
+                    "label": "Comparer le fuseau horaire de l'agent CI à celui du poste local",
+                    "cost": 20,
+                    "text": "Les deux environnements sont configurés sur le même fuseau horaire : ce n'est pas le fuseau.",
+                    "eliminates": ["s3-c-timezone"]
+                  },
+                  {
+                    "id": "s3-h5",
+                    "label": "Demander la liste des variables lues au démarrage de la suite",
+                    "cost": 25,
+                    "text": "Chaque variable lue au démarrage est bien définie sur l'agent : ce n'est pas une variable absente.",
+                    "eliminates": ["s3-c-env"]
+                  }
+                ],
+                "causes": [
+                  {
+                    "id": "s3-c-parallel",
+                    "text": "Les tests s'exécutent en parallèle sans réelle isolation.",
+                    "actual": true,
+                    "verification": "Confirmé : isoler l'état entre les tests, ou désactiver le parallélisme sur l'agent CI, fait disparaître les échecs intermittents.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s3-c-env",
+                    "text": "Les tests dépendent d'une variable d'environnement absente.",
+                    "actual": false,
+                    "verification": "Toutes les variables d'environnement requises sont bien présentes sur l'agent CI : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  },
+                  {
+                    "id": "s3-c-node",
+                    "text": "La version de Node installée en CI diffère de celle en local.",
+                    "actual": false,
+                    "verification": "La version de Node de l'agent CI est identique à celle du poste local : ce n'est pas la cause.",
+                    "ruledOutByReport": true
+                  },
+                  {
+                    "id": "s3-c-cache",
+                    "text": "Le cache de dépendances de l'agent CI est corrompu.",
+                    "actual": false,
+                    "verification": "Le rapport le dit sans le conclure : l'échec ne porte jamais sur les mêmes tests d'une exécution à l'autre. Un cache corrompu ferait échouer les mêmes tests à chaque fois. Ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  },
+                  {
+                    "id": "s3-c-timezone",
+                    "text": "Le fuseau horaire de l'agent CI diffère bien du poste local.",
+                    "actual": false,
+                    "verification": "Les deux environnements partagent le même fuseau horaire : ce n'est pas la cause.",
+                    "ruledOutByReport": false
+                  }
+                ]
               }
             ]
           },
           "criteria": [
             {
               "id": "g2-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Les incidents ont-ils été résolus en achetant moins de la moitié des indices ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "frugal-solves-at-least",
+                "share": 0.5,
+                "threshold": 3
               },
               "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2
-                },
                 {
                   "dimension": "pilotage-contexte",
                   "weight": 2
@@ -461,15 +787,26 @@
             },
             {
               "id": "g2-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Le contexte a-t-il été posé avant le premier indice ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "framed-first-at-least",
+                "threshold": 2
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
-                },
+                }
+              ]
+            },
+            {
+              "id": "g2-1-c3",
+              "question": "Ce contexte était-il fondé sur le rapport ?",
+              "rule": {
+                "type": "grounded-framings-at-least",
+                "threshold": 2
+              },
+              "mapping": [
                 {
                   "dimension": "pilotage-contexte",
                   "weight": 1
