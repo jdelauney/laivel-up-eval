@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { Button } from '../../../../components/ui/button'
 import type { GameComponentProps } from '../../../types/game-component'
 import { useLieDetector } from '../../hooks/use-lie-detector.hook'
@@ -43,9 +44,7 @@ export const LieDetectorGame = ({ config, onSubmit }: GameComponentProps) => {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
-        {statement}
-      </p>
+      <Statement text={statement} roundNumber={roundNumber} />
 
       <RoundNumber roundNumber={roundNumber} roundsTotal={roundsTotal} />
 
@@ -75,6 +74,47 @@ export const LieDetectorGame = ({ config, onSubmit }: GameComponentProps) => {
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * La consigne ne change jamais d'une manche à l'autre : la relire en entier
+ * à chaque fois repousse la grille de comparaison sous la ligne de
+ * flottaison, mesuré à 390 de large — la première carte n'apparaissait qu'à
+ * 648px sur un écran de 844. Elle ne s'affiche donc en entier qu'à la
+ * première manche, là où elle doit être lue ; ensuite elle se replie derrière
+ * un repli natif (`<details>`), jamais introuvable, jamais réduite au silence
+ * — seulement pas répétée. Le coût du geste (verrou de la désignation) ne
+ * vit pas ici : il reste porté par `RoundSheet`, annoncé à chaque manche.
+ */
+const Statement = ({
+  text,
+  roundNumber,
+}: {
+  text: string
+  roundNumber: number
+}) => {
+  if (roundNumber === 1) {
+    return (
+      <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
+        {text}
+      </p>
+    )
+  }
+
+  return (
+    <details className="group">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 font-medium text-plane-foreground/60 text-xs uppercase tracking-[0.14em] [&::-webkit-details-marker]:hidden">
+        <ChevronDown
+          aria-hidden
+          className="size-3 transition-transform group-open:rotate-180"
+        />
+        Revoir la consigne
+      </summary>
+      <p className="mt-2 max-w-[54ch] text-plane-foreground text-sm leading-relaxed">
+        {text}
+      </p>
+    </details>
   )
 }
 
