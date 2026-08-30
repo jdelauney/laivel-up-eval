@@ -66,7 +66,7 @@ journey
 
 | id | question | règle | poids |
 | --- | --- | --- | --- |
-| `g1-1-c1` | La confiance engagée sur les extraits défectueux est-elle restée sous 50 % en moyenne ? | `mean-stake-on-flawed-below` `{ threshold: 50 }` | 2 |
+| `g1-1-c1` | La confiance engagée sur les extraits défectueux est-elle restée sous 30 % en moyenne ? | `mean-stake-on-flawed-below` `{ threshold: 30 }` | 2 |
 | `g1-1-c2` | La confiance engagée sur les extraits sains a-t-elle dépassé 70 % en moyenne ? | `mean-stake-on-sound-above` `{ threshold: 70 }` | 2 |
 | `g1-1-c3` | La calibration globale atteint-elle son seuil ? | `calibration-at-least` `{ threshold: 0.5 }` | 2 |
 | `g1-1-c4` | La confiance est-elle restée dans la bande d'incertitude sur chaque extrait qu'on ne peut pas trancher ? | `stake-within-band-on-undecidable` `{ from: 40, to: 60 }` | 1 |
@@ -86,7 +86,7 @@ journey
 | 1 | Calibré, tranché des deux côtés | 90·90 / 10·10 / 50·50 | ✓ | ✓ | ✓ | ✓ | 7/7 = 1.000 | 260 |
 | 2 | Calibré, une hésitation de chaque côté | 90·70 / 10·30 / 50·50 | ✓ | ✓ | ✓ | ✓ | 7/7 = 1.000 | 220 |
 | 3 | Lit le code, ne sait pas dire qu'il ne sait pas | 90·90 / 10·10 / 90·90 | ✓ | ✓ | ✓ | ✗ | 6/7 = 0.857 | 180 |
-| 4 | Discriminant mais tiède | 70·70 / 30·30 / 50·50 | ✓ | ✗ | ✓ | ✓ | 5/7 = 0.714 | 180 |
+| 4 | Discriminant mais tiède | 70·70 / 30·30 / 50·50 | ✗ | ✗ | ✓ | ✓ | 3/7 = 0.429 | 180 |
 | 5 | Tout confiant | 90 partout | ✗ | ✓ | ✗ | ✗ | 2/7 = 0.286 | 20 |
 | 6 | Tout méfiant | 10 partout | ✓ | ✗ | ✗ | ✗ | 2/7 = 0.286 | 20 |
 | 7 | Hédgeur, la mise neutre partout | 50 partout | ✗ | ✗ | ✗ | ✓ | 1/7 = 0.143 | 100 |
@@ -97,7 +97,8 @@ journey
    - le garde-fou est ce qui sépare le profil 1 du profil 3 : sans lui, savoir lire du code suffirait pour un sans-faute ;
    - les profils 5 et 6, les deux formes d'extrémité, retombent à 0.286, **sous le premier palier de `verification`** (0.4) ;
    - le hédgeur, qui ne se trompe jamais parce qu'il ne s'engage jamais, est le plus bas des huit avec le profil à contresens ;
-   - le profil 4 est le cas limite du seuil de calibration : il atterrit exactement sur 0.5, et la borne inclusive le fait passer ;
+   - le profil 4 est le cas limite des trois seuils à la fois : il pose 30 sur les défectueux et 70 sur les sains, exactement sur des bornes strictes qui le recalent, et il atterrit sur 0.5 de calibration, borne inclusive qui le fait passer. C'est le profil qui a vu la différence sans jamais s'engager, et il manque les deux critères d'engagement pour la même raison, symétriquement ;
+   - les profils 5 et 6 sont l'image l'un de l'autre et rendent le même score : c'est la preuve la plus directe que les deux seuils sont désormais symétriques autour de la mise neutre ;
    - le profil 9 est le garde-fou de l'ordre du corpus : celui qui déduit la maille au lieu de lire reste strictement sous le profil 3, qui a lu tout le code sans savoir avouer son ignorance. Sur un corpus rangé par nature, ce même joueur décrochait 7/7 en n'ayant lu que la moitié des extraits.
 5. Vérifier aussi que le parcours réel se charge : la config de `g1-1` passe le schéma du jeu, et le registre résout son type.
 

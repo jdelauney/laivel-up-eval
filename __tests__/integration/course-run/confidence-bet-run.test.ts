@@ -214,8 +214,8 @@ const TABLE_FROM_PHASE_4 = [
   {
     name: 'Discriminant mais tiède',
     bets: DISCRIMINATING_BUT_LUKEWARM,
-    satisfied: { c1: true, c2: false, c3: true, c4: true },
-    score: 5 / 7,
+    satisfied: { c1: false, c2: false, c3: true, c4: true },
+    score: 3 / 7,
     capital: 180,
   },
   {
@@ -324,15 +324,35 @@ describe('confidence-bet in the course', () => {
     expect(backwards).toBeCloseTo(Math.min(...scores), 3)
   })
 
-  it('lands the lukewarm profile exactly on the calibration threshold, and the inclusive bound lets it pass', () => {
+  /**
+   * Le profil tiède se pose sur les trois seuils à la fois : 30 sur les
+   * défectueux et 70 sur les sains, que les bornes strictes recalent, et 0.5
+   * de calibration, que la borne inclusive fait passer. Il a vu la différence
+   * sans jamais s'engager.
+   */
+  it('lands the lukewarm profile on all three thresholds at once, the strict bounds turning it away and the inclusive one letting it pass', () => {
     const dimension = verificationDimension(
       playG1_1(DISCRIMINATING_BUT_LUKEWARM),
     )
+    const verdictOf = (criterionId: string) =>
+      dimension.contributions.find((c) => c.criterionId === criterionId)
+        ?.satisfied
 
-    expect(
-      dimension.contributions.find((c) => c.criterionId === 'g1-1-c3')
-        ?.satisfied,
-    ).toBe(true)
+    expect(verdictOf('g1-1-c1')).toBe(false)
+    expect(verdictOf('g1-1-c2')).toBe(false)
+    expect(verdictOf('g1-1-c3')).toBe(true)
+  })
+
+  /**
+   * La preuve la plus directe de la symétrie des deux seuils autour de la
+   * mise neutre : deux extrémités opposées, un score identique. Elle tomberait
+   * au premier seuil déplacé d'un seul côté.
+   */
+  it('scores the two opposite extremes identically, the thresholds mirroring each other around the neutral stake', () => {
+    const confident = verificationDimension(playG1_1(ALL_CONFIDENT)).score
+    const suspicious = verificationDimension(playG1_1(ALL_SUSPICIOUS)).score
+
+    expect(confident).toBeCloseTo(suspicious, 3)
   })
 
   it('loads the real course and opens the Jugement critique group on confidence-bet', () => {
@@ -363,7 +383,9 @@ describe('confidence-bet in the course', () => {
       game.config as { statement: string }
     ).statement.toLowerCase()
 
-    expect(statement).not.toMatch(/seuil|bande|moyenne|\b50\b|\b70\b|0[.,]5/)
+    expect(statement).not.toMatch(
+      /seuil|bande|moyenne|\b30\b|\b50\b|\b70\b|0[.,]5/,
+    )
   })
 
   it('validates the real g1-1 config against its own schema, the registry resolving its type', () => {

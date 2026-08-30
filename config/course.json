@@ -69,10 +69,10 @@
           "criteria": [
             {
               "id": "g1-1-c1",
-              "question": "La confiance engagée sur les extraits défectueux est-elle restée sous 50 % en moyenne ?",
+              "question": "La confiance engagée sur les extraits défectueux est-elle restée sous 30 % en moyenne ?",
               "rule": {
                 "type": "mean-stake-on-flawed-below",
-                "threshold": 50
+                "threshold": 30
               },
               "mapping": [
                 {
