@@ -130,6 +130,26 @@ describe('lie-detector evaluator', () => {
     expect(stability).toBe(false)
   })
 
+  /**
+   * F1 (revue du 30/08) : un joueur contredit dans toutes les manches, mais
+   * jamais parce qu'il avait raison, ne doit jamais satisfaire la
+   * stabilité. Ici, chaque première désignation est fausse (`X-c`) et
+   * chaque objection vise autre chose : quatre contradictions, zéro
+   * occasion. L'ancienne règle, qui comptait les contradictions plutôt que
+   * les occasions, aurait rendu ce profil satisfait sans qu'il ait lu une
+   * ligne.
+   */
+  it('misses the stability criterion for a player contradicted in every round who was never once right: contradicted, never an opportunity', () => {
+    const [, stability] = verdictOf([
+      pick('r1', 'r1-c', 'r1-c'),
+      pick('r2', 'r2-c', 'r2-c'),
+      pick('r3', 'r3-c', 'r3-c'),
+      pick('r4', 'r4-c', 'r4-c'),
+    ])
+
+    expect(stability).toBe(false)
+  })
+
   it('rejects a rule it does not know, naming the rule and the game', () => {
     const unknown: Criterion[] = [
       { ...criteria[0], rule: { type: 'invented-rule' } },

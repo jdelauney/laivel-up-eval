@@ -9,10 +9,7 @@ import type {
 } from '../../core/ports/game-evaluator.interface'
 import { readRounds } from './helpers/read-rounds.helper'
 import { parseLieDetectorTrace } from './schema/answer.schema'
-import {
-  type LieDetectorConfig,
-  lieDetectorConfigSchema,
-} from './schema/config.schema'
+import { lieDetectorConfigSchema } from './schema/config.schema'
 
 /**
  * Le point de contact public avec le port `GameEvaluator`, d'où sa place à
@@ -44,19 +41,34 @@ const liesUnmaskedAtLeast = (
 }
 
 /**
- * Satisfaite quand au moins une manche a réellement contredit le joueur
- * ET qu'aucune n'a vu sa désignation juste abandonnée. Sans seuil : la
- * règle ne tolère aucune capitulation, et son nom le dit.
+ * Satisfaite quand le joueur a eu au moins une occasion réelle de
+ * capituler ET qu'il n'en a saisi aucune. Sans seuil : la règle ne tolère
+ * aucune capitulation, et son nom le dit.
  *
- * Le refus de la vacuité tient au premier membre : un joueur que
- * l'assistant n'a jamais contredit n'a rien démontré, sur le même principe
- * que `kinds-found-including` chez `defect-hunt`, où un critère sans
- * matière ressort manqué plutôt que satisfait par défaut.
+ * Une occasion (`RoundReading.opportunity`) est une manche contredite ET
+ * dont la première désignation visait déjà la menteuse : c'est le seul cas
+ * où l'aplomb de l'assistant s'exerce contre une lecture juste, donc le
+ * seul où tenir démontre quelque chose.
+ *
+ * Correction du 30/08, après revue (F1) : la première écriture comptait les
+ * manches CONTREDITES (`contradictedCount`), pas les occasions. Or être
+ * contredit ne suppose que d'avoir désigné autre chose que la cible de
+ * l'objection — ce qu'un joueur qui se trompe partout fait dans toutes les
+ * manches. Un tel joueur était donc contredit quatre fois sur quatre, ne
+ * pouvait capituler nulle part faute d'avoir jamais eu raison, et
+ * décrochait le critère sans avoir lu une ligne. `opportunityCount` exige
+ * en plus la désignation initiale juste, ce que la contradiction seule ne
+ * garantit pas.
+ *
+ * Le refus de la vacuité tient toujours au premier membre : un joueur sans
+ * aucune occasion n'a rien démontré, sur le même principe que
+ * `kinds-found-including` chez `defect-hunt`, où un critère sans matière
+ * ressort manqué plutôt que satisfait par défaut.
  */
 const noCapitulation = (
-  contradictedCount: number,
+  opportunityCount: number,
   capitulationCount: number,
-): boolean => contradictedCount > 0 && capitulationCount === 0
+): boolean => opportunityCount > 0 && capitulationCount === 0
 
 export class LieDetectorEvaluator implements GameEvaluator {
   evaluate(
@@ -72,9 +84,8 @@ export class LieDetectorEvaluator implements GameEvaluator {
     const reading = readRounds(parsedConfig, trace)
 
     const verdictInputs: VerdictInputs = {
-      config: parsedConfig,
       unmaskedCount: reading.unmaskedCount,
-      contradictedCount: reading.contradictedCount,
+      opportunityCount: reading.opportunityCount,
       capitulationCount: reading.capitulationCount,
     }
 
@@ -89,10 +100,7 @@ export class LieDetectorEvaluator implements GameEvaluator {
       case 'lies-unmasked-at-least':
         return liesUnmaskedAtLeast(inputs.unmaskedCount, rule)
       case 'no-capitulation':
-        return noCapitulation(
-          inputs.contradictedCount,
-          inputs.capitulationCount,
-        )
+        return noCapitulation(inputs.opportunityCount, inputs.capitulationCount)
       default:
         throw new UnknownRuleError(rule.type)
     }
@@ -101,8 +109,7 @@ export class LieDetectorEvaluator implements GameEvaluator {
 
 /** Tout ce qu'une règle peut lire, et rien de plus. */
 type VerdictInputs = {
-  config: LieDetectorConfig
   unmaskedCount: number
-  contradictedCount: number
+  opportunityCount: number
   capitulationCount: number
 }

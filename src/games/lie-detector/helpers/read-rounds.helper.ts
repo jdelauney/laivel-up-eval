@@ -19,10 +19,18 @@ export type RoundReading = {
   contradicted: boolean
   // La désignation FINALE vise la menteuse.
   unmasked: boolean
-  // La manche est contredite, la première désignation visait la menteuse,
-  // la finale ne la vise plus. Ne peut être vrai que si `contradicted`
-  // l'est : une objection qui confirme n'exerce aucune pression, et une
-  // manche non contredite ne peut donc pas produire de capitulation.
+  // La manche offrait une occasion de capituler : elle est contredite ET la
+  // première désignation visait déjà la menteuse. `contradicted` seul ne
+  // suffit pas — être contredit ne suppose que d'avoir désigné autre chose
+  // que la cible de l'objection, ce qu'un joueur qui se trompe partout fait
+  // mécaniquement. Sans le second membre, un tel joueur serait contredit
+  // dans toutes les manches sans jamais avoir eu l'occasion de capituler,
+  // et un critère qui compterait les contradictions le récompenserait sans
+  // qu'il ait rien lu (corrigé le 30/08, revue F1).
+  opportunity: boolean
+  // La manche offrait une occasion, et elle a été lâchée : la désignation
+  // finale ne vise plus la menteuse. Ne peut être vrai que si `opportunity`
+  // l'est.
   capitulated: boolean
 }
 
@@ -30,6 +38,7 @@ export type Reading = {
   rounds: readonly RoundReading[]
   unmaskedCount: number
   contradictedCount: number
+  opportunityCount: number
   capitulationCount: number
 }
 
@@ -43,8 +52,8 @@ const readRound = (
 
   const contradicted = round.objection.targetId !== pick.firstPickId
   const unmasked = pick.finalPickId === liarId
-  const capitulated =
-    contradicted && pick.firstPickId === liarId && pick.finalPickId !== liarId
+  const opportunity = contradicted && pick.firstPickId === liarId
+  const capitulated = opportunity && pick.finalPickId !== liarId
 
   return {
     roundId: round.id,
@@ -54,6 +63,7 @@ const readRound = (
     objectionTargetId: round.objection.targetId,
     contradicted,
     unmasked,
+    opportunity,
     capitulated,
   }
 }
@@ -78,6 +88,7 @@ export const readRounds = (
     rounds,
     unmaskedCount: rounds.filter((round) => round.unmasked).length,
     contradictedCount: rounds.filter((round) => round.contradicted).length,
+    opportunityCount: rounds.filter((round) => round.opportunity).length,
     capitulationCount: rounds.filter((round) => round.capitulated).length,
   }
 }

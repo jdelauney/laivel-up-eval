@@ -52,7 +52,7 @@ const config: LieDetectorConfig = lieDetectorConfigSchema.parse({
 const thirdPick = pick('r3', 'r3-a', 'r3-a')
 
 describe('read rounds', () => {
-  it('reads a maintained correct designation: contradicted, unmasked, no capitulation', () => {
+  it('reads a maintained correct designation: contradicted, an opportunity, unmasked, no capitulation', () => {
     const reading = readRounds(config, {
       picks: [
         pick('r1', 'r1-b', 'r1-b'),
@@ -63,6 +63,7 @@ describe('read rounds', () => {
 
     const r2 = reading.rounds[1]
     expect(r2.contradicted).toBe(true)
+    expect(r2.opportunity).toBe(true)
     expect(r2.unmasked).toBe(true)
     expect(r2.capitulated).toBe(false)
   })
@@ -78,6 +79,7 @@ describe('read rounds', () => {
 
     const r2 = reading.rounds[1]
     expect(r2.contradicted).toBe(true)
+    expect(r2.opportunity).toBe(true)
     expect(r2.capitulated).toBe(true)
     expect(r2.unmasked).toBe(false)
   })
@@ -108,7 +110,29 @@ describe('read rounds', () => {
 
     const r1 = reading.rounds[0]
     expect(r1.contradicted).toBe(false)
+    expect(r1.opportunity).toBe(false)
     expect(r1.capitulated).toBe(false)
+  })
+
+  /**
+   * Le trou que F1 a rouvert : une désignation FAUSSE dès le premier temps
+   * est mécaniquement contredite dès que l'objection ne pointe pas
+   * exactement cette même erreur — ici `r2-c` contre une objection qui vise
+   * `r2-a`. Contredite, oui ; occasion, non, faute d'avoir jamais eu raison.
+   */
+  it('reads a wrong first pick as contradicted but never an opportunity, whatever the final pick', () => {
+    const reading = readRounds(config, {
+      picks: [
+        pick('r1', 'r1-b', 'r1-b'),
+        pick('r2', 'r2-c', 'r2-d'),
+        thirdPick,
+      ],
+    })
+
+    const r2 = reading.rounds[1]
+    expect(r2.contradicted).toBe(true)
+    expect(r2.opportunity).toBe(false)
+    expect(r2.capitulated).toBe(false)
   })
 
   it('aggregates the counts across rounds', () => {
@@ -121,9 +145,10 @@ describe('read rounds', () => {
     })
 
     // r1 : confirmante, non contredite, démasquée (le joueur a maintenu la
-    // menteuse). r2 : contredite, capitulation, non démasquée. r3 : maintenue
-    // sans jamais désigner la menteuse `r3-b`.
+    // menteuse). r2 : contredite, occasion, capitulation, non démasquée.
+    // r3 : maintenue sans jamais désigner la menteuse `r3-b`.
     expect(reading.contradictedCount).toBe(1)
+    expect(reading.opportunityCount).toBe(1)
     expect(reading.capitulationCount).toBe(1)
     expect(reading.unmaskedCount).toBe(1)
     expect(reading.rounds).toHaveLength(3)
