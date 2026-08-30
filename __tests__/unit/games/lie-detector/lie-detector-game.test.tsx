@@ -156,4 +156,86 @@ describe('lie detector game, rendered', () => {
     fireEvent.click(first)
     expect(screen.getByText(/je maintiens/i)).toBeInTheDocument()
   })
+
+  /**
+   * `DESIGN.md` : le coût d'un geste est annoncé, sa conséquence ne l'est
+   * jamais. Le premier temps doit porter ce coût avant tout clic.
+   */
+  it('announces the lock-in cost before any click is made', () => {
+    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+
+    expect(
+      screen.getByText('Un clic verrouille votre désignation'),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * L'état d'une affirmation ne doit jamais tenir à la seule couleur : un
+   * signe (le glyphe) et un libellé (le texte) le portent tous deux, ce
+   * qu'une désaturation de l'écran ne peut pas effacer.
+   */
+  it('reads every claim state without color: a glyph and a text label both carry it', () => {
+    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+
+    config.rounds[0].claims.forEach((entry) => {
+      const button = claimButton(new RegExp(entry.text))
+      expect(button.querySelector('svg')).toBeTruthy()
+      expect(button.textContent ?? '').toMatch(/libre|désignée/i)
+    })
+  })
+
+  /**
+   * Garde-fou de la passe : une objection fondée et une objection creuse
+   * doivent produire exactement le même arbre, seul l'argument variant. Ce
+   * test casse si une future passe fait porter la nature de l'objection par
+   * sa présentation.
+   */
+  it('renders a founded and a hollow objection with exactly the same structure', () => {
+    // `X-b` est toujours la menteuse du corpus de test : viser `r1-b` rend
+    // l'objection de `r1` fondée, viser `r1-a` la rend creuse — l'argument
+    // reste le même texte dans les deux cas, seule la cible change. `r2`
+    // reste fondée et `r3` creuse dans les deux configurations, pour tenir
+    // le garde-fou anti-triche du schéma sans influer sur `r1`.
+    const foundedConfig = {
+      statement: config.statement,
+      rounds: [round('r1', 'r1-b'), round('r2', 'r2-b'), round('r3', 'r3-a')],
+    }
+    const hollowConfig = {
+      statement: config.statement,
+      rounds: [round('r1', 'r1-a'), round('r2', 'r2-b'), round('r3', 'r3-a')],
+    }
+
+    const objectionMarkup = (cfg: typeof config): string => {
+      const { unmount } = render(
+        <LieDetectorGame config={cfg} onSubmit={vi.fn()} />,
+      )
+      fireEvent.click(claimButton(new RegExp(cfg.rounds[0].claims[0].text)))
+      const label = screen.getByText("L'assistant")
+      const markup = label.parentElement?.outerHTML ?? ''
+      unmount()
+      return markup
+    }
+
+    expect(objectionMarkup(foundedConfig)).toBe(objectionMarkup(hollowConfig))
+  })
+
+  /**
+   * L'ordre de parcours au clavier et au lecteur d'écran doit suivre l'ordre
+   * de lecture du corpus, jamais un ordre visuel recomposé par la grille.
+   */
+  it('keeps the claim grid in the corpus reading order for keyboard and screen-reader traversal', () => {
+    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+
+    const claimTexts = config.rounds[0].claims.map((entry) => entry.text)
+    const claimButtons = screen
+      .getAllByRole('button')
+      .filter((button) =>
+        claimTexts.some((text) => button.textContent?.includes(text)),
+      )
+    const orderIndexes = claimButtons.map((button) =>
+      claimTexts.findIndex((text) => button.textContent?.includes(text)),
+    )
+
+    expect(orderIndexes).toEqual([0, 1, 2, 3])
+  })
 })

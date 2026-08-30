@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu lie-detector se joue de bout en bout à la place du placeholder g1-3, mesure la désignation d'une affirmation menteuse puis sa tenue sous contradiction sur la dimension verification, et n'oblige aucun contrat existant à bouger."
-status: in-progress
+status: implemented
 ---
 
 # Plan: Le jeu `lie-detector`, désigner la menteuse puis tenir sa ligne
