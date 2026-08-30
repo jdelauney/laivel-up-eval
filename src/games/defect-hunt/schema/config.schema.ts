@@ -6,10 +6,11 @@ import { snippetLines } from '../helpers/snippet-lines.helper'
  * consigne affichée au joueur, l'extrait à revoir, le temps imparti, et le
  * corpus des défauts qu'il porte.
  *
- * Le nombre de défauts annoncé au joueur se DÉRIVE de `defects.length` : ce
- * n'est jamais un champ à part. Un champ séparé pourrait mentir sur ce que le
- * corpus porte réellement, et le jeu tout entier repose sur ce nombre pour
- * mesurer si le joueur lit vraiment le code.
+ * Le nombre de défauts n'est **jamais annoncé au joueur** : il n'a aucune
+ * règle d'arrêt et décide lui-même quand sa revue est finie. Ce nombre ne se
+ * lit qu'après le rendu, et il se DÉRIVE alors de `defects.length` — ce n'est
+ * jamais un champ à part, un champ séparé pourrait mentir sur ce que le
+ * corpus porte réellement.
  */
 
 export const defectKindSchema = z.enum([

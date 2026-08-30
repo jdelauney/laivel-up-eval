@@ -70,7 +70,7 @@ journey
 | --- | --- |
 | `hallucinated-dependency` | L'import d'un paquet qui n'existe pas sur npm, et dont le symbole importé n'est jamais appelé. **Le seul défaut de l'extrait qui ne se tranche pas dans les lignes montrées** |
 | `security` | Un paramètre d'URL interpolé brut dans une requête SQL |
-| `resource` | Un `client.release` lu sans être appelé — les parenthèses manquent, la connexion n'est jamais rendue au pool |
+| `resource` | Dans un bloc `finally` correct, un `client?.release` lu sans être appelé — les parenthèses manquent, et c'est le seul endroit où l'on corrige |
 | `logic` | Une pagination décalée : la page 1 saute la première page, les premiers éléments sont inatteignables |
 | `contract` | Une valeur de `req.query` convertie sans validation, qui rend `NaN` sans que rien ne le signale |
 

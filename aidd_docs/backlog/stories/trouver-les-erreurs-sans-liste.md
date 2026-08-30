@@ -44,6 +44,12 @@ Câblés dans `config/course.json`, situation `g1-2`, et verrouillés par
 
 ## Contrainte de rédaction du corpus
 
-Sans compte annoncé, chaque hésitation du joueur se paie. L'extrait doit donc être **sans ambiguïté** : chaque défaut n'a qu'une seule ligne où un relecteur le signalerait, et aucune ligne saine n'est légitimement signalable au-delà de la tolérance que le seuil laisse.
+Sans compte annoncé, chaque hésitation du joueur se paie. L'extrait doit donc être **sans ambiguïté** : chaque défaut n'a qu'un seul endroit où on le corrige, et les lignes saines encore défendables sont listées, comptées, et tenues sous la tolérance du seuil.
 
-Deux garde-fous le tiennent, tous deux dans le test d'intégration : chaque ligne fautive porte une instruction complète (équilibre des parenthèses et des accolades), et le marqueur de chaque défaut n'apparaît qu'une fois dans tout l'extrait — sinon le défaut aurait deux domiciles plausibles, et le joueur qui le diagnostique correctement mais clique l'autre paierait deux fois.
+Trois garde-fous le tiennent, tous dans le test d'intégration :
+
+1. Chaque ligne fautive porte une instruction complète — équilibre des parenthèses et des accolades.
+2. Le marqueur de chaque défaut n'apparaît qu'une fois dans tout l'extrait.
+3. Les lignes saines encore défendables vivent dans une liste nommée, revue à la main, et un test casse dès qu'on lui en ajoute une sans bouger le seuil.
+
+Le troisième est né d'un échec des deux premiers. La fuite de connexion a d'abord été posée sur un retour anticipé, puis sur un `release` sans parenthèses dans un bloc sans `finally` : dans les deux cas le correctif complet vivait sur deux lignes, et un relecteur qui diagnostiquait juste en marquant les deux sortait **moins bien noté** que celui qui n'en voyait que la moitié. Un marqueur textuel unique ne prouve pas un lieu de correction unique.

@@ -100,27 +100,58 @@ const playG1_2 = (
 
 /**
  * Les lignes du corpus réel de `config/course.json` : cinq défauts, sur les
- * lignes 2 (dépendance hallucinée), 9 (contrat), 10 (logique), 14 (sécurité)
- * et 17 (ressource). Les autres lignes de l'extrait sont saines.
+ * lignes 2 (dépendance hallucinée), 10 (contrat), 11 (logique), 16 (sécurité)
+ * et 23 (ressource). Les autres lignes de l'extrait sont saines.
  *
- * Deux contraintes tiennent l'équité de ce corpus, et elles sont toutes deux
+ * Trois contraintes tiennent l'équité de ce corpus, et elles sont toutes
  * verrouillées plus bas :
  *
  * 1. Chaque ligne fautive se suffit à elle-même — aucun défaut posé à
  *    l'intérieur d'une construction qui s'étale sur plusieurs lignes.
- * 2. Chaque défaut n'a qu'une seule ligne naturelle où un relecteur le
- *    signalerait. La première écriture posait la fuite de connexion sur le
- *    retour anticipé alors que le geste naturel visait l'appel à `release`
- *    plus bas ; un joueur qui lisait juste encaissait alors un faux positif
- *    ET un défaut manqué. Le jeu mesurait la devinette du découpage.
+ * 2. Chaque défaut n'a qu'un seul **lieu de correction**, et non pas
+ *    seulement un seul marqueur textuel. La nuance a coûté deux écritures :
+ *    la fuite de connexion a d'abord été posée sur un retour anticipé, puis
+ *    sur un `release` sans parenthèses dans un bloc qui n'avait pas de
+ *    `finally` — et dans les deux cas le correctif complet vivait sur deux
+ *    lignes. Un relecteur qui diagnostiquait juste et marquait les deux
+ *    encaissait alors moins de points que celui qui n'en voyait que la
+ *    moitié. Le `finally` existe désormais, et seules les parenthèses
+ *    manquent.
+ * 3. Les lignes saines encore défendables sont listées, comptées, et tenues
+ *    sous la tolérance du seuil — voir `DEBATABLE_LINES`.
  */
 const DEFECT_LINES = {
   dependency: 2,
-  contract: 9,
-  logic: 10,
-  security: 14,
-  resource: 17,
+  contract: 10,
+  logic: 11,
+  security: 16,
+  resource: 23,
 }
+
+/**
+ * **La tolérance du corpus, écrite noir sur blanc plutôt que supposée.**
+ *
+ * Ces lignes ne portent aucun défaut déclaré et restent malgré tout
+ * défendables en revue réelle. Elles sont la liste revue à la main, et la
+ * seule qui existe : toute autre ligne saine de l'extrait doit être
+ * indéfendable, sinon le corpus punit la lecture correcte.
+ *
+ * Le seuil de score net en tolère deux, et cette liste en compte deux. Elle
+ * n'a donc aucune marge : y ajouter une entrée sans bouger le seuil, c'est
+ * livrer un jeu qui paie mieux le lecteur superficiel.
+ *
+ * - ligne 17 : `client.query(sql)` — le relecteur qui marque le site d'appel
+ *   de la requête plutôt que la construction de la chaîne ligne 16.
+ * - ligne 19 : `res.json({ items: rows })` — la réponse ne porte ni total ni
+ *   curseur, ce qu'un relecteur peut reprocher à un point d'entrée qui
+ *   pagine.
+ *
+ * Deux domiciles qui existaient dans les écritures précédentes ont été
+ * fermés dans le code, pas dans ce commentaire : l'absence de `finally`
+ * (le vrai correctif de la fuite vivait alors sur deux lignes) et l'absence
+ * de contrôle d'autorisation sur `:owner`.
+ */
+const DEBATABLE_LINES = [17, 19]
 
 /**
  * Dérivé de l'extrait réel, jamais figé : un corpus réécrit plus long
@@ -129,8 +160,8 @@ const DEFECT_LINES = {
 const allLines = (config: DefectHuntConfig): number[] =>
   snippetLines(config.snippet.code).map((_, index) => index + 1)
 
-/** Une ligne saine de l'extrait, celle du premier import. */
-const FALSE_POSITIVE_LINE = 3
+/** Une ligne saine et indéfendable de l'extrait : l'import du routeur. */
+const FALSE_POSITIVE_LINE = 1
 
 /**
  * Quatre défauts sur cinq, dépendance comprise, une marque posée à côté.
@@ -152,6 +183,13 @@ const FOUR_OF_FIVE_WITHOUT_DEPENDENCY = [
   DEFECT_LINES.contract,
   DEFECT_LINES.logic,
   FALSE_POSITIVE_LINE,
+]
+
+/** Trois défauts, dépendance comprise, aucune marque à côté : le prudent. */
+const THREE_SURE_THINGS = [
+  DEFECT_LINES.dependency,
+  DEFECT_LINES.security,
+  DEFECT_LINES.resource,
 ]
 
 /** Cinq défauts sur cinq, et toutes les lignes saines marquées en plus. */
@@ -184,6 +222,21 @@ const TABLE_FROM_PHASE_4 = [
     markedLines: FOUR_OF_FIVE_WITH_DEPENDENCY,
     elapsedSeconds: 200,
     satisfied: { c1: true, c2: true, c3: true, c4: false },
+  },
+  {
+    /**
+     * Le profil que retirer le compte annoncé fabrique mécaniquement : celui
+     * qui ne marque que ce dont il est certain. Trois défauts, aucune erreur.
+     *
+     * C'est le seul profil qui satisfait le score net en manquant la
+     * couverture, et il est donc la moitié manquante de la preuve que les
+     * deux critères ne mesurent pas la même chose — le saturateur prouvait
+     * déjà l'autre sens.
+     */
+    name: 'Le prudent',
+    markedLines: THREE_SURE_THINGS,
+    elapsedSeconds: 100,
+    satisfied: { c1: true, c2: false, c3: true, c4: true },
   },
 ] as const
 
@@ -244,12 +297,37 @@ describe('defect-hunt in the course', () => {
    * deux lignes saines peuvent rester légitimement signalables. La première
    * écriture en portait quatre, et ce profil sortait au score du saturateur.
    */
-  it('rewards the exhaustive reviewer: five found plus two debatable marks keeps a full score', () => {
+  it('rewards the exhaustive reviewer: five found plus every debatable line still scores full', () => {
     const exhaustif = verificationDimension(
-      playG1_2([...Object.values(DEFECT_LINES), FALSE_POSITIVE_LINE, 1], 100),
+      playG1_2([...Object.values(DEFECT_LINES), ...DEBATABLE_LINES], 100),
     )
 
     expect(exhaustif.score).toBe(1)
+  })
+
+  /**
+   * Le garde-fou qui manquait, et sans lequel le test précédent n'est que de
+   * l'arithmétique : il vérifiait `5 − 2 ≥ 3` en marquant deux imports
+   * irréprochables, et il aurait passé à l'identique sur un corpus dont
+   * quatre lignes saines étaient défendables.
+   *
+   * La liste des lignes discutables n'a aucune marge face au seuil. Ce test
+   * casse dès qu'on lui en ajoute une sans bouger le seuil, ce qui force la
+   * question à revenir sur la table plutôt qu'à passer en silence.
+   */
+  it('leaves the debatable-line budget with no slack: one more would sink the exhaustive reviewer', () => {
+    const uneDeTrop = [
+      ...Object.values(DEFECT_LINES),
+      ...DEBATABLE_LINES,
+      FALSE_POSITIVE_LINE,
+    ]
+
+    const dimension = verificationDimension(playG1_2(uneDeTrop, 100))
+    const netScoreSatisfied = dimension.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-2-c1',
+    )?.satisfied
+
+    expect(netScoreSatisfied).toBe(false)
   })
 
   it('loads the real course and opens the Jugement critique group on the second situation, defect-hunt', () => {
@@ -322,7 +400,7 @@ describe('defect-hunt in the course', () => {
       contract: 'Number(req.query.page)',
       logic: 'page * PAGE_SIZE',
       security: 'req.params.owner',
-      resource: 'client.release',
+      resource: 'client?.release',
     }
 
     config.defects.forEach((defect) => {

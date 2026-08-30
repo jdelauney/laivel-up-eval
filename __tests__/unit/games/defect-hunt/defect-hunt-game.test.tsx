@@ -9,8 +9,14 @@ import { DefectHuntGame } from '@/games/defect-hunt/components/composites/defect
  */
 
 const config = {
+  /**
+   * La consigne de la fixture n'annonce aucun nombre, comme celle du parcours
+   * réel. Une fixture qui en annoncerait un rendrait vide le test
+   * d'étanchéité juste en dessous : il chercherait un compte dans un DOM qui
+   * en porterait un, et passerait quand même faute de viser la bonne région.
+   */
   statement:
-    'Cinq défauts se cachent dans cet extrait. Leur nature n’est dite nulle part, aucune liste ne vous est proposée.',
+    'Cet extrait contient des défauts. Ni leur nombre ni leur nature ne vous sont dits, et aucune liste ne vous est proposée.',
   snippet: {
     label: 'Extrait de test',
     language: 'ts',
@@ -49,7 +55,7 @@ const config = {
 
 /**
  * Une ligne n'est pas un bouton : c'est une option d'une liste à sélection
- * multiple. Vingt-cinq boutons feraient vingt-cinq arrêts de tabulation, et un
+ * multiple. Autant de boutons feraient autant d'arrêts de tabulation, et un
  * joueur au clavier devrait traverser tout le code pour atteindre le rendu.
  */
 const lineOption = (lineNumber: number) =>
@@ -76,16 +82,29 @@ describe('defect hunt game, rendered', () => {
    * lui rendrait cette règle et changerait ce que le jeu mesure.
    */
   it('never tells how many defects the extract carries before the review is rendered', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    const { container } = render(
+      <DefectHuntGame config={config} onSubmit={vi.fn()} />,
+    )
 
+    /**
+     * On lit le texte réellement visible, et on y cherche le compte sous
+     * toutes les formes par lesquelles il pourrait passer — « 4 défauts »,
+     * « 4 à trouver », « sur 4 », « 0/4 ». Un chiffre nu ne suffirait pas à
+     * conclure : les numéros de ligne en portent.
+     */
+    const visible = container.textContent ?? ''
+    const total = config.defects.length
+
+    expect(visible).not.toMatch(
+      new RegExp(`${total}\\s*(défaut|à trouver)`, 'i'),
+    )
+    expect(visible).not.toMatch(new RegExp(`(sur|/)\\s*${total}\\b`, 'i'))
     expect(screen.queryByText(/à trouver/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/sur 4/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/4 défauts/i)).not.toBeInTheDocument()
   })
 
   /**
-   * L'acceptance dure de la surface : un extrait de vingt-cinq lignes ne doit
-   * pas coûter vingt-cinq arrêts de tabulation. Un seul descendant de la liste
+   * L'acceptance dure de la surface : un extrait de plusieurs dizaines de lignes ne doit
+   * pas coûter autant d'arrêts de tabulation. Un seul descendant de la liste
    * porte `tabIndex=0`, les autres sont hors du parcours de tabulation.
    */
   it('costs a single tab stop for the whole sheet', () => {

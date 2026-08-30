@@ -9,7 +9,7 @@ La session est posée directement sur la situation `g1-2` en écrivant un instan
 | Fichier | État |
 | --- | --- |
 | `desktop-1-avant-marque.png` · `mobile-1-avant-marque.png` | La feuille ouverte, aucune marque, le cadran en cours |
-| `desktop-2-en-cours.png` · `mobile-2-en-cours.png` | Cinq lignes marquées — quatre défauts et une saine — le pied qui suit le compte |
+| `desktop-2-en-cours.png` · `mobile-2-en-cours.png` | Cinq lignes marquées — les défauts 2, 10, 11, 16 et une ligne saine — le pied qui suit le compte |
 | `desktop-3-focus-clavier.png` · `mobile-3-focus-clavier.png` | Le focus posé sur la feuille, deux flèches plus bas |
 | `desktop-4-verdict.png` · `mobile-4-verdict.png` | La revue rendue : les trois verdicts sur la feuille, le score net au pied, les annotations dessous |
 | `desktop-5-depassement.png` · `mobile-5-depassement.png` | Le budget épuisé, le cadran en dépassement, la feuille toujours jouable |
@@ -35,7 +35,17 @@ Le code ne défile jamais horizontalement : une ligne longue se replie. C'est le
 
 1. **Le nom accessible d'une ligne masquait le code.** Sur une `option`, `aria-label` remplace le contenu : un lecteur d'écran annonçait « Ligne 3 » sans jamais dire ce qu'elle contenait, ce qui rendait injouable un jeu qui consiste à lire du code. Le libellé porte désormais le code.
 2. **Le contour de focus reposait sur le défaut du navigateur.** Il est explicite, à deux pixels sur le jeton du plan.
-3. **Le corpus punissait le relecteur exhaustif.** Quatre lignes saines y restaient légitimement signalables, dont `client.release()` — visible marquée « à côté » dans la capture de la première tournée, alors que c'est l'endroit naturel où un relecteur signale la fuite. L'extrait a été réécrit : chaque défaut n'a plus qu'une seule ligne où on le signalerait.
+3. **Le corpus punissait le relecteur exhaustif.** Quatre lignes saines y restaient légitimement signalables, dont `client.release()` — visible marquée « à côté » dans la capture de la première tournée, alors que c'est l'endroit naturel où un relecteur signale la fuite.
+
+## Ce que la seconde revue a trouvé
+
+Le correctif ci-dessus n'avait pas suffi, et l'échec était au même endroit.
+
+Le corpus déclarait alors la fuite sur `client.release` sans parenthèses — marqueur unique dans tout le fichier, donc le garde-fou passait — mais le bloc n'avait **pas de `finally`**. Le correctif complet vivait donc sur deux lignes : les parenthèses, et le `finally` manquant. Pire : `page` vaut `NaN` dès qu'une requête arrive sans `?page`, donc `OFFSET NaN` fait toujours échouer la requête, donc le chemin d'erreur était le chemin par défaut et la ligne du `release` n'était jamais atteinte.
+
+Un relecteur qui diagnostiquait complètement et marquait les deux lignes sortait à `+1 − 1 = 0`. Celui qui n'en voyait que la moitié sortait à `+1`. **Le jeu payait mieux la lecture superficielle.**
+
+L'extrait a été réécrit une troisième fois : le `finally` existe, seules les parenthèses manquent, un contrôle d'autorisation visible ferme la ligne du routeur, et la réponse ne promet plus de pagination. Les deux lignes saines encore défendables sont désormais énumérées dans le test d'intégration, sous le nom `DEBATABLE_LINES`, avec un test qui casse si on en ajoute une troisième.
 
 ## Ce que la décision produit du 30/08 a changé
 

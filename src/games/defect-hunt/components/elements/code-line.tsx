@@ -38,7 +38,7 @@ const VerdictMark = ({ verdict }: { verdict: SettledVerdict }) => {
  * Une ligne de l'épreuve : la marge où l'on frappe, le numéro, le code.
  *
  * Avant le rendu, c'est une option d'une liste à sélection multiple — pas un
- * bouton : vingt-cinq boutons feraient vingt-cinq arrêts de tabulation, et un
+ * bouton : autant de boutons feraient autant d'arrêts de tabulation, et un
  * joueur au clavier devrait traverser tout le code pour atteindre le rendu.
  * La liste porte le focus, les flèches parcourent, l'espace marque. Voir
  * `use-roving-focus.hook.ts`.
@@ -137,7 +137,7 @@ export const CodeLine = ({
   }
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: le clavier est porté par la liste, pas par la ligne — un gestionnaire par ligne rouvrirait les vingt-cinq arrêts de tabulation que le motif à focus glissant ferme.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: le clavier est porté par la liste, pas par la ligne — un gestionnaire par ligne rouvrirait les arrêts de tabulation que le motif à focus glissant ferme.
     <div
       role="option"
       aria-selected={marked}

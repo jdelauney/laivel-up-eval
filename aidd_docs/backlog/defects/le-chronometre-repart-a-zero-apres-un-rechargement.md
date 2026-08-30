@@ -47,11 +47,17 @@ L'instant de départ vit dans le composant du jeu, et l'instantané de session n
 
 Le correctif appartient donc à la couche session, pas au jeu : il faut que l'instant d'ouverture de la situation courante survive au rechargement. Le tenir dans `defect-hunt` seul reviendrait à le réécrire dans chaque jeu minuté à venir.
 
-## Fix envisagé
+## Deux correctifs possibles, et pourquoi aucun n'est dans ce lot
 
-Un champ optionnel `currentGameStartedAt` dans l'instantané, sur le modèle de `repository` — optionnel exactement pour la même raison, une partie enregistrée avant son arrivée n'en porte pas, et la rendre requise ferait disparaître toutes ces parties.
+**Le bon.** Un champ optionnel `currentGameStartedAt` dans l'instantané de session, sur le modèle de `repository` — optionnel exactement pour la même raison, une partie enregistrée avant son arrivée n'en porte pas, et la rendre requise ferait disparaître toutes ces parties. La façade le pose à l'ouverture d'une situation et le remet à zéro au passage à la suivante.
 
-La façade le pose à l'ouverture d'une situation et le remet à zéro au passage à la suivante. Reste à trancher **comment le jeu le reçoit** : `GameComponentProps` vaut aujourd'hui `{ config, onSubmit }`, et l'élargir touche le contrat des cinq jeux livrés. C'est la vraie décision, et elle mérite son propre lot.
+Ce qu'il coûte : il faut trancher **comment le jeu le reçoit**. `GameComponentProps` vaut aujourd'hui `{ config, onSubmit }`, et l'élargir touche le contrat des cinq jeux livrés. C'est la vraie décision, et elle mérite son propre lot.
+
+**Le raccourci, et pourquoi il est écarté.** Le jeu pourrait écrire son propre instant de départ dans `localStorage`, sous une clé à lui, indexée par identifiant de situation. Ça ferme le contournement sans toucher `GameComponentProps` ni le noyau, et ce serait tentant.
+
+C'est écarté pour une raison de fond, pas de coût : le projet a **un seul chemin de persistance**, le port `PersistenceSessionAdapter` et son adaptateur `LocalSessionStorageAdapter`. Un jeu qui écrirait directement dans `localStorage` court-circuiterait ce port, échapperait à l'export JSON qui sert de trace d'audit, survivrait à `resetSession()`, et ferait du premier jeu minuté le précédent qui autorise les quatre suivants à en faire autant. Le prix de ce raccourci n'est pas dans ce lot, il est dans les suivants.
+
+Reste que le lot livre un critère `g1-2-c4` que quatre touches défont. C'est un arbitrage assumé et écrit, pas un oubli — le poids est borné à 1 sur les 7 points de la situation.
 
 ## Notes
 

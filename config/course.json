@@ -133,9 +133,9 @@
           "config": {
             "statement": "Cet extrait contient des défauts. Ni leur nombre, ni leur nature ne vous sont dits, et aucune liste ne vous est proposée. Marquez les lignes que vous jugez fautives, autant que vous voulez, et rendez votre revue quand vous l'estimez terminée. Une ligne fautive marquée vaut un point, une ligne saine marquée en coûte un, une ligne laissée de côté ne vaut rien. Le temps imparti court à l'écran : il ne vous interrompt jamais, mais rendre au-delà se voit.",
             "snippet": {
-              "label": "Un routeur de fichiers, paginé",
+              "label": "Un routeur de fichiers",
               "language": "ts",
-              "code": "import { Router } from 'express'\nimport { sanitizeIdentifier } from 'express-query-guard'\nimport { db } from '../infra/db'\n\nconst PAGE_SIZE = 20\nconst router = Router()\n\nrouter.get('/owners/:owner/files', async (req, res, next) => {\n  const page = Number(req.query.page)\n  const offset = page * PAGE_SIZE\n\n  try {\n    const client = await db.connect()\n    const sql = `SELECT id, name FROM files WHERE owner = '${req.params.owner}' LIMIT ${PAGE_SIZE} OFFSET ${offset}`\n    const { rows } = await client.query(sql)\n\n    client.release\n    res.json({ items: rows })\n  } catch (error) {\n    next(error)\n  }\n})\n\nexport default router"
+              "code": "import { Router } from 'express'\nimport { sanitizeIdentifier } from 'express-query-guard'\nimport { requireOwner } from '../auth/require-owner'\nimport { db } from '../infra/db'\n\nconst PAGE_SIZE = 20\nconst router = Router()\n\nrouter.get('/owners/:owner/files', requireOwner, async (req, res, next) => {\n  const page = Number(req.query.page)\n  const offset = page * PAGE_SIZE\n  let client\n\n  try {\n    client = await db.connect()\n    const sql = `SELECT id, name FROM files WHERE owner = '${req.params.owner}' LIMIT ${PAGE_SIZE} OFFSET ${offset}`\n    const { rows } = await client.query(sql)\n\n    res.json({ items: rows })\n  } catch (error) {\n    next(error)\n  } finally {\n    client?.release\n  }\n})\n\nexport default router"
             },
             "timeLimitSeconds": 180,
             "defects": [
@@ -147,27 +147,27 @@
               },
               {
                 "id": "e2",
-                "line": 9,
+                "line": 10,
                 "kind": "contract",
                 "reveal": "Number(req.query.page) convertit une valeur de requête sans jamais la valider : si le paramètre est absent, répété ou non numérique, page vaut NaN, et rien ne le signale. Tout ce qui en découle plus bas hérite du NaN."
               },
               {
                 "id": "e3",
-                "line": 10,
+                "line": 11,
                 "kind": "logic",
                 "reveal": "offset vaut page * PAGE_SIZE : sur la première page, page vaut 1, ce qui saute déjà les vingt premiers éléments au lieu de les inclure. La formule correcte est (page - 1) * PAGE_SIZE."
               },
               {
                 "id": "e4",
-                "line": 14,
+                "line": 16,
                 "kind": "security",
                 "reveal": "req.params.owner vient de l'URL et est interpolé brut dans la requête SQL plutôt que lié en paramètre : c'est une injection SQL directe."
               },
               {
                 "id": "e5",
-                "line": 17,
+                "line": 23,
                 "kind": "resource",
-                "reveal": "client.release est lu, jamais appelé : il manque les parenthèses. L'expression ne fait rien, la connexion n'est jamais rendue au pool, et chaque requête en fuit une jusqu'à épuisement."
+                "reveal": "client?.release est lu, jamais appelé : il manque les parenthèses. Le bloc finally s'exécute bien, mais l'expression ne fait rien — la connexion n'est jamais rendue au pool, et chaque requête en fuit une jusqu'à épuisement."
               }
             ]
           },
