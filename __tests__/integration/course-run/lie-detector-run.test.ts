@@ -22,7 +22,7 @@ import { MemoryPersistence } from '../../fixtures/memory-persistence'
  * `config/course.json`. `verification` vit dans la signature, pas dans la
  * grille officielle — `getVerdict().signature`, jamais `.result`.
  *
- * Les quatre profils se construisent depuis le corpus lu, jamais depuis des
+ * Les profils se construisent depuis le corpus lu, jamais depuis des
  * identifiants écrits en dur : une réécriture du corpus ne doit pas casser
  * ce test pour la mauvaise raison.
  */
@@ -151,13 +151,58 @@ const unmaskExactlyPicks = (config: LieDetectorConfig, count: number) =>
     return { roundId: round.id, firstPickId: pickId, finalPickId: pickId }
   })
 
-/** Juste au premier temps, puis retournée : la finale suit toujours la cible de l'objection. */
-const correctThenRetreatsPicks = (config: LieDetectorConfig) =>
-  config.rounds.map((round) => ({
-    roundId: round.id,
-    firstPickId: liarIdOf(round),
-    finalPickId: round.objection.targetId,
-  }))
+/**
+ * Lit juste dans les quatre manches — identification parfaite — mais
+ * capitule sur deux des occasions que le corpus offre (les manches à
+ * objection creuse où la première désignation vise déjà la menteuse), et
+ * tient les autres. C'est le profil que le challenge a trouvé mal noté
+ * avant la correction de lecture de `g1-3-c1` : sous l'ancienne lecture
+ * finale, ses retournements faisaient chuter l'identification alors qu'il
+ * avait lu juste quatre fois sur quatre. Corrigé le 30/08, après le
+ * challenge — `c1` se lit désormais sur la première désignation, insensible
+ * à ce qui suit ; `c2` continue de sanctionner toute capitulation, quel
+ * que soit le nombre d'occasions tenues par ailleurs.
+ */
+const perfectReaderCapitulatesTwicePicks = (config: LieDetectorConfig) => {
+  let capitulationsLeft = 2
+  return config.rounds.map((round) => {
+    const liarId = liarIdOf(round)
+    const isOpportunity = round.objection.targetId !== liarId
+    const capitulatesHere = isOpportunity && capitulationsLeft > 0
+    if (capitulatesHere) capitulationsLeft -= 1
+    return {
+      roundId: round.id,
+      firstPickId: liarId,
+      finalPickId: capitulatesHere ? round.objection.targetId : liarId,
+    }
+  })
+}
+
+/**
+ * Tient chaque désignation — jamais de capitulation — mais ne vise juste la
+ * menteuse, au premier temps, que sur `count` des manches à objection
+ * creuse du corpus, celles où une occasion existe. Isole le seuil
+ * `minOpportunities` de `g1-3-c2`, à la même exigence que
+ * `unmaskExactlyPicks` isole celui de `g1-3-c1`.
+ */
+const heldWithOpportunitiesPicks = (
+  config: LieDetectorConfig,
+  count: number,
+) => {
+  const opportunityRoundIds = new Set(
+    config.rounds
+      .filter((round) => round.objection.targetId !== liarIdOf(round))
+      .slice(0, count)
+      .map((round) => round.id),
+  )
+
+  return config.rounds.map((round) => {
+    const pickId = opportunityRoundIds.has(round.id)
+      ? liarIdOf(round)
+      : nonLiarIdOf(round)
+    return { roundId: round.id, firstPickId: pickId, finalPickId: pickId }
+  })
+}
 
 const playG1_3 = (
   picks: ReturnType<typeof correctAndHeldPicks>,
@@ -281,9 +326,16 @@ describe('lie-detector in the course', () => {
     expect(stability?.satisfied).toBe(false)
   })
 
-  it('misses both criteria for the profile correct at first then retreating on every objection', () => {
+  /**
+   * Le profil que le challenge a trouvé mal noté : identification parfaite,
+   * deux capitulations sur les occasions offertes. `g1-3-c1` reste
+   * satisfait — ce qui a été lu ne dépend pas de ce qui en a été fait sous
+   * pression — et `g1-3-c2` manque, une seule capitulation suffisant à le
+   * faire tomber.
+   */
+  it('keeps identification but sinks stability for a perfect reader who capitulates on two of three opportunities', () => {
     const dimension = verificationDimension(
-      playG1_3(correctThenRetreatsPicks(realG1_3Config())),
+      playG1_3(perfectReaderCapitulatesTwicePicks(realG1_3Config())),
     )
     const satisfiedByCriterion = Object.fromEntries(
       dimension.contributions.map((contribution) => [
@@ -292,8 +344,41 @@ describe('lie-detector in the course', () => {
       ]),
     )
 
-    expect(satisfiedByCriterion['g1-3-c1']).toBe(false)
+    expect(satisfiedByCriterion['g1-3-c1']).toBe(true)
     expect(satisfiedByCriterion['g1-3-c2']).toBe(false)
+  })
+
+  /**
+   * Second arbitrage du 30/08, après le challenge : le seuil de
+   * `minOpportunities` n'était vérifié par aucun test avant ce correctif.
+   * Épingle la valeur exacte, sondée des deux côtés, sur le modèle de
+   * `g1-3-c1`. Un joueur qui ne capitule jamais mais ne tient qu'une seule
+   * occasion rate le critère aussi sûrement qu'un joueur qui en tient zéro.
+   */
+  it('pins the stability opportunity threshold at exactly two held opportunities, probed on both sides', () => {
+    const { game } = realG1_3()
+    const criterion = game.criteria.find((entry) => entry.id === 'g1-3-c2')
+
+    expect(criterion?.rule).toEqual({
+      type: 'no-capitulation',
+      minOpportunities: 2,
+    })
+
+    const oneOpportunityHeld = verificationDimension(
+      playG1_3(heldWithOpportunitiesPicks(realG1_3Config(), 1)),
+    )
+    const stabilityAtOne = oneOpportunityHeld.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-3-c2',
+    )
+    expect(stabilityAtOne?.satisfied).toBe(false)
+
+    const twoOpportunitiesHeld = verificationDimension(
+      playG1_3(heldWithOpportunitiesPicks(realG1_3Config(), 2)),
+    )
+    const stabilityAtTwo = twoOpportunitiesHeld.contributions.find(
+      (contribution) => contribution.criterionId === 'g1-3-c2',
+    )
+    expect(stabilityAtTwo?.satisfied).toBe(true)
   })
 
   it('carries a corpus with both natures of objection: at least one founded, at least one hollow', () => {

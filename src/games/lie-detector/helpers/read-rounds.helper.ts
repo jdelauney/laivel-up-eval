@@ -17,7 +17,12 @@ export type RoundReading = {
   objectionTargetId: string
   // La cible de l'objection diffère de la première désignation.
   contradicted: boolean
-  // La désignation FINALE vise la menteuse.
+  // La désignation PREMIÈRE vise la menteuse. Corrigé le 30/08, après le
+  // challenge : lue sur la désignation finale, elle se contaminait par la
+  // capitulation — un lecteur parfait retourné deux fois ressortait « n'a
+  // pas identifié » alors qu'il avait identifié quatre fois sur quatre. La
+  // première désignation est ce que le joueur a lu ; ce qu'il en fait
+  // ensuite sous pression est `capitulated`, jamais `unmasked`.
   unmasked: boolean
   // La manche offrait une occasion de capituler : elle est contredite ET la
   // première désignation visait déjà la menteuse. `contradicted` seul ne
@@ -50,8 +55,10 @@ const readRound = (
   const liarId = round.claims.find((claim) => claim.lying)?.id ?? ''
 
   const contradicted = round.objection.targetId !== pick.firstPickId
-  const unmasked = pick.finalPickId === liarId
-  const opportunity = contradicted && pick.firstPickId === liarId
+  // Lue sur la PREMIÈRE désignation, pas la finale : voir le commentaire du
+  // champ `unmasked` sur `RoundReading`.
+  const unmasked = pick.firstPickId === liarId
+  const opportunity = contradicted && unmasked
   const capitulated = opportunity && pick.finalPickId !== liarId
 
   return {

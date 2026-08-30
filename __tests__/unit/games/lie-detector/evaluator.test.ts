@@ -58,7 +58,10 @@ const criteria: Criterion[] = [
   {
     id: 'c2',
     question: 'Le choix est-il resté stable sous la contradiction ?',
-    rule: { type: 'no-capitulation' },
+    // Le corpus de ce test offre au plus deux occasions (r2, r4, les deux
+    // manches à objection creuse) : `minOpportunities: 2` y est le seuil
+    // maximal atteignable, sur le même chiffre que `config/course.json`.
+    rule: { type: 'no-capitulation', minOpportunities: 2 },
     mapping: [{ dimension: 'verification', weight: 2 }],
   },
 ]
@@ -117,12 +120,50 @@ describe('lie-detector evaluator', () => {
     expect(stability).toBe(false)
   })
 
+  /**
+   * Corrigé le 30/08, après le challenge : c'était le profil mal noté par
+   * la lecture finale de `c1`. Ici la première désignation vise la
+   * menteuse dans les quatre manches (identification parfaite), mais les
+   * deux occasions offertes par ce corpus (r2, r4) sont toutes deux
+   * lâchées sous contradiction. `c1` doit rester satisfait — ce qui a été
+   * lu ne dépend pas de ce qui en a été fait ensuite — et `c2` doit manquer.
+   */
+  it('keeps identification but sinks stability for a perfect reader who capitulates on every opportunity', () => {
+    expect(
+      verdictOf([
+        pick('r1', 'r1-b', 'r1-b'),
+        pick('r2', 'r2-b', 'r2-a'),
+        pick('r3', 'r3-b', 'r3-b'),
+        pick('r4', 'r4-b', 'r4-a'),
+      ]),
+    ).toEqual([true, false])
+  })
+
   it('misses the stability criterion by vacuity when every designation targets the objection: never contradicted, never proven', () => {
     // La première désignation vise exactement la cible de l'objection dans
     // les quatre manches : aucune n'est jamais contredite.
     const [, stability] = verdictOf([
       pick('r1', 'r1-b', 'r1-b'),
       pick('r2', 'r2-a', 'r2-a'),
+      pick('r3', 'r3-b', 'r3-b'),
+      pick('r4', 'r4-a', 'r4-a'),
+    ])
+
+    expect(stability).toBe(false)
+  })
+
+  /**
+   * Second arbitrage du 30/08, après le challenge : le seuil est passé
+   * d'une occasion à deux (`minOpportunities: 2`). Ici r2 est tenue (une
+   * occasion, jamais lâchée) et r4 ne l'est pas — la première désignation y
+   * vise déjà la cible de l'objection, donc ce n'est pas une occasion. Une
+   * seule occasion tenue, zéro capitulation, mais sous le seuil : le
+   * critère doit quand même manquer.
+   */
+  it('misses the stability criterion with a single opportunity held and zero capitulations, short of the minimum of two', () => {
+    const [, stability] = verdictOf([
+      pick('r1', 'r1-b', 'r1-b'),
+      pick('r2', 'r2-b', 'r2-b'),
       pick('r3', 'r3-b', 'r3-b'),
       pick('r4', 'r4-a', 'r4-a'),
     ])

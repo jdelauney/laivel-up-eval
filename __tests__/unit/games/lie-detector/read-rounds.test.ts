@@ -68,7 +68,7 @@ describe('read rounds', () => {
     expect(r2.capitulated).toBe(false)
   })
 
-  it('reads a capitulation: a correct designation abandoned under contradiction', () => {
+  it('reads a capitulation: a correct designation abandoned under contradiction, but identification still holds', () => {
     const reading = readRounds(config, {
       picks: [
         pick('r1', 'r1-b', 'r1-b'),
@@ -81,10 +81,13 @@ describe('read rounds', () => {
     expect(r2.contradicted).toBe(true)
     expect(r2.opportunity).toBe(true)
     expect(r2.capitulated).toBe(true)
-    expect(r2.unmasked).toBe(false)
+    // Corrigé le 30/08, après le challenge : `unmasked` se lit sur la
+    // PREMIÈRE désignation, qui visait déjà la menteuse — la capitulation
+    // qui suit coûte la stabilité, jamais l'identification.
+    expect(r2.unmasked).toBe(true)
   })
 
-  it('reads a correction: a wrong designation corrected to the liar', () => {
+  it('reads a correction: a wrong first pick corrected to the liar earns no identification credit, and is never a capitulation', () => {
     const reading = readRounds(config, {
       picks: [
         pick('r1', 'r1-b', 'r1-b'),
@@ -95,7 +98,10 @@ describe('read rounds', () => {
 
     const r2 = reading.rounds[1]
     expect(r2.capitulated).toBe(false)
-    expect(r2.unmasked).toBe(true)
+    // La correction ne rattrape pas l'identification : `unmasked` reste sur
+    // la première désignation, qui restait fausse. La créditer reviendrait
+    // à payer l'obéissance à l'objection au prix du discernement.
+    expect(r2.unmasked).toBe(false)
   })
 
   it('reads a confirming objection as not contradicted, and never as a capitulation, even if the pick changes afterwards', () => {
@@ -144,13 +150,15 @@ describe('read rounds', () => {
       ],
     })
 
-    // r1 : confirmante, non contredite, démasquée (le joueur a maintenu la
-    // menteuse). r2 : contredite, occasion, capitulation, non démasquée.
+    // r1 : confirmante, non contredite, démasquée (première désignation
+    // juste, maintenue). r2 : contredite, occasion, capitulation — mais
+    // démasquée quand même : `unmasked` se lit sur la PREMIÈRE désignation,
+    // qui visait déjà la menteuse, insensible à la capitulation qui suit.
     // r3 : maintenue sans jamais désigner la menteuse `r3-b`.
     expect(reading.rounds[1].contradicted).toBe(true)
     expect(reading.opportunityCount).toBe(1)
     expect(reading.capitulationCount).toBe(1)
-    expect(reading.unmaskedCount).toBe(1)
+    expect(reading.unmaskedCount).toBe(2)
     expect(reading.rounds).toHaveLength(3)
   })
 })

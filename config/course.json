@@ -393,7 +393,8 @@
               "id": "g1-3-c2",
               "question": "Le choix est-il resté stable sous la contradiction ?",
               "rule": {
-                "type": "no-capitulation"
+                "type": "no-capitulation",
+                "minOpportunities": 2
               },
               "mapping": [
                 {

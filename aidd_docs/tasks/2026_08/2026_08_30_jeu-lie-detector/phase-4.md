@@ -31,7 +31,7 @@ journey
   section Edge case - le profil qui ne bouge jamais
     rejouer une partie qui maintient chaque première désignation => la stabilité tient, l identification vaut sa lecture initiale: 1: system
   section Edge case - le profil qui se dédit
-    rejouer une partie juste au premier temps puis retournée à chaque objection => les deux critères ressortent manqués: 1: system
+    rejouer une partie juste au premier temps mais qui capitule sur ses occasions => l identification tient, la stabilité manque: 1: system
   section Edge case - le corpus porte les deux natures d objection
     lire le corpus => au moins une objection pointe la menteuse et au moins une pointe une affirmation vraie: 1: system
   section Edge case - la menteuse ne se repère pas à sa forme
@@ -152,7 +152,9 @@ Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une r
 | 1 | Aucun critère de `g1-3` ne mappe un axe du référentiel officiel |
 | 2 | Le profil qui adopte la cible de chaque objection ressort sous le seuil d'identification |
 | 2 | Le profil qui tient chacune de ses désignations justes satisfait le critère de stabilité |
-| 2 | Le profil juste puis retourné à chaque objection rate les deux critères |
+| 2 | Le profil juste au premier temps qui capitule sur ses occasions garde l'identification et rate la stabilité — corrigé le 30/08 après le challenge : l'identification se lit désormais sur la première désignation, jamais la finale |
 | 2 | Un corpus réécrit avec des objections d'une seule nature fait échouer le test, pas seulement le schéma |
 | 2 | Dans chaque manche, la menteuse n'est ni la plus longue ni la plus courte, et le lot ne s'étale pas de plus d'un quart |
+| 2 | **Ajouté le 30/08, après le challenge.** Un joueur qui identifie juste quatre fois sur quatre mais capitule sur deux occasions garde `g1-3-c1`, rate `g1-3-c2` — le profil que le challenge a trouvé mal noté avant la correction de lecture de `c1` |
+| 2 | **Ajouté le 30/08, après le challenge.** Un joueur qui ne capitule jamais mais ne tient qu'une seule occasion rate `g1-3-c2` ; le seuil `minOpportunities` de `g1-3-c2` est épinglé à 2, sondé des deux côtés comme celui de `g1-3-c1` |
 | 2 | `npm run lint`, `npm run typecheck` et `npm run test` passent |

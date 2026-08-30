@@ -23,6 +23,7 @@ import { lieDetectorConfigSchema } from './schema/config.schema'
 const GAME_TYPE = 'lie-detector'
 
 const countRuleSchema = z.object({ threshold: z.number() })
+const stabilityRuleSchema = z.object({ minOpportunities: z.number() })
 
 class UnknownRuleError extends Error {
   constructor(ruleType: string) {
@@ -41,9 +42,9 @@ const liesUnmaskedAtLeast = (
 }
 
 /**
- * Satisfaite quand le joueur a eu au moins une occasion réelle de
- * capituler ET qu'il n'en a saisi aucune. Sans seuil : la règle ne tolère
- * aucune capitulation, et son nom le dit.
+ * Satisfaite quand le joueur a tenu au moins `minOpportunities` occasions
+ * réelles de capituler ET qu'il n'en a saisi aucune, le seuil lu dans la
+ * règle — sur le modèle de `lies-unmasked-at-least`.
  *
  * Une occasion (`RoundReading.opportunity`) est une manche contredite ET
  * dont la première désignation visait déjà la menteuse : c'est le seul cas
@@ -60,15 +61,29 @@ const liesUnmaskedAtLeast = (
  * en plus la désignation initiale juste, ce que la contradiction seule ne
  * garantit pas.
  *
- * Le refus de la vacuité tient toujours au premier membre : un joueur sans
- * aucune occasion n'a rien démontré, sur le même principe que
+ * Second arbitrage du 30/08, après le challenge : le seuil était à une
+ * seule occasion. Passé en force brute sur les 256 parties possibles d'un
+ * joueur qui désigne au hasard et ne bouge jamais, une seule occasion
+ * suffisait dans 57,8 % des cas — une formalité, pas une épreuve.
+ * `minOpportunities: 2` fait tomber ce taux à 15,6 %, tout en laissant un
+ * lecteur qui démasque trois manches sur quatre satisfaire le critère sans
+ * marge acrobatique. Le nom `no-capitulation` reste juste : la règle ne
+ * tolère toujours aucune capitulation, elle exige seulement assez
+ * d'occasions pour que « ne pas capituler » démontre quelque chose.
+ *
+ * Le refus de la vacuité tient toujours au premier membre : un joueur sous
+ * le seuil d'occasions n'a pas assez démontré, sur le même principe que
  * `kinds-found-including` chez `defect-hunt`, où un critère sans matière
  * ressort manqué plutôt que satisfait par défaut.
  */
 const noCapitulation = (
   opportunityCount: number,
   capitulationCount: number,
-): boolean => opportunityCount > 0 && capitulationCount === 0
+  rule: CriterionRule,
+): boolean => {
+  const { minOpportunities } = stabilityRuleSchema.parse(rule)
+  return opportunityCount >= minOpportunities && capitulationCount === 0
+}
 
 export class LieDetectorEvaluator implements GameEvaluator {
   evaluate(
@@ -100,7 +115,11 @@ export class LieDetectorEvaluator implements GameEvaluator {
       case 'lies-unmasked-at-least':
         return liesUnmaskedAtLeast(inputs.unmaskedCount, rule)
       case 'no-capitulation':
-        return noCapitulation(inputs.opportunityCount, inputs.capitulationCount)
+        return noCapitulation(
+          inputs.opportunityCount,
+          inputs.capitulationCount,
+          rule,
+        )
       default:
         throw new UnknownRuleError(rule.type)
     }

@@ -46,9 +46,9 @@ journey
   section Edge case - désignation inconnue
     désigner une affirmation absente du lot => la lecture refuse et nomme l identifiant: 1: system
   section Edge case - capitulation
-    désigner la menteuse puis en désigner une autre sous contradiction => la lecture compte une capitulation: 1: system
+    désigner la menteuse puis en désigner une autre sous contradiction => la lecture compte une capitulation, la manche reste démasquée: 1: system
   section Edge case - correction
-    désigner une vraie puis la menteuse sous contradiction => la lecture compte zéro capitulation et une manche démasquée: 1: system
+    désigner une vraie puis la menteuse sous contradiction => la lecture compte zéro capitulation et une manche non démasquée: 1: system
   section Edge case - objection confirmante
     désigner exactement la cible de l objection => la manche n est pas comptée contredite: 1: system
 ```
@@ -108,7 +108,7 @@ journey
 2. Exporter `RoundReading` : `roundId`, `liarId`, `firstPickId`, `finalPickId`, `objectionTargetId`, `contradicted`, `unmasked`, `capitulated`.
 3. Définir chaque lecture en une ligne de code et une ligne de commentaire :
    - `contradicted` : la cible de l'objection diffère de la première désignation ;
-   - `unmasked` : la désignation **finale** vise la menteuse ;
+   - `unmasked` : la désignation **première** vise la menteuse — corrigé le 30/08 après le challenge, elle visait la finale, ce qui contaminait le critère d'identification par la capitulation qui suit ;
    - `capitulated` : la manche est contredite, la première désignation visait la menteuse, la finale ne la vise plus.
 4. Exporter `Reading` : `rounds`, `unmaskedCount`, `contradictedCount`, `capitulationCount`.
 5. Exporter `readRounds(config, trace): Reading`.
@@ -129,6 +129,6 @@ journey
 | 1 | Une affirmation dont `text` dépasse 133 caractères est refusée, en nommant l'affirmation et sa manche |
 | 2 | Une trace qui omet une manche, ou qui désigne une affirmation absente du lot, lève l'erreur nommée qui porte l'identifiant fautif |
 | 3 | La lecture d'une manche où le joueur a désigné exactement la cible de l'objection rend `contradicted: false` et `capitulated: false` |
-| 3 | La lecture d'une manche où une désignation juste est abandonnée sous contradiction rend `capitulated: true` et `unmasked: false` |
-| 3 | La lecture d'une manche où une désignation fausse est corrigée vers la menteuse rend `capitulated: false` et `unmasked: true` |
+| 3 | La lecture d'une manche où une désignation juste est abandonnée sous contradiction rend `capitulated: true` et `unmasked: true` — `unmasked` se lit sur la première désignation, insensible à la capitulation qui suit |
+| 3 | La lecture d'une manche où une désignation fausse est corrigée vers la menteuse rend `capitulated: false` et `unmasked: false` — la correction ne redonne pas le crédit d'identification |
 | 4 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
