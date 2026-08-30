@@ -40,7 +40,6 @@ export const CutPanel = ({
           <CauseOption
             key={cause.id}
             text={cause.text}
-            selected={cause.id === revelation?.cutCauseId}
             interactive={interactive}
             onSelect={interactive ? () => onCut(cause.id) : undefined}
             actual={causeRevelation?.actual}

@@ -107,9 +107,20 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
    * favorisé sur l'ensemble d'une partie — au clavier comme visuellement,
    * l'ordre DOM porte les deux à la fois. Limite assumée, écrite en phase 5 :
    * ce n'est pas la parité par écran que la phase 3 visait, seulement
-   * l'absence de biais systématique sur les trois situations.
+   * l'absence de biais systématique de *position* sur les trois situations.
+   *
+   * **Correction du 30/08, tour 2 de revue : le sens de l'alternance
+   * s'inverse.** `c2` note l'ordre au seuil « 2 sur 3 ». Avec le cadrage en
+   * tête sur `s1` et `s3` (l'ancien réglage), un joueur mobile qui se
+   * contente de suivre l'écran de haut en bas cadrait en premier deux fois
+   * sur trois et tenait `c2` sans intention. Aucune alternance ne peut être
+   * neutre pour un seuil de majorité sur un nombre impair de situations —
+   * ce n'est pas ce que ce réglage prétend. Il inverse simplement qui la
+   * passivité favorise : le marché est désormais en tête sur `s1` et `s3`,
+   * le cadrage sur `s2` seulement — un joueur passif cadre en premier une
+   * fois sur trois et **manque** `c2` au lieu de le décrocher.
    */
-  const cadrageFirst = (situationNumber - 1) % 2 === 0
+  const cadrageFirst = (situationNumber - 1) % 2 !== 0
 
   return (
     <div className="flex flex-col gap-3 sm:gap-6">

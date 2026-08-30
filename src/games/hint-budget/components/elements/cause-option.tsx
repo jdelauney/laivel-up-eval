@@ -11,24 +11,24 @@ import { Circle, Disc } from 'lucide-react'
  */
 export const CauseOption = ({
   text,
-  selected,
   interactive,
   onSelect,
   actual,
   verification,
 }: {
   text: string
-  selected: boolean
   interactive: boolean
   onSelect?: () => void
   actual?: boolean
   verification?: string
 }) => {
-  // `selected` ne peut valoir `true` qu'à la révélation : `CutPanel` le
-  // dérive de `revelation?.cutCauseId`, `undefined` tant que la situation
-  // n'est pas tranchée. Avant la révélation, la carte ne porte donc jamais
-  // de marque de sélection — seul `aria-pressed` en garde trace pour le
-  // clavier et le lecteur d'écran.
+  // Le clic est l'action elle-même — immédiate, irréversible — jamais un
+  // premier temps de sélection suivi d'une confirmation : il n'existe donc
+  // aucun état « choisie, pas encore tranchée » à porter avant la
+  // révélation. `aria-pressed` supposait cet état intermédiaire ; retiré
+  // le 30/08, tour 2, avec la prop `selected` qui ne l'alimentait jamais
+  // (elle ne pouvait valoir `true` qu'à la révélation, où cette branche ne
+  // se rend plus).
   const revealed = actual !== undefined
   const stateLabel = revealed
     ? actual
@@ -86,7 +86,6 @@ export const CauseOption = ({
   return (
     <button
       type="button"
-      aria-pressed={selected}
       onClick={onSelect}
       className={`${shell} outline-plane-foreground -outline-offset-2 hover:bg-plane-foreground/4 focus-visible:outline-2`}
     >
