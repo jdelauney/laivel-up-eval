@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Instruction: Le jeu dans le parcours, et son corpus
@@ -36,6 +36,8 @@ journey
     lire le corpus => au moins une objection pointe la menteuse et au moins une pointe une affirmation vraie: 1: system
   section Edge case - la menteuse ne se repère pas à sa forme
     mesurer les affirmations de chaque manche => la menteuse n est ni la plus longue ni la plus courte de son lot: 1: system
+  section Edge case - le lot est de longueur homogène
+    mesurer l écart entre la plus longue et la plus courte affirmation d une manche => il ne dépasse pas le quart de la plus longue: 1: system
 ```
 
 ## Le corpus
@@ -43,6 +45,17 @@ journey
 Quatre manches, quatre affirmations chacune. Les textes ci-dessous sont **définitifs** : les recopier mot pour mot dans `config/course.json`, sans les reformuler.
 
 Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand elle est vraie, pourquoi elle est fausse quand elle ment. Elle n'apparaît qu'à la révélation.
+
+### La longueur est une contrainte du corpus, pas un détail de rédaction
+
+**Correction du 30/08, après la première transcription.** La première écriture de ce corpus posait des textes libres, et deux menteuses sur quatre se trouvaient être l'affirmation **la plus longue** de leur lot — 143 caractères contre 111 à 133 autour. Un joueur pressé y trouve la bonne réponse sans lire : le lot le plus argumenté est celui qui se défend, donc celui qui ment. Le jeu mesurait alors la reconnaissance d'un motif de mise en forme, ce qu'il est justement écrit pour ne pas mesurer.
+
+Deux garde-fous en sortent, tous deux mesurés sur `text.length` — les caractères, une seule métrique, parce qu'un décompte de mots compte la ponctuation isolée comme un mot et rend le test bruité :
+
+1. Dans chaque manche, la menteuse n'est **ni la plus longue ni la plus courte** du lot.
+2. Dans chaque manche, l'écart entre la plus longue et la plus courte ne dépasse pas **un quart** de la plus longue. Le premier garde-fou seul autorisait encore un lot allant de 80 à 168 caractères, où la menteuse est au milieu mais où deux affirmations se signalent par leur taille.
+
+Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une retouche future d'un seul mot peut rouvrir le trou : c'est le rôle des deux tests.
 
 ### Manche 1 — `r1` · le contexte de projet
 
@@ -52,8 +65,8 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 | --- | --- | --- | --- |
 | `r1-a` | « Un fichier de contexte versionné profite à toute personne qui utilise l'assistant sur ce dépôt, pas seulement à celle qui l'a écrit. » | non | « Il est lu depuis le dépôt : quiconque le clone l'obtient, sans avoir rien à reconfigurer. » |
 | `r1-b` | « Un contexte trop long finit par diluer ce qui compte : il occupe la fenêtre sans rendre les instructions importantes plus saillantes. » | non | « L'effet est documenté et mesuré sur les longues fenêtres, où une instruction placée au milieu est moins suivie qu'en tête ou en fin. » |
-| `r1-c` | « Une fois le fichier de contexte en place, l'assistant s'y conforme sans qu'on ait à le vérifier : c'est ce qui le distingue d'un simple prompt. » | **oui** | « Un contexte oriente, il ne contraint pas. Ce qui contraint est exécutable : un hook, un test, une commande qui échoue. Le contexte réduit la fréquence des écarts, il ne les supprime pas, et la vérification reste due. » |
-| `r1-d` | « Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une fois. » | non | « C'est le cran haut de l'échelle de pilotage du contexte : un contexte transférable à quelqu'un d'autre. » |
+| `r1-c` | « Une fois le contexte posé, l'assistant s'y conforme sans qu'on ait à le vérifier : c'est ce qui le distingue d'un prompt. » | **oui** | « Un contexte oriente, il ne contraint pas. Ce qui contraint est exécutable : un hook, un test, une commande qui échoue. Le contexte réduit la fréquence des écarts, il ne les supprime pas, et la vérification reste due. » |
+| `r1-d` | « Un contexte écrit pour l'assistant sert aussi à un nouveau venu humain : c'est le même besoin, décrit une seule fois. » | non | « C'est le cran haut de l'échelle de pilotage du contexte : un contexte transférable à quelqu'un d'autre. » |
 
 > `objection` → cible `r1-b`, **creuse** : « Je pense que c'est celle sur la dilution qui ment. Les modèles récents tiennent des fenêtres de plusieurs centaines de milliers de jetons : la longueur du contexte n'est plus un facteur. »
 
@@ -63,10 +76,10 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 
 | id | Affirmation | Ment | Vérification |
 | --- | --- | --- | --- |
-| `r2-a` | « Un test écrit par le même assistant que le code qu'il teste peut passer pour une mauvaise raison : il peut décrire ce que le code fait, plutôt que ce qui était demandé. » | non | « Se vérifie en cassant le comportement attendu : un test qui reste vert testait le code, pas la demande. » |
-| `r2-b` | « Quand l'assistant détaille son raisonnement pas à pas, la réponse est plus fiable : le niveau de détail de l'explication indique sa justesse. » | **oui** | « L'explication est produite par le même processus que la réponse et peut la justifier après coup. Une explication longue et une réponse fausse coexistent sans difficulté. Ce qui indique la justesse est une vérification indépendante : une exécution, une source ouverte. » |
-| `r2-c` | « Un assistant qui cite une source ne l'a pas nécessairement lue : la citation se vérifie en l'ouvrant. » | non | « Se vérifie en ouvrant la source citée et en y cherchant l'affirmation qu'elle est censée porter. » |
-| `r2-d` | « Faire échouer un test avant de le faire passer prouve qu'il teste quelque chose. » | non | « Un test qui n'a jamais été vu rouge peut être vert parce qu'il n'assure rien. Le voir échouer sur le comportement absent est ce qui le qualifie. » |
+| `r2-a` | « Un test écrit par le même assistant que le code peut passer pour une mauvaise raison : il décrit ce que le code fait, pas la demande. » | non | « Se vérifie en cassant le comportement attendu : un test qui reste vert testait le code, pas la demande. » |
+| `r2-b` | « Quand l'assistant détaille son raisonnement pas à pas, la réponse est plus fiable : le niveau de détail indique sa justesse. » | **oui** | « L'explication est produite par le même processus que la réponse et peut la justifier après coup. Une explication longue et une réponse fausse coexistent sans difficulté. Ce qui indique la justesse est une vérification indépendante : une exécution, une source ouverte. » |
+| `r2-c` | « Un assistant qui cite une source ne l'a pas nécessairement lue : la citation ne vaut que si on l'ouvre soi-même. » | non | « Se vérifie en ouvrant la source citée et en y cherchant l'affirmation qu'elle est censée porter. » |
+| `r2-d` | « Faire échouer un test avant de le faire passer est ce qui prouve qu'il teste réellement quelque chose. » | non | « Un test qui n'a jamais été vu rouge peut être vert parce qu'il n'assure rien. Le voir échouer sur le comportement absent est ce qui le qualifie. » |
 
 > `objection` → cible `r2-b`, **fondée** : « Je pense que c'est celle sur le raisonnement détaillé qui ment. Une explication est une reconstruction : elle est produite en même temps que la réponse et peut la justifier après coup. »
 
@@ -76,10 +89,10 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 
 | id | Affirmation | Ment | Vérification |
 | --- | --- | --- | --- |
-| `r3-a` | « Découper en lots plus petits rend chaque retour vérifiable séparément. » | non | « Se vérifie en jouant les tests d'un lot sans attendre les suivants : le verdict porte sur ce lot seul. » |
-| `r3-b` | « Plus le lot confié est petit, meilleur est le résultat : découper au maximum est toujours la bonne stratégie. » | **oui** | « Un découpage trop fin fait repayer le cadrage à chaque passe et perd le contexte partagé entre les tranches. Le référentiel décrit un cran de taille qui **monte** avec la maîtrise. Il existe une taille juste ; elle n'est pas le minimum. » |
+| `r3-a` | « Découper une feature en lots plus petits rend chaque retour vérifiable séparément, sans attendre les lots suivants. » | non | « Se vérifie en jouant les tests d'un lot sans attendre les suivants : le verdict porte sur ce lot seul. » |
+| `r3-b` | « Plus le lot confié est petit, meilleur est le résultat : découper au maximum reste toujours la bonne stratégie. » | **oui** | « Un découpage trop fin fait repayer le cadrage à chaque passe et perd le contexte partagé entre les tranches. Le référentiel décrit un cran de taille qui **monte** avec la maîtrise. Il existe une taille juste ; elle n'est pas le minimum. » |
 | `r3-c` | « Une dépendance non satisfaite entre deux lots fait échouer le second, quel que soit le soin mis à le formuler. » | non | « Se vérifie en confiant le lot dépendant en premier : il échoue sur ce qui n'existe pas encore. » |
-| `r3-d` | « Un lot dont on ne sait pas dire ce qui prouverait qu'il est fini n'est pas prêt à être confié. » | non | « Se vérifie en essayant d'énoncer son critère d'acceptation avant de le confier : s'il ne s'énonce pas, il ne se vérifiera pas non plus au retour. » |
+| `r3-d` | « Un lot dont on ne sait pas dire ce qui prouverait qu'il est fini n'est pas prêt à être confié à un assistant. » | non | « Se vérifie en essayant d'énoncer son critère d'acceptation avant de le confier : s'il ne s'énonce pas, il ne se vérifiera pas non plus au retour. » |
 
 > `objection` → cible `r3-c`, **creuse** : « Je pense que c'est celle sur les dépendances qui ment. Un assistant à qui on donne le dépôt entier retrouve seul ce qui manque : l'ordre des lots n'a rien d'absolu. »
 
@@ -90,8 +103,8 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 | id | Affirmation | Ment | Vérification |
 | --- | --- | --- | --- |
 | `r4-a` | « Un échec qui se répète sur la même demande est un signal sur le cadre donné, pas seulement sur le modèle. » | non | « Se vérifie en changeant le cadre — la consigne, le contexte, le critère de fin — sans changer de modèle : l'échec bouge. » |
-| `r4-b` | « Un hook qui bloque une action rend la main au développeur : il signale, il ne poursuit pas le travail à sa place. » | non | « Se vérifie en le déclenchant : l'action s'arrête et rien d'autre ne se produit. C'est une boucle de relance, pas un hook, qui reprend le travail. » |
-| `r4-c` | « Reprendre la main sur le code produit signe un échec de la délégation : un usage mature se mesure à la part du code qu'on n'a pas eu à toucher. » | **oui** | « Le référentiel mesure l'intervention comme un cran qui monte : savoir où reprendre la main est une compétence, pas un aveu. Ce qui se mesure est la part produite par l'IA rapportée au volume, jamais l'absence de reprise. » |
+| `r4-b` | « Un hook qui bloque une action rend la main au développeur : il signale l'écart, il ne poursuit pas le travail à sa place. » | non | « Se vérifie en le déclenchant : l'action s'arrête et rien d'autre ne se produit. C'est une boucle de relance, pas un hook, qui reprend le travail. » |
+| `r4-c` | « Reprendre la main sur le code produit signe un échec de la délégation : un usage mature se mesure au code non touché. » | **oui** | « Le référentiel mesure l'intervention comme un cran qui monte : savoir où reprendre la main est une compétence, pas un aveu. Ce qui se mesure est la part produite par l'IA rapportée au volume, jamais l'absence de reprise. » |
 | `r4-d` | « Une boucle de relance sur une commande en échec ne vaut que si la commande dit vraiment si le travail est fini. » | non | « Se vérifie en la lançant sur une commande qui passe pour une mauvaise raison : la boucle s'arrête sur un vert qui ne prouve rien. » |
 
 > `objection` → cible `r4-b`, **creuse** : « Je pense que c'est celle sur le hook qui ment. Un hook peut parfaitement corriger le format d'un fichier puis laisser passer : il fait donc bien le travail à votre place. »
@@ -118,9 +131,11 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 1. Créer `__tests__/integration/course-run/lie-detector-run.test.ts`, sur le modèle de `defect-hunt-run.test.ts`.
 2. Vérifier la situation : type, nombre de manches, seuil du premier critère, absence de mapping hors `verification`.
 3. Rejouer les quatre profils du Test Scope, chacun construit depuis le corpus lu — jamais des identifiants écrits en dur, qui survivraient à une réécriture du corpus.
-4. Poser les deux garde-fous de rédaction du corpus, en tests :
+4. Poser les trois garde-fous de rédaction du corpus, en tests :
    - au moins une objection pointe la menteuse de sa manche, et au moins une pointe une affirmation vraie ;
-   - dans chaque manche, la menteuse n'est ni l'affirmation la plus longue ni la plus courte du lot — un joueur qui trouve par la mise en forme ne lit pas.
+   - dans chaque manche, la menteuse n'est ni l'affirmation la plus longue ni la plus courte du lot — un joueur qui trouve par la mise en forme ne lit pas ;
+   - dans chaque manche, l'écart entre la plus longue et la plus courte affirmation ne dépasse pas un quart de la plus longue.
+   Les deux derniers se mesurent sur `text.length`, jamais sur un décompte de mots : un `split` sur les espaces compte la ponctuation isolée comme un mot et rend le verdict bruité.
 5. Vérifier que chaque affirmation porte une `verification` non vide : l'acceptance de la story exige que les vraies soient vérifiables.
 
 ## Test acceptance criteria
@@ -133,4 +148,5 @@ Chaque affirmation porte sa `verification` — à quoi elle se vérifie quand el
 | 2 | Le profil qui tient chacune de ses désignations justes satisfait le critère de stabilité |
 | 2 | Le profil juste puis retourné à chaque objection rate les deux critères |
 | 2 | Un corpus réécrit avec des objections d'une seule nature fait échouer le test, pas seulement le schéma |
+| 2 | Dans chaque manche, la menteuse n'est ni la plus longue ni la plus courte, et le lot ne s'étale pas de plus d'un quart |
 | 2 | `npm run lint`, `npm run typecheck` et `npm run test` passent |

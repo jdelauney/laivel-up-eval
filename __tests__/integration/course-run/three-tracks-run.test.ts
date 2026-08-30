@@ -12,6 +12,8 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { buildLieDetectorAnswer } from '@/games/lie-detector/actions/build-lie-detector-answer.action'
+import { lieDetectorConfigSchema } from '@/games/lie-detector/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
 import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
@@ -105,6 +107,23 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
   if (game.type === 'defect-hunt') {
     const config = defectHuntConfigSchema.parse(game.config)
     return buildDefectHuntAnswer(config, [], 0)
+  }
+  /**
+   * `g1-3` porte lie-detector depuis la phase 4 de son propre plan : ce test
+   * mesure `parallele`, jamais `verification`, donc n'importe quelle trace
+   * conforme suffit — ici, la première affirmation de chaque manche,
+   * désignée et maintenue.
+   */
+  if (game.type === 'lie-detector') {
+    const config = lieDetectorConfigSchema.parse(game.config)
+    return buildLieDetectorAnswer(
+      config,
+      config.rounds.map((round) => ({
+        roundId: round.id,
+        firstPickId: round.claims[0].id,
+        finalPickId: round.claims[0].id,
+      })),
+    )
   }
   return { selected: [] }
 }
