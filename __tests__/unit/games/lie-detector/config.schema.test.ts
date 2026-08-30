@@ -138,11 +138,11 @@ describe('lie-detector config schema', () => {
     expect(firstIssue(config).path).toEqual(['rounds'])
   })
 
-  it('accepts a claim text at exactly the 135-character mobile layout budget', () => {
+  it('accepts a claim text at exactly the 133-character mobile layout budget', () => {
     const config = validConfig()
     config.rounds[0] = round('r1', 'r1-b', {
       claims: [
-        claim('r1-a', 'A'.repeat(135), false),
+        claim('r1-a', 'A'.repeat(133), false),
         claim('r1-b', 'Affirmation B.', true),
         claim('r1-c', 'Affirmation C.', false),
         claim('r1-d', 'Affirmation D.', false),
@@ -150,14 +150,16 @@ describe('lie-detector config schema', () => {
     })
 
     const parsed = lieDetectorConfigSchema.parse(config)
-    expect(parsed.rounds[0].claims[0].text).toHaveLength(135)
+    expect(parsed.rounds[0].claims[0].text).toHaveLength(133)
   })
 
-  it('rejects a claim text past the 135-character mobile layout budget, naming the claim', () => {
+  // Corrigé le 30/08, après le challenge : la borne était posée à 135 (133
+  // mesuré, plus deux caractères jamais mesurés), ramenée à 133.
+  it('rejects a claim text past the 133-character mobile layout budget, naming the claim', () => {
     const config = validConfig()
     config.rounds[0] = round('r1', 'r1-b', {
       claims: [
-        claim('r1-a', 'A'.repeat(136), false),
+        claim('r1-a', 'A'.repeat(134), false),
         claim('r1-b', 'Affirmation B.', true),
         claim('r1-c', 'Affirmation C.', false),
         claim('r1-d', 'Affirmation D.', false),

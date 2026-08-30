@@ -70,17 +70,21 @@ journey
    - une manche sans aucune affirmation `lying` ;
    - une manche avec plus d'une affirmation `lying` ;
    - une `objection.targetId` absente des affirmations de sa manche ;
-   - une affirmation dont `text` dépasse 135 caractères — le budget de mise
-     en page mobile mesuré à 390×844, plus deux caractères ;
+   - une affirmation dont `text` dépasse 133 caractères — le budget de mise
+     en page mobile mesuré à 390×844 ;
    - un corpus dont **toutes** les objections sont de la même nature — que des fondées, ou que des creuses.
 
    **Ajout du 30/08, après revue.** Le refus de longueur est arrivé après
    coup : les deux garde-fous du corpus (phase 4) bornent un écart *interne*
    à la manche, jamais une longueur absolue. Un corpus réécrit dans les
    clous de cet écart peut donc glisser d'une ligne à quatre sur mobile
-   sans qu'aucun de ces deux tests ne bouge. La borne de 135 est le
-   maximum du corpus réel (133, `r1-b`/`r2-a`) plus deux : elle protège la
-   mesure de tenue mobile prise sur ce corpus, pas un style de rédaction.
+   sans qu'aucun de ces deux tests ne bouge. La borne de 133 est le
+   maximum mesuré du corpus réel (`r1-b`/`r2-a`) : elle protège la mesure de
+   tenue mobile prise sur ce corpus, pas un style de rédaction.
+
+   **Correction du 30/08, après le challenge.** La borne avait d'abord été
+   posée à 135 (133 mesuré, plus deux) : deux caractères jamais mesurés,
+   ramenés à 133 exactement.
 7. Documenter le dernier refus comme le garde-fou anti-triche du jeu : sans lui, une politique fixe gagne sans lire.
 8. Exporter les types `Claim`, `Objection`, `Round`, `LieDetectorConfig`.
 
@@ -122,7 +126,7 @@ journey
 | --- | --- |
 | 1 | Une configuration dont toutes les objections pointent une affirmation vraie est refusée au chargement, en nommant le corpus |
 | 1 | Une manche à zéro ou deux menteuses est refusée, en nommant la manche |
-| 1 | Une affirmation dont `text` dépasse 135 caractères est refusée, en nommant l'affirmation et sa manche |
+| 1 | Une affirmation dont `text` dépasse 133 caractères est refusée, en nommant l'affirmation et sa manche |
 | 2 | Une trace qui omet une manche, ou qui désigne une affirmation absente du lot, lève l'erreur nommée qui porte l'identifiant fautif |
 | 3 | La lecture d'une manche où le joueur a désigné exactement la cible de l'objection rend `contradicted: false` et `capitulated: false` |
 | 3 | La lecture d'une manche où une désignation juste est abandonnée sous contradiction rend `capitulated: true` et `unmasked: false` |

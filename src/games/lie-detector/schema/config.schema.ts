@@ -10,15 +10,16 @@ import { z } from 'zod'
  */
 
 /**
- * 135 caractères : le budget de mise en page mobile mesuré à 390×844, plus
- * deux caractères. Le corpus le plus long tenu à cette mesure culmine à
- * 133 (`r1-b`, `r2-a`) ; au-delà, une affirmation bascule de trois à
- * quatre lignes en `text-sm leading-snug`, coûte environ 19px et double la
- * marge de 9px qui séparait alors le verrou du bas de l'écran. Ce n'est
- * pas une règle de rédaction : c'est ce budget-là, mesuré une fois, qui
- * doit se casser au chargement plutôt que devant le jury.
+ * 133 caractères : le budget de mise en page mobile mesuré à 390×844,
+ * exactement le maximum du corpus tenu à cette mesure (`r1-b`, `r2-a`).
+ * Corrigé le 30/08, après le challenge : la borne posée à 135 laissait
+ * passer deux caractères jamais mesurés — au-delà de 133, une affirmation
+ * bascule de trois à quatre lignes en `text-sm leading-snug`, coûte environ
+ * 19px et double la marge de 9px qui séparait alors le verrou du bas de
+ * l'écran. Ce n'est pas une règle de rédaction : c'est ce budget-là, mesuré
+ * une fois, qui doit se casser au chargement plutôt que devant le jury.
  */
-const CLAIM_TEXT_MAX_LENGTH = 135
+const CLAIM_TEXT_MAX_LENGTH = 133
 
 export const claimSchema = z.object({
   id: z.string().min(1),
