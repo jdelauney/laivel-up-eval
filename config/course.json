@@ -322,9 +322,9 @@
                   },
                   {
                     "id": "r3-c",
-                    "text": "Une dépendance non satisfaite entre deux lots fait échouer le second, quel que soit le soin mis à le formuler.",
+                    "text": "Un lot ne se vérifie pas tant que celui dont il dépend n'existe pas : l'ordre n'est pas une préférence.",
                     "lying": false,
-                    "verification": "Se vérifie en confiant le lot dépendant en premier : il échoue sur ce qui n'existe pas encore."
+                    "verification": "Se vérifie en confiant le lot dépendant en premier : rien n'y est exécutable tant que ce dont il dépend n'existe pas."
                   },
                   {
                     "id": "r3-d",

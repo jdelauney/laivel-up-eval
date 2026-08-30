@@ -91,10 +91,12 @@ Les textes ci-dessous ont été réécrits pour les tenir, sens inchangé. Une r
 | --- | --- | --- | --- |
 | `r3-a` | « Découper une feature en lots plus petits rend chaque retour vérifiable séparément, sans attendre les lots suivants. » | non | « Se vérifie en jouant les tests d'un lot sans attendre les suivants : le verdict porte sur ce lot seul. » |
 | `r3-b` | « Plus le lot confié est petit, meilleur est le résultat : découper au maximum reste toujours la bonne stratégie. » | **oui** | « Un découpage trop fin fait repayer le cadrage à chaque passe et perd le contexte partagé entre les tranches. Le référentiel décrit un cran de taille qui **monte** avec la maîtrise. Il existe une taille juste ; elle n'est pas le minimum. » |
-| `r3-c` | « Une dépendance non satisfaite entre deux lots fait échouer le second, quel que soit le soin mis à le formuler. » | non | « Se vérifie en confiant le lot dépendant en premier : il échoue sur ce qui n'existe pas encore. » |
+| `r3-c` | « Un lot ne se vérifie pas tant que celui dont il dépend n'existe pas : l'ordre n'est pas une préférence. » | non | « Se vérifie en confiant le lot dépendant en premier : rien n'y est exécutable tant que ce dont il dépend n'existe pas. » |
 | `r3-d` | « Un lot dont on ne sait pas dire ce qui prouverait qu'il est fini n'est pas prêt à être confié à un assistant. » | non | « Se vérifie en essayant d'énoncer son critère d'acceptation avant de le confier : s'il ne s'énonce pas, il ne se vérifiera pas non plus au retour. » |
 
 > `objection` → cible `r3-c`, **creuse** : « Je pense que c'est celle sur les dépendances qui ment. Un assistant à qui on donne le dépôt entier retrouve seul ce qui manque : l'ordre des lots n'a rien d'absolu. »
+
+**Correction du 30/08, après revue (F10).** `r3-c` disait « quel que soit le soin mis à le formuler » — un absolu qu'un assistant disposant du dépôt entier peut défaire, précisément la contre-attaque que porte l'objection creuse ci-dessus, et elle tenait : la phrase devenait défendable plutôt que vraie sans discussion, contre la contrainte de rédaction du corpus. Le texte retenu porte sur ce qui est **exécutable**, un fait technique que le soin de formulation ne change pas : longueur 103, entre la menteuse (111) et le reste du lot (115/109), dispersion 10 %.
 
 ### Manche 4 — `r4` · l'échec et la reprise en main
 
