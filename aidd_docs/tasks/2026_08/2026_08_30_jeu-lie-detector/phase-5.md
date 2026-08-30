@@ -131,7 +131,9 @@ Le budget ne permet pas les deux. Le chrome du parcours — barre, rampe, situat
 
 Ce qui a été tranché, et dans ce sens : **la règle du jeu se lit en entier avant la première décision.** Un joueur qui découvre la mécanique après avoir joué `r1` ne joue pas la même manche que les autres, et `r1` cesserait de mesurer la même chose pour tout le monde. La comparaison sans défilement est un moyen ; la mesure comparable est la fin.
 
-L'alternative écartée : replier la consigne dès `r1` derrière un résumé d'une ligne. Le verrou de la désignation est bien annoncé indépendamment de la consigne, à chaque manche, donc le coût du geste resterait couvert — mais le cadre du jeu, lui, ne le serait plus, et `DESIGN.md` demande qu'il soit annoncé, pas qu'il soit disponible.
+Une troisième voie existe et satisferait les deux : un écran de règles posé avant `r1`, qui sortirait la consigne de la manche au lieu de la comprimer. Elle est écartée pour la même raison que la barre d'action collante du défaut voisin — un motif d'interface introduit pour un seul jeu, là où le produit en compte vingt. Elle est nommée ici pour que ce refus reste révisable : si un deuxième jeu réclame un jour le même écran, la raison de l'écarter tombe.
+
+L'autre alternative écartée : replier la consigne dès `r1` derrière un résumé d'une ligne. Le verrou de la désignation est bien annoncé indépendamment de la consigne, à chaque manche, donc le coût du geste resterait couvert — mais le cadre du jeu, lui, ne le serait plus, et `DESIGN.md` demande qu'il soit annoncé, pas qu'il soit disponible.
 
 Ce que cela coûte, énoncé sans arrondi : sur mobile, à la première manche, le joueur défile une fois pour voir sa quatrième affirmation. Le critère de la tâche 2 n'est pas atteint là, et le tableau ci-dessous le dit au lieu de le contourner.
 

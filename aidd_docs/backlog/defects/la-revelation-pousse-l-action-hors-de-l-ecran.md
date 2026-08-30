@@ -27,10 +27,12 @@ L'action de passage reste atteignable sans défiler, quelle que soit la longueur
 
 L'action passe sous la ligne de flottaison dès que la révélation est ouverte.
 
-| Gabarit | Dépassement mesuré sur `lie-detector` |
+| Gabarit | Dépassement sur `lie-detector`, manche `r1` |
 | --- | --- |
-| 1440 × 900 | 383 px sous la ligne de flottaison |
-| 390 × 844 | 185 px |
+| 390 × 844 | **597 px**, mesuré à `scrollY = 0` vérifié |
+| 1440 × 900 | 383 px, **mesure à refaire** — prise au repère contaminé, cf. ci-dessous |
+
+**Les premiers chiffres étaient faux, et de beaucoup.** La tournée annonçait 185 px sur mobile. Le navigateur piloté fait défiler la page pour amener un bouton hors écran dans sa zone cliquable avant de le cliquer, et ce décalage survivait au passage de manche puisque l'application ne recharge jamais. Toutes les lectures étaient donc courtes de l'offset accumulé. Reprise au bon repère, la mesure mobile est plus de trois fois pire.
 
 ## Reproduction
 
@@ -40,9 +42,13 @@ L'action passe sous la ligne de flottaison dès que la révélation est ouverte.
 
 ## Impact
 
-Modéré, et sans effet sur la mesure : le joueur lit avant d'agir, et défiler après lecture n'est pas absurde. C'est la règle du produit qui est enfreinte, pas le verdict qui est faussé — d'où la sévérité basse et le report en backlog plutôt qu'une correction dans la branche du jeu.
+**Relevé après correction de la mesure.** Le premier triage disait « modéré » sur la foi de 185 px, soit un cinquième d'écran. Le chiffre réel est 597 px sur mobile : sept dixièmes d'une hauteur d'écran séparent la fin de la lecture de l'action qui la clôt. Ce n'est plus une gêne de défilement, c'est une sortie hors champ.
 
-Ce qui justifie quand même de le traiter : la règle existe parce qu'une liste qui s'allonge finit par cacher la sortie. Les deux jeux concernés ont une révélation de taille bornée aujourd'hui ; un corpus plus fourni la rend plus longue sans que rien n'alerte.
+Ce qui ne change pas : **le verdict n'est pas faussé.** Le joueur lit avant d'agir, aucun critère ne dépend de la position du bouton, et rien ne se perd s'il défile. C'est la règle du produit qui est enfreinte, pas la mesure. Le report en backlog plutôt qu'une correction dans la branche du jeu tient donc toujours, pour la raison énoncée plus bas : la correction ne peut pas être locale à un jeu.
+
+Ce qui change : sur mobile, rien à l'écran n'indique qu'une action attend en dessous. Un joueur qui a fini de lire ses quatre vérifications peut raisonnablement croire la manche terminée et chercher ailleurs comment continuer. C'est le premier écran du produit où la sortie est réellement introuvable sans geste exploratoire, et c'est ce qui justifie de ne pas le laisser dormir.
+
+La règle existe précisément pour ça : une liste qui s'allonge finit par cacher la sortie. Les deux jeux concernés ont une révélation de taille bornée aujourd'hui ; un corpus plus fourni l'allonge sans que rien n'alerte.
 
 ## Ce que la correction ne doit pas être
 
