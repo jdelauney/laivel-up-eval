@@ -1,6 +1,7 @@
 import { CheckpointsGame } from './checkpoints/components/composites/checkpoints-game'
 import { ConfidenceBetGame } from './confidence-bet/components/composites/confidence-bet-game'
 import { DefectHuntGame } from './defect-hunt/components/composites/defect-hunt-game'
+import { HintBudgetGame } from './hint-budget/components/composites/hint-budget-game'
 import { LieDetectorGame } from './lie-detector/components/composites/lie-detector-game'
 import { TestBenchGame } from './test-bench/components/composites/test-bench-game'
 import { ThreeTracksGame } from './three-tracks/components/composites/three-tracks-game'
@@ -22,6 +23,7 @@ const components: Record<string, GameComponent> = {
   'confidence-bet': ConfidenceBetGame,
   'defect-hunt': DefectHuntGame,
   'lie-detector': LieDetectorGame,
+  'hint-budget': HintBudgetGame,
 }
 
 export const resolveGameComponent = (
