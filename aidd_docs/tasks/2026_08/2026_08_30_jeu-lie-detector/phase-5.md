@@ -12,11 +12,13 @@ status: done
 .
 ├── .impeccable/surfaces/
 │   └── ...lie-detector-components-composites-lie-detector-game-tsx.md   ✅ la surface du jeu
+├── aidd_docs/tasks/2026_08/2026_08_30_jeu-lie-detector/qa/               ✅ la tournée aux deux gabarits
 ├── src/games/lie-detector/
 │   ├── hooks/use-lie-detector.hook.ts                                   ✏️ si la passe a besoin d une lecture de plus
 │   └── components/
 │       ├── elements/                                                    ✏️ affirmation, objection
-│       └── composites/                                                  ✏️ feuille de manche et racine
+│       └── composites/
+│           └── lie-detector-game.tsx                                    ✏️ la consigne se replie dès la deuxième manche
 └── __tests__/unit/games/lie-detector/
     ├── lie-detector-game.test.tsx                                       ✏️ les tests qui verrouillent
     └── use-lie-detector.test.ts                                         ✏️
@@ -102,12 +104,26 @@ journey
 1. Étendre `lie-detector-game.test.tsx` avec les situations du Test Scope qui sont vérifiables en test unitaire — le coût annoncé, l'état hors couleur, l'identité de présentation des deux natures d'objection, l'ordre de parcours au clavier.
 2. Un test doit casser si une future passe fait porter la nature de l'objection par sa présentation.
 
+### `4)` La tournée navigateur
+
+1. Jouer la manche `r1` (la plus longue du corpus) et `r2` (l'unique objection fondée) aux deux gabarits, `1440×900` et `390×844`, sur `npm run dev`. Session posée directement sur `g1-3` par un instantané de `laivel-eval.session`.
+2. Déposer les captures et les mesures dans `qa/`.
+
+### `5)` Le correctif mobile de la consigne
+
+1. La tournée mesure la cause du défilement mobile : `statement` se réaffiche en entier à chaque manche (205px des 648 avant la première carte). Décision du chef de produit : propre à ce jeu (critère d'acceptation nommé de ce jeu, cf. tâche 2), à corriger ici — à la différence du bouton de passage sous la ligne de flottaison à la révélation (tâche 3, même schéma chez `defect-hunt`), suivi comme défaut transverse séparé.
+2. `lie-detector-game.tsx` : la consigne reste en entier à la première manche, se replie derrière un `<details>` natif dès la deuxième — jamais retirée du DOM, dépliable d'un tap.
+3. Remesurer sur `390×844` et joindre la preuve à `qa/`.
+
 ## Test acceptance criteria
 
 | Task | Acceptance criteria |
 | --- | --- |
 | 1 | La fiche de surface existe et nomme la stratégie retenue pour ce jeu |
-| 2 | Les quatre affirmations d'une manche se comparent sans défilement au premier temps |
+| 2 | Les quatre affirmations d'une manche se comparent sans défilement au premier temps — tient au format desktop (mesuré) ; au format mobile, tient à `r2`, `r3`, `r4` depuis la tâche 5, `r1` reste l'exception assumée où la consigne complète est due (mesuré, cf. `qa/README.md`) |
 | 2 | Une objection fondée et une objection creuse sont rendues avec exactement la même structure et le même ton |
 | 3 | Un test échoue si la présentation de l'objection dépend de sa nature |
 | 3 | `npm run lint`, `npm run typecheck` et `npm run test` passent |
+| 4 | La tournée aux deux gabarits est déposée dans `qa/` |
+| 5 | Sur `390×844`, à la deuxième manche et aux suivantes, les quatre affirmations et le verrou de désignation tiennent dans le cadre sans défilement — mesuré |
+| 5 | `npm run lint`, `npm run typecheck` et `npm run test` passent, aucune régression |
