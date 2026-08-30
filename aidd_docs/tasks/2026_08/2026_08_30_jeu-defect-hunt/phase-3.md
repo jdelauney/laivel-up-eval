@@ -16,14 +16,15 @@ status: done
 │   │   │   └── build-defect-hunt-answer.action.ts   ✅ la trace, construite hors de React
 │   │   ├── hooks/
 │   │   │   ├── use-defect-hunt.hook.ts              ✅ marques, rendu, révélation
-│   │   │   └── use-elapsed-seconds.hook.ts          ✅ le temps qui court, et rien d autre
+│   │   │   ├── use-elapsed-seconds.hook.ts          ✅ le temps qui court, et rien d autre
+│   │   │   └── use-roving-focus.hook.ts             ✅ posé en phase 5 (un seul arrêt de tabulation)
 │   │   └── components/
 │   │       ├── elements/
 │   │       │   ├── code-line.tsx                    ✅ une ligne, sa marque, son verdict
-│   │       │   ├── hunt-status.tsx                  ✅ marques posées, nombre annoncé, temps
+│   │       │   ├── time-dial.tsx                    ✅ posé en phase 5, à la place de hunt-status
 │   │       │   └── defect-reveal.tsx                ✅ ce qu un défaut était
 │   │       └── composites/
-│   │           ├── reviewed-snippet.tsx             ✅ l extrait, ligne à ligne
+│   │           ├── review-sheet.tsx                 ✅ posé en phase 5, à la place de reviewed-snippet
 │   │           └── defect-hunt-game.tsx             ✅ la racine du jeu
 │   └── register-components.ts                       ✏️ le jumeau interface du câblage
 └── __tests__/unit/games/defect-hunt/
@@ -153,12 +154,18 @@ Après le rendu, le même écran bascule :
 
 ### `4)` Les composants
 
-1. `elements/code-line.tsx` — une ligne : son numéro, son code en monospace, et son état. Avant le rendu c'est un bouton bascule (`aria-pressed`, libellé qui nomme le numéro de ligne). Après le rendu ce n'est plus un contrôle : c'est une ligne figée qui porte son verdict en texte — trouvé, manqué, marquée à côté — et jamais par la seule couleur.
+1. `elements/code-line.tsx` — une ligne : son numéro, son code en monospace, et son état. Avant le rendu c'est un contrôle bascule ; après, une ligne figée qui porte son verdict en texte — trouvé, manqué, marquée à côté — et jamais par la seule couleur.
 2. `elements/hunt-status.tsx` — marques posées, nombre annoncé, et le temps. Le dépassement s'écrit en toutes lettres. Seule région `aria-live="polite"` de l'écran, et elle n'annonce que le compte, pas chaque battement de seconde.
 3. `elements/defect-reveal.tsx` — un défaut : sa ligne, sa nature, sa phrase. N'existe qu'après le rendu.
-4. `composites/reviewed-snippet.tsx` — l'extrait ligne à ligne, dans un `<pre>` sans coloration syntaxique. Aucune dépendance nouvelle : une coloration jugerait à la place du joueur, exactement comme chez `confidence-bet`.
+4. `composites/reviewed-snippet.tsx` — l'extrait ligne à ligne, sans coloration syntaxique. Aucune dépendance nouvelle : une coloration jugerait à la place du joueur, exactement comme chez `confidence-bet`.
 5. `composites/defect-hunt-game.tsx` — la racine, purement d'assemblage. Elle bascule d'un bloc à l'autre au rendu.
 6. Les composants sont muets : ils affichent ce qu'on leur donne, ils ne connaissent ni les seuils ni les critères.
+
+> **Ce que la phase 5 a repris de ce découpage.** La passe de surface a le droit de le refaire, et elle l'a fait sur trois points, tous consignés dans la fiche `.impeccable/surfaces/` du jeu :
+>
+> - `hunt-status.tsx` s'est scindé — le cadran du temps est parti dans `elements/time-dial.tsx` et il porte trois libellés, `RESTANT` / `DÉPASSÉ DE` / `RENDUE EN` ; le compte de marques est descendu dans le pied de la feuille, à côté de l'action, parce que c'est ce que le joueur **produit** et non ce que le jeu lui **donne**. La région `aria-live` l'a suivi.
+> - `reviewed-snippet.tsx` est devenu `composites/review-sheet.tsx` : la feuille porte désormais son bandeau de tête et son pied, elle n'est plus un bloc de code nu suivi d'un bouton détaché.
+> - **Le bloc n'est plus un `<pre>`.** Le motif `listbox`/`option` demande un conteneur et des descendants sémantiques, ce qu'un `<pre>` de contrôles ne donne pas. `whitespace-pre-wrap` sur chaque ligne préserve l'indentation, et le repli remplace le défilement horizontal — un jeu de lecture se perd si un caractère de l'extrait est hors de vue.
 
 ### `5)` Le câblage interface
 

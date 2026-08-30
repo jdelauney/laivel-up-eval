@@ -42,14 +42,14 @@ const config: DefectHuntConfig = defectHuntConfigSchema.parse({
 const criteria: Criterion[] = [
   {
     id: 'c1',
-    question: 'Au moins 80 % des défauts ont-ils été trouvés ?',
-    rule: { type: 'found-ratio-at-least', threshold: 0.8 },
+    question: 'Le score net de la revue atteint-il son seuil ?',
+    rule: { type: 'net-score-at-least', threshold: 4 },
     mapping: [{ dimension: 'verification', weight: 2 }],
   },
   {
     id: 'c2',
-    question: 'Les marques posées à côté sont-elles restées sous leur seuil ?',
-    rule: { type: 'false-positives-at-most', threshold: 2 },
+    question: 'Au moins 80 % des défauts ont-ils été trouvés ?',
+    rule: { type: 'found-ratio-at-least', threshold: 0.8 },
     mapping: [{ dimension: 'verification', weight: 2 }],
   },
   {
@@ -83,8 +83,13 @@ const verdictOf = (
     .map((result) => result.satisfied)
 
 describe('defect-hunt evaluator', () => {
-  it('satisfies the four criteria on four defects out of five, one false positive, rendered in time', () => {
-    expect(verdictOf([2, 4, 6, 8, 1], 100)).toEqual([true, true, true, true])
+  it('satisfies the four criteria on five defects out of five, one wrong mark, rendered in time', () => {
+    expect(verdictOf([2, 4, 6, 8, 10, 1], 100)).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ])
   })
 
   it('returns one result per criterion, in the order the course declares them', () => {
@@ -102,39 +107,57 @@ describe('defect-hunt evaluator', () => {
     ])
   })
 
-  it('satisfies the ratio criterion exactly on its threshold, four out of five', () => {
-    const [ratio] = verdictOf([2, 4, 6, 8], 100)
+  it('satisfies the net score criterion exactly on its threshold, four found and none wrong', () => {
+    const [netScore] = verdictOf([2, 4, 6, 8], 100)
+    expect(netScore).toBe(true)
+  })
+
+  /**
+   * La preuve que le point négatif se soustrait vraiment : cinq bonnes
+   * réponses et une mauvaise valent le même score net que quatre bonnes et
+   * aucune mauvaise, et tiennent le seuil de justesse.
+   */
+  it('subtracts a point per wrong mark: five found and one wrong still lands on the threshold', () => {
+    const [netScore] = verdictOf([2, 4, 6, 8, 10, 1], 100)
+    expect(netScore).toBe(true)
+  })
+
+  it('misses the net score criterion when two wrong marks eat into five right ones', () => {
+    const [netScore, ratio] = verdictOf([2, 4, 6, 8, 10, 1, 3], 100)
+
+    expect(netScore).toBe(false)
+    // La couverture, elle, reste pleine : les deux critères ne mesurent pas
+    // la même chose, et c'est ce profil-là qui les sépare.
     expect(ratio).toBe(true)
   })
 
-  it('satisfies the false positives criterion exactly on its threshold', () => {
-    // Deux marques posées à côté, sur les dix lignes de l'extrait : le seuil
-    // vaut exactement deux et doit encore tenir.
-    const [, falsePositives] = verdictOf([2, 4, 6, 8, 1, 3], 100)
-    expect(falsePositives).toBe(true)
-  })
-
-  it('misses the nature criterion when every visible defect is found without the hallucinated dependency', () => {
-    const [ratio, , kinds] = verdictOf([2, 4, 8, 10], 100)
-    expect(ratio).toBe(true)
+  it('misses the nature criterion when every other defect is found without the hallucinated dependency', () => {
+    const [netScore, , kinds] = verdictOf([2, 4, 8, 10], 100)
+    expect(netScore).toBe(true)
     expect(kinds).toBe(false)
   })
 
   it('satisfies the time criterion exactly at the budget', () => {
-    const [, , , time] = verdictOf([2, 4, 6, 8, 1], 180)
+    const [, , , time] = verdictOf([2, 4, 6, 8, 10], 180)
     expect(time).toBe(true)
   })
 
   it('misses only the time criterion one second beyond the budget, the other three unchanged', () => {
-    expect(verdictOf([2, 4, 6, 8, 1], 181)).toEqual([true, true, true, false])
+    expect(verdictOf([2, 4, 6, 8, 10], 181)).toEqual([true, true, true, false])
   })
 
-  it('satisfies the ratio but misses the false positives criterion when every line is marked', () => {
+  /**
+   * Le barème ferme la saturation à lui seul, depuis que le nombre de défauts
+   * n'est plus annoncé : marquer les dix lignes rend cinq bonnes réponses et
+   * cinq mauvaises, soit un score net nul. Il n'y a plus de critère séparé de
+   * faux positifs — il aurait puni deux fois la même marque.
+   */
+  it('closes saturation through the scoring alone: marking every line nets zero while coverage stays full', () => {
     const allLines = Array.from({ length: 10 }, (_, index) => index + 1)
-    const [ratio, falsePositives] = verdictOf(allLines, 100)
+    const [netScore, ratio] = verdictOf(allLines, 100)
 
+    expect(netScore).toBe(false)
     expect(ratio).toBe(true)
-    expect(falsePositives).toBe(false)
   })
 
   it('renders the same verdict regardless of the mark order', () => {

@@ -39,11 +39,14 @@ Ce que la passe doit résoudre, et qui est propre à ce jeu :
 
 `DESIGN.md` : « Un jeu ne dit jamais ce qu'il note. Le contrat annonce le cadre, jamais les critères. »
 
+> **Repris le 30/08, après la décision produit.** Le nombre de défauts n'est plus annoncé du tout : il passe de la colonne « s'énonce » à la colonne « se tait ». Ce qui s'énonce à sa place est le barème, +1 / −1 / 0, parce que `DESIGN.md` veut le coût d'un geste annoncé avant qu'on le pose.
+
 | S'énonce | Se tait |
 | --- | --- |
-| Le nombre de défauts que porte l'extrait | Le seuil de 80 % |
+| Que l'extrait contient des défauts | **Combien il en contient** |
 | Que leur nature n'est dite nulle part, et qu'aucune liste n'est proposée | Que la dépendance hallucinée a son propre critère |
-| Qu'une marque posée à côté est comptée elle aussi | Le seuil de deux marques |
+| Le barème : un point par ligne fautive, un de moins par ligne saine, rien pour une ligne laissée de côté | Le seuil de score net, et celui de 80 % |
+| Que le joueur rend sa revue quand il l'estime finie | Qu'aucun signal ne lui dira qu'elle est complète, parce qu'il n'y en a pas |
 | Le temps imparti, et qu'il n'interrompt pas la partie | Que le dépassement ne coûte qu'un critère sur quatre |
 | Le nombre de marques déjà posées | Où elles tombent, et lesquelles sont justes |
 

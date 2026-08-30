@@ -20,6 +20,7 @@ export type Reading = {
   missed: readonly Defect[]
   falsePositiveLines: readonly number[]
   foundRatio: number
+  netScore: number
 }
 
 export const readReview = (
@@ -45,7 +46,20 @@ export const readReview = (
   // nul, il n'y a donc pas de branche morte à garder pour ce cas.
   const foundRatio = found.length / config.defects.length
 
-  return { found, missed, falsePositiveLines, foundRatio }
+  /**
+   * Le score de la revue, et la monnaie du jeu : un point par ligne fautive
+   * marquée, un point de moins par ligne saine marquée, rien pour une ligne
+   * laissée de côté. Il peut être négatif.
+   *
+   * C'est ce barème, et lui seul, qui rend le nombre de défauts inutile à
+   * annoncer : sans règle d'arrêt donnée, marquer au hasard se paie
+   * mécaniquement, et le joueur décide lui-même quand sa revue est finie.
+   * Une ligne non marquée ne vaut rien — ne pas savoir n'est jamais puni,
+   * seule l'affirmation fausse l'est.
+   */
+  const netScore = found.length - falsePositiveLines.length
+
+  return { found, missed, falsePositiveLines, foundRatio, netScore }
 }
 
 /** L'ensemble des natures trouvées, matière du critère de nature exigée. */

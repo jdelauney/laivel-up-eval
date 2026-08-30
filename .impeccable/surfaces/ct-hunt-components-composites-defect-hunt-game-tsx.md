@@ -19,7 +19,9 @@ Une surface, mode **Operate**. Elle occupe la colonne de droite de `CourseView` 
 
 ## Public et métier
 
-Le développeur évalué, seul, à la deuxième situation du parcours. On lui annonce **combien** de défauts porte l'extrait, jamais lesquels ni de quelle nature, et on ne lui propose aucune liste. Il clique les lignes qu'il juge fautives, sous un temps qui court.
+Le développeur évalué, seul, à la deuxième situation du parcours. **On ne lui dit ni combien de défauts porte l'extrait, ni lesquels, ni de quelle nature**, et on ne lui propose aucune liste. Il clique les lignes qu'il juge fautives, sous un temps qui court, et rend sa revue quand il l'estime finie.
+
+Il n'a donc **aucune règle d'arrêt**, et c'est délibéré : un compte annoncé lui apprendrait à jouer le nombre plutôt qu'à lire. Ce qui remplace le compte est le barème, annoncé lui — un point par ligne fautive marquée, un de moins par ligne saine marquée, rien pour une ligne laissée de côté. Marquer au hasard se paie mécaniquement, et ne pas savoir n'est jamais puni : seule l'affirmation fausse l'est.
 
 Ce qui est mesuré n'est pas s'il connaît les défauts classiques, mais s'il **lit vraiment le code** au lieu de reconnaître des motifs. Le corpus porte un défaut qui ne se tranche pas dans les lignes montrées — une dépendance qui n'existe pas sur npm — et c'est celui-là qui sépare le lecteur du vérificateur.
 
@@ -33,7 +35,7 @@ Il balaie, il frappe, il rend. Une fois. Le succès de l'écran, c'est qu'il ait
 
 | Bande | Ce qu'elle porte | Pourquoi elle est là |
 | --- | --- | --- |
-| Tête | L'intitulé de l'extrait, sa langue, le nombre de défauts, le cadran du temps | Ce que le jeu **donne** |
+| Tête | L'intitulé de l'extrait, sa langue, le cadran du temps. **Aucun compte de défauts** | Ce que le jeu **donne** |
 | Corps | La feuille : marge de frappe, filet du registre, numéros, code | Le travail |
 | Pied | Les lignes marquées, puis l'action ; après le rendu, le relevé | Ce que le joueur **produit** |
 
@@ -43,7 +45,7 @@ Le filet vertical entre le numéro et le code court sur toute la hauteur : c'est
 
 ## Ce qui ne se négocie pas
 
-- **La feuille ne coûte qu'un seul arrêt de tabulation.** Vingt-cinq lignes cliquables feraient vingt-cinq arrêts, et un joueur au clavier devrait traverser tout le code pour atteindre le rendu : conforme ligne à ligne, hostile dans son ensemble. Les lignes sont des `option` d'un `listbox` à sélection multiple, les flèches parcourent, `Début`/`Fin` sautent, l'espace marque. Le focus se pose sur le nœud réel, pas sur un état seul.
+- **La feuille ne coûte qu'un seul arrêt de tabulation.** Vingt-quatre lignes cliquables feraient vingt-quatre arrêts, et un joueur au clavier devrait traverser tout le code pour atteindre le rendu : conforme ligne à ligne, hostile dans son ensemble. Les lignes sont des `option` d'un `listbox` à sélection multiple, les flèches parcourent, `Début`/`Fin` sautent, l'espace marque. Le focus se pose sur le nœud réel, pas sur un état seul.
 - **Le code ne défile jamais horizontalement.** Une ligne longue se replie. Ce jeu se perd si un seul caractère de l'extrait est hors de vue, et une gouttière figée par-dessus une ligne teintée aurait doublé la teinte.
 - **Aucune coloration syntaxique.** Elle jugerait à la place du joueur, et elle attirerait l'œil là où la teinte tombe plutôt que là où le défaut est. Aucune dépendance ajoutée pour l'obtenir.
 - **Le cadran est un relevé, jamais une jauge.** Une jauge ferait la barre de progression que `DESIGN.md` refuse et pousserait au réflexe — or ce jeu mesure une lecture. Trois libellés, `RESTANT` / `DÉPASSÉ DE` / `RENDUE EN`, et le troisième n'est pas un détail : un cadran figé sur « restant » après le rendu ferait croire que la partie court encore.
@@ -58,15 +60,18 @@ Le cadre s'annonce dans la consigne, jamais les critères.
 
 | S'énonce | Se tait |
 | --- | --- |
-| Le nombre de défauts que porte l'extrait | Le seuil de 80 % |
+| Que l'extrait contient des défauts | **Combien il en contient** |
 | Que leur nature n'est dite nulle part, et qu'aucune liste n'est proposée | Que la dépendance hallucinée porte son propre critère |
-| Qu'une ligne saine marquée compte contre vous | Le seuil de deux marques |
+| Le barème : un point par ligne fautive, un de moins par ligne saine, rien pour une ligne laissée de côté | Le seuil de score net, et celui de 80 % |
+| Que le joueur rend sa revue quand il l'estime finie | Qu'aucun signal ne lui dira qu'elle est complète, parce qu'il n'y en a pas |
 | Que le temps court sans interrompre, et que rendre au-delà se voit | Que le dépassement ne coûte qu'un critère sur quatre |
 | Le nombre de lignes déjà marquées | Où elles tombent, et lesquelles sont justes |
 
-Avant le rendu, le hook n'expose ni la nature d'un défaut ni sa ligne : ce qui n'est pas exposé ne peut pas fuiter à l'écran. Cette étanchéité est verrouillée par un test, et la surface ne doit pas rouvrir ce chemin pour un effet visuel.
+Le barème s'énonce et n'est pas une fuite : `DESIGN.md` veut le coût d'un geste annoncé **avant** qu'on le pose. Ce qui reste tu, ce sont les seuils qui en font un verdict.
 
-Deux formulations ont été retirées de la consigne à la passe de relecture, parce qu'elles disaient le barème : « au même titre qu'un défaut manqué » (elle donnait l'égalité des poids) et « le dépassement vous coûte son propre critère » (elle nommait un critère).
+Le total de défauts n'apparaît qu'au pied de la feuille, **une fois la revue verrouillée**. Avant le rendu, le hook n'expose ni ce total, ni la nature d'un défaut, ni sa ligne : ce qui n'est pas exposé ne peut pas fuiter à l'écran. Cette étanchéité est verrouillée par des tests, et la surface ne doit pas rouvrir ce chemin pour un effet visuel.
+
+Trois formulations ont été retirées de la consigne, à la passe de relecture puis à la décision produit, parce qu'elles disaient le barème ou le remplaçaient mal : « au même titre qu'un défaut manqué » (elle donnait l'égalité des poids), « le dépassement vous coûte son propre critère » (elle nommait un critère), et l'annonce du nombre de défauts elle-même (elle donnait la règle d'arrêt).
 
 Si un joueur peut déduire de l'écran **où** chercher plutôt que **lire pour trouver**, la surface est allée trop loin.
 

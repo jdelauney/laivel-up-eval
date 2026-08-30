@@ -12,10 +12,15 @@ import { TimeDial } from '../elements/time-dial'
  * balaie une feuille et on frappe la marge.
  *
  * Un seul objet, trois bandes : la tête donne ce qu'on reçoit — l'extrait, sa
- * langue, le nombre de défauts, le temps qui reste ; le corps est la feuille ;
- * le pied porte ce qu'on produit — les marques posées, puis l'action. Cette
- * séparation est la raison d'être de la composition : on ne mélange pas ce que
- * le jeu donne et ce que le joueur rend.
+ * langue, le temps qui reste ; le corps est la feuille ; le pied porte ce
+ * qu'on produit — les marques posées, puis l'action. Cette séparation est la
+ * raison d'être de la composition : on ne mélange pas ce que le jeu donne et
+ * ce que le joueur rend.
+ *
+ * La tête ne dit **jamais** combien de défauts l'extrait porte. Le joueur n'a
+ * pas de règle d'arrêt : il marque autant qu'il veut et décide lui-même quand
+ * sa revue est finie. C'est le barème — un point par ligne fautive, un de
+ * moins par ligne saine — qui remplace le compte annoncé.
  *
  * Le code n'est jamais coloré syntaxiquement : une coloration jugerait à la
  * place du joueur et attirerait l'œil là où la teinte tombe, pas là où le
@@ -26,7 +31,6 @@ import { TimeDial } from '../elements/time-dial'
 export const ReviewSheet = ({
   label,
   language,
-  announcedCount,
   elapsedSeconds,
   timeLimitSeconds,
   lines,
@@ -38,7 +42,6 @@ export const ReviewSheet = ({
 }: {
   label: string
   language: string
-  announcedCount: number
   elapsedSeconds: number
   timeLimitSeconds: number
   lines: readonly string[]
@@ -73,11 +76,12 @@ export const ReviewSheet = ({
   return (
     <section className="border border-plane-rule bg-plane">
       <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3 border-plane-rule border-b px-4 py-3">
+        {/* La tête ne porte aucun compte de défauts : le joueur n'a pas de
+         * règle d'arrêt, il décide lui-même quand sa revue est finie. */}
         <div className="flex flex-col gap-1">
           <h3 className="font-semibold text-plane-foreground">{label}</h3>
           <p className="font-medium text-[10px] text-plane-foreground/45 uppercase tracking-[0.18em]">
-            {language} · {announcedCount} défaut
-            {announcedCount === 1 ? '' : 's'} à trouver
+            {language}
           </p>
         </div>
 

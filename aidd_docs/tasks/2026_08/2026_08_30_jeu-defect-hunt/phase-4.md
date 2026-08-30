@@ -79,8 +79,10 @@ journey
 
 ### `2)` Les quatre critères
 
-1. `g1-2-c1` — « Au moins 80 % des défauts de l'extrait ont-ils été trouvés ? » · `found-ratio-at-least` à `0.8` · `verification`, poids **2**.
-2. `g1-2-c2` — « Les marques posées à côté d'un défaut sont-elles restées sous leur seuil ? » · `false-positives-at-most` à `2` · `verification`, poids **2**. C'est le seul garde-fou contre la saturation : sans lui, marquer toutes les lignes satisfait le premier critère.
+> **Repris le 30/08, après la décision produit.** Le nombre de défauts n'est plus annoncé et le barème le remplace : +1 par ligne fautive marquée, −1 par ligne saine marquée, 0 pour une ligne laissée de côté. Le critère qui comptait séparément les faux positifs disparaît — le barème les fait déjà payer un par un, et le garder les punirait deux fois pour la même marque. Le garde-fou contre la saturation est désormais le barème lui-même : marquer les vingt-quatre lignes rend cinq bonnes réponses et dix-neuf mauvaises.
+
+1. `g1-2-c1` — « Le score net de la revue atteint-il son seuil ? » · `net-score-at-least` à `3` · `verification`, poids **2**. Trois sur cinq et non quatre : à quatre, un relecteur qui trouve tout n'a droit qu'à une seule marque discutable, et la rédaction du corpus en tolère deux.
+2. `g1-2-c2` — « Au moins 80 % des défauts de l'extrait ont-ils été trouvés ? » · `found-ratio-at-least` à `0.8` · `verification`, poids **2**. Il tient l'autre bout du barème : on n'atteint pas le score net en marquant trois lignes au hasard.
 3. `g1-2-c3` — « Le défaut qui ne se lit pas dans l'extrait a-t-il été trouvé ? » · `kinds-found-including` sur `["hallucinated-dependency"]` · `verification`, poids **2**. Il sépare le joueur qui lit le code de celui qui vérifie aussi ce que le code invoque.
 4. `g1-2-c4` — « La revue a-t-elle été rendue dans le temps imparti ? » · `within-time-budget`, sans seuil · `verification`, poids **1**. Le budget noté est celui affiché.
 5. Le mapping `intervention` du placeholder disparaît : ce groupe porte la signature, pas les axes officiels.

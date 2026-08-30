@@ -130,7 +130,14 @@ export const useDefectHunt = (
     snippet: { label: parsed.snippet.label, language: parsed.snippet.language },
     lines,
     markedLines,
-    announcedCount: parsed.defects.length,
+    /**
+     * Le nombre de défauts n'est PAS exposé avant le rendu, et il ne l'a
+     * jamais été depuis la décision produit du 30/08 : le joueur n'a aucune
+     * règle d'arrêt, il décide lui-même quand sa revue est finie. C'est le
+     * barème — un point par ligne fautive, un de moins par ligne saine — qui
+     * rend le compte inutile à donner. Le total n'arrive qu'avec la
+     * révélation, à travers `reading`.
+     */
     timeLimitSeconds: parsed.timeLimitSeconds,
     elapsedSeconds,
     submitted,

@@ -62,13 +62,25 @@ afterEach(() => {
 })
 
 describe('defect hunt game, rendered', () => {
-  it('opens with the statement, the announced count and the extract lines', () => {
+  it('opens with the statement and the extract lines', () => {
     render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
-    expect(screen.getByText(/4 défauts à trouver/i)).toBeInTheDocument()
     expect(lineOption(1)).toBeInTheDocument()
     expect(lineOption(6)).toBeInTheDocument()
+  })
+
+  /**
+   * Le joueur n'a aucune règle d'arrêt : il décide lui-même quand sa revue
+   * est finie. Lui donner le nombre de défauts, sous n'importe quelle forme,
+   * lui rendrait cette règle et changerait ce que le jeu mesure.
+   */
+  it('never tells how many defects the extract carries before the review is rendered', () => {
+    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+
+    expect(screen.queryByText(/à trouver/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/sur 4/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/4 défauts/i)).not.toBeInTheDocument()
   })
 
   /**
@@ -138,9 +150,12 @@ describe('defect hunt game, rendered', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /rendre ma revue/i }))
 
+    // Deux bonnes réponses, une mauvaise : le total de défauts n'apparaît
+    // qu'ici, et le score net porte son signe.
     expect(
       screen.getByText(/2 trouvés sur 4 · 1 marque à côté/i),
     ).toBeInTheDocument()
+    expect(screen.getByText(/\+1 point/i)).toBeInTheDocument()
     expect(screen.getByText('Ce paquet n’existe pas.')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))

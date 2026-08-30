@@ -6,17 +6,22 @@ import { ReviewSheet } from './review-sheet'
 
 /**
  * Le quatrième jeu à état du parcours, sur le registre de la planche de
- * relecture : une épreuve imprimée, sa marge, et un chronomètre en cadran.
- * Seul le nombre de défauts est annoncé, jamais leur nature, et aucune liste
- * de choix n'est offerte. Le joueur balaie l'extrait, frappe la marge, rend sa
- * revue — elle se verrouille, le chronomètre s'arrête — puis la vérité vient
- * se tamponner sur la feuille qu'il vient de lire.
+ * relecture : une épreuve imprimée, sa marge, et un chronomètre en cadran. Le
+ * joueur balaie l'extrait, frappe la marge, rend sa revue — elle se
+ * verrouille, le chronomètre s'arrête — puis la vérité vient se tamponner sur
+ * la feuille qu'il vient de lire.
  *
- * La consigne annonce le cadre du jeu — le nombre de défauts, l'absence de
- * liste, le coût d'une marque posée à côté, le temps qui court sans
- * interrompre la partie — jamais ce qui est noté : ni les seuils, ni le fait
- * que la dépendance hallucinée porte son propre critère. `DESIGN.md`, « Un jeu
- * ne dit jamais ce qu'il note. »
+ * **Rien ne lui dit combien de défauts chercher.** Ni le nombre, ni la nature,
+ * ni aucune liste : il n'a aucune règle d'arrêt et décide lui-même quand sa
+ * revue est finie. Ce qui remplace le compte, c'est le barème — un point par
+ * ligne fautive marquée, un de moins par ligne saine marquée, rien pour une
+ * ligne laissée de côté. Marquer au hasard se paie mécaniquement, et ne pas
+ * savoir n'est jamais puni : seule l'affirmation fausse l'est.
+ *
+ * La consigne annonce ce cadre et ce barème — `DESIGN.md` veut le coût d'un
+ * geste annoncé — jamais ce qui est noté : ni les seuils, ni le fait que la
+ * dépendance hallucinée porte son propre critère. « Un jeu ne dit jamais ce
+ * qu'il note. »
  */
 export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
@@ -24,7 +29,6 @@ export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
     snippet,
     lines,
     markedLines,
-    announcedCount,
     timeLimitSeconds,
     elapsedSeconds,
     submitted,
@@ -48,7 +52,6 @@ export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
       <ReviewSheet
         label={snippet.label}
         language={snippet.language}
-        announcedCount={announcedCount}
         elapsedSeconds={elapsedSeconds}
         timeLimitSeconds={timeLimitSeconds}
         lines={lines}
@@ -60,8 +63,9 @@ export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
           submitted && reading !== undefined ? (
             <Readout
               found={reading.found.length}
-              announcedCount={announcedCount}
+              total={reading.found.length + reading.missed.length}
               falsePositives={reading.falsePositiveLines.length}
+              netScore={reading.netScore}
             />
           ) : (
             <>
@@ -116,20 +120,32 @@ export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
  * Le pied de la feuille une fois la revue rendue : des faits, jamais un seuil.
  * Le joueur lit ce qu'il a produit, pas la note qu'il en tire.
  *
+ * Le total de défauts n'apparaît qu'**ici**, une fois la revue verrouillée :
+ * avant le rendu, le connaître donnerait au joueur la règle d'arrêt que le jeu
+ * lui refuse.
+ *
  * La durée n'y figure pas : le cadran de tête la porte déjà, et deux endroits
  * pour le même fait, c'est un endroit de trop.
  */
 const Readout = ({
   found,
-  announcedCount,
+  total,
   falsePositives,
+  netScore,
 }: {
   found: number
-  announcedCount: number
+  total: number
   falsePositives: number
+  netScore: number
 }) => (
   <p className="font-medium text-plane-foreground/70 text-xs uppercase tracking-[0.14em] tabular-nums">
-    {found} trouvé{found === 1 ? '' : 's'} sur {announcedCount} ·{' '}
-    {falsePositives} marque{falsePositives === 1 ? '' : 's'} à côté
+    {found} trouvé{found === 1 ? '' : 's'} sur {total} · {falsePositives} marque
+    {falsePositives === 1 ? '' : 's'} à côté ·{' '}
+    <span
+      className={`font-semibold ${netScore < 0 ? 'text-missed' : 'text-plane-foreground'}`}
+    >
+      {netScore > 0 ? `+${netScore}` : netScore} point
+      {Math.abs(netScore) === 1 ? '' : 's'}
+    </span>
   </p>
 )

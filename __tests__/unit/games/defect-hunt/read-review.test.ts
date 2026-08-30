@@ -55,6 +55,8 @@ describe('read review', () => {
     expect(reading.missed.map((entry) => entry.id)).toEqual(['d5'])
     expect(reading.falsePositiveLines).toEqual([1])
     expect(reading.foundRatio).toBe(0.8)
+    // Quatre bonnes réponses, une mauvaise : +4 − 1.
+    expect(reading.netScore).toBe(3)
   })
 
   it('reads an empty review: nothing found, everything missed, no false positive, null ratio', () => {
@@ -64,6 +66,8 @@ describe('read review', () => {
     expect(reading.missed).toHaveLength(5)
     expect(reading.falsePositiveLines).toEqual([])
     expect(reading.foundRatio).toBe(0)
+    // Ne rien cocher ne vaut rien, et ne coûte rien : ignorer n'est pas puni.
+    expect(reading.netScore).toBe(0)
   })
 
   it('reads a saturated review: everything found, one false positive per healthy line', () => {
@@ -73,6 +77,22 @@ describe('read review', () => {
     expect(reading.found).toHaveLength(5)
     expect(reading.foundRatio).toBe(1)
     expect(reading.falsePositiveLines).toHaveLength(5)
+    // Tout marquer s'annule exactement : c'est le barème, et non un critère
+    // séparé, qui ferme la saturation depuis que le nombre n'est plus annoncé.
+    expect(reading.netScore).toBe(0)
+  })
+
+  /**
+   * Le barème peut passer sous zéro. Sans cela, marquer au hasard aurait un
+   * plancher gratuit, et un joueur qui affirme faux s'en tirerait au même prix
+   * que celui qui se tait.
+   */
+  it('goes negative when the review claims more than it finds', () => {
+    const reading = readReview(config, trace([1, 3, 5, 7, 9]))
+
+    expect(reading.found).toEqual([])
+    expect(reading.falsePositiveLines).toHaveLength(5)
+    expect(reading.netScore).toBe(-5)
   })
 
   it('renders the exact same reading, defects in declared order, for two reviews marking the same lines in a different order', () => {

@@ -141,12 +141,19 @@ export const CodeLine = ({
     <div
       role="option"
       aria-selected={marked}
-      aria-label={`Ligne ${lineNumber}`}
+      /**
+       * Le code est DANS le nom accessible, jamais seulement dans le contenu :
+       * sur une `option`, `aria-label` remplace le contenu, et un libellé
+       * réduit au numéro ferait annoncer « Ligne 3 » sans jamais dire ce
+       * qu'elle contient. Le jeu consiste à lire du code — il serait
+       * injouable au lecteur d'écran.
+       */
+      aria-label={`Ligne ${lineNumber} : ${code.trim() === '' ? 'ligne vide' : code.trim()}`}
       data-roving-index={rovingIndex}
       tabIndex={active ? 0 : -1}
       onClick={() => onToggle?.(lineNumber)}
       onFocus={() => onFocusLine?.(rovingIndex)}
-      className={`group/line grid cursor-pointer items-start gap-x-2 px-2 -outline-offset-2 ${columns} ${rowGround} hover:bg-plane-foreground/4`}
+      className={`group/line grid cursor-pointer items-start gap-x-2 px-2 outline-plane-foreground -outline-offset-2 focus-visible:outline-2 ${columns} ${rowGround} hover:bg-plane-foreground/4`}
     >
       {cells}
     </div>

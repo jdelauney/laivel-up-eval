@@ -37,11 +37,16 @@ afterEach(() => {
 })
 
 describe('use defect hunt', () => {
-  it('opens with the announced count, no marks and no revelation', () => {
+  /**
+   * Le hook n'expose aucun compte de défauts : le joueur n'a pas de règle
+   * d'arrêt, et un `announcedCount` rendu ici serait la porte par laquelle
+   * l'écran finirait par la lui donner.
+   */
+  it('opens with no defect count, no marks and no revelation', () => {
     const { result } = renderGame()
 
     expect(result.current.statement).toBe('Consigne de test.')
-    expect(result.current.announcedCount).toBe(3)
+    expect('announcedCount' in result.current).toBe(false)
     expect(result.current.markedLines.size).toBe(0)
     expect(result.current.submitted).toBe(false)
     expect(result.current.reading).toBeUndefined()

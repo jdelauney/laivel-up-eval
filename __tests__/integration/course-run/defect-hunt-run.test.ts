@@ -4,6 +4,7 @@ import { parseConfiguration } from '@/core/contracts/helpers/parse-config.helper
 import { WeightedMappingStrategy } from '@/core/scoring/weighted-mapping.strategy'
 import { GameSessionFacade } from '@/core/session/game-session.facade'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
+import { snippetLines } from '@/games/defect-hunt/helpers/snippet-lines.helper'
 import {
   type DefectHuntConfig,
   defectHuntConfigSchema,
@@ -99,32 +100,49 @@ const playG1_2 = (
 
 /**
  * Les lignes du corpus réel de `config/course.json` : cinq défauts, sur les
- * lignes 2 (dépendance hallucinée), 12 (sécurité), 15 (ressource), 17
- * (contrat) et 18 (logique). Les autres lignes de l'extrait de vingt-cinq
- * lignes sont saines.
+ * lignes 2 (dépendance hallucinée), 9 (contrat), 10 (logique), 14 (sécurité)
+ * et 17 (ressource). Les autres lignes de l'extrait sont saines.
  *
- * Chacune de ces cinq lignes se suffit à elle-même : aucun défaut n'est posé
- * à l'intérieur d'une construction qui s'étale sur plusieurs lignes. Sans
- * cette contrainte, un joueur qui lit juste mais clique la ligne voisine
- * encaisserait à la fois un faux positif et un défaut manqué, et le jeu
- * mesurerait la devinette du découpage plutôt que la lecture.
+ * Deux contraintes tiennent l'équité de ce corpus, et elles sont toutes deux
+ * verrouillées plus bas :
+ *
+ * 1. Chaque ligne fautive se suffit à elle-même — aucun défaut posé à
+ *    l'intérieur d'une construction qui s'étale sur plusieurs lignes.
+ * 2. Chaque défaut n'a qu'une seule ligne naturelle où un relecteur le
+ *    signalerait. La première écriture posait la fuite de connexion sur le
+ *    retour anticipé alors que le geste naturel visait l'appel à `release`
+ *    plus bas ; un joueur qui lisait juste encaissait alors un faux positif
+ *    ET un défaut manqué. Le jeu mesurait la devinette du découpage.
  */
 const DEFECT_LINES = {
   dependency: 2,
-  security: 12,
-  resource: 15,
-  contract: 17,
-  logic: 18,
+  contract: 9,
+  logic: 10,
+  security: 14,
+  resource: 17,
 }
-const ALL_LINES = Array.from({ length: 25 }, (_, index) => index + 1)
 
-/** Quatre défauts sur cinq, dépendance comprise, une marque posée à côté. */
+/**
+ * Dérivé de l'extrait réel, jamais figé : un corpus réécrit plus long
+ * laisserait passer un « saturateur » qui ne saturerait plus rien.
+ */
+const allLines = (config: DefectHuntConfig): number[] =>
+  snippetLines(config.snippet.code).map((_, index) => index + 1)
+
+/** Une ligne saine de l'extrait, celle du premier import. */
+const FALSE_POSITIVE_LINE = 3
+
+/**
+ * Quatre défauts sur cinq, dépendance comprise, une marque posée à côté.
+ * Score net : quatre bonnes réponses moins une mauvaise, soit trois — le
+ * seuil exact du premier critère.
+ */
 const FOUR_OF_FIVE_WITH_DEPENDENCY = [
   DEFECT_LINES.dependency,
   DEFECT_LINES.security,
   DEFECT_LINES.resource,
   DEFECT_LINES.contract,
-  1,
+  FALSE_POSITIVE_LINE,
 ]
 
 /** Quatre défauts sur cinq, la dépendance manquée : le lecteur de motifs. */
@@ -133,11 +151,11 @@ const FOUR_OF_FIVE_WITHOUT_DEPENDENCY = [
   DEFECT_LINES.resource,
   DEFECT_LINES.contract,
   DEFECT_LINES.logic,
-  1,
+  FALSE_POSITIVE_LINE,
 ]
 
 /** Cinq défauts sur cinq, et toutes les lignes saines marquées en plus. */
-const EVERY_LINE = ALL_LINES
+const EVERY_LINE = allLines(realG1_2Config())
 
 const TABLE_FROM_PHASE_4 = [
   {
@@ -153,10 +171,13 @@ const TABLE_FROM_PHASE_4 = [
     satisfied: { c1: true, c2: true, c3: false, c4: true },
   },
   {
+    // Marquer tout l'extrait rend cinq bonnes réponses et dix-neuf mauvaises :
+    // le score net plonge, alors que la couverture reste pleine. C'est le
+    // barème seul qui ferme la saturation, sans critère dédié.
     name: 'Le saturateur',
     markedLines: EVERY_LINE,
     elapsedSeconds: 100,
-    satisfied: { c1: true, c2: false, c3: true, c4: true },
+    satisfied: { c1: false, c2: true, c3: true, c4: true },
   },
   {
     name: 'Le lent',
@@ -210,6 +231,27 @@ describe('defect-hunt in the course', () => {
     expect(lent.score).toBeCloseTo(6 / 7, 3)
   })
 
+  /**
+   * Le cinquième profil, et le plus important : celui qui lit bien.
+   *
+   * Un relecteur méticuleux trouve les cinq défauts ET signale deux lignes
+   * que le corpus ne déclare pas — un point de style, une lecture discutable.
+   * Il doit sortir avec le score plein. S'il n'y arrive pas, le jeu
+   * récompense celui qui s'arrête au nombre annoncé plutôt que celui qui
+   * lit, ce qui est l'inverse exact de ce que la story mesure.
+   *
+   * C'est le test qui tient la contrainte de rédaction du corpus : au plus
+   * deux lignes saines peuvent rester légitimement signalables. La première
+   * écriture en portait quatre, et ce profil sortait au score du saturateur.
+   */
+  it('rewards the exhaustive reviewer: five found plus two debatable marks keeps a full score', () => {
+    const exhaustif = verificationDimension(
+      playG1_2([...Object.values(DEFECT_LINES), FALSE_POSITIVE_LINE, 1], 100),
+    )
+
+    expect(exhaustif.score).toBe(1)
+  })
+
   it('loads the real course and opens the Jugement critique group on the second situation, defect-hunt', () => {
     expect(() => buildFacade()).not.toThrow()
 
@@ -259,7 +301,7 @@ describe('defect-hunt in the course', () => {
 
     const dimension = verificationDimension(playG1_2(missesOneDefect, 100))
     const ratioSatisfied = dimension.contributions.find(
-      (c) => c.criterionId === 'g1-2-c1',
+      (contribution) => contribution.criterionId === 'g1-2-c2',
     )?.satisfied
 
     expect(ratioSatisfied).toBe(true)
@@ -273,19 +315,33 @@ describe('defect-hunt in the course', () => {
    */
   it('locks the corpus: each declared defect lands on a line whose content matches what its reveal describes', () => {
     const config = realG1_2Config()
-    const lines = config.snippet.code.split('\n')
+    const lines = snippetLines(config.snippet.code)
 
     const expectedSubstringByKind: Record<string, string> = {
       'hallucinated-dependency': 'express-query-guard',
-      security: 'SELECT',
-      resource: 'return',
       contract: 'Number(req.query.page)',
       logic: 'page * PAGE_SIZE',
+      security: 'req.params.owner',
+      resource: 'client.release',
     }
 
     config.defects.forEach((defect) => {
       const lineContent = lines[defect.line - 1]
       expect(lineContent).toContain(expectedSubstringByKind[defect.kind])
+
+      /**
+       * Le marqueur d'un défaut n'apparaît qu'une fois dans tout l'extrait.
+       * S'il apparaissait deux fois, le défaut aurait deux domiciles
+       * plausibles, et le joueur qui le diagnostique correctement mais
+       * clique l'autre encaisserait un faux positif ET un défaut manqué.
+       * C'est exactement ce que la première écriture du corpus faisait avec
+       * la fuite de connexion, déclarée sur le retour anticipé quand le
+       * geste naturel visait l'appel à `release`.
+       */
+      const homes = lines.filter((line) =>
+        line.includes(expectedSubstringByKind[defect.kind]),
+      )
+      expect(homes).toHaveLength(1)
     })
   })
 
@@ -299,7 +355,7 @@ describe('defect-hunt in the course', () => {
    */
   it('locks the corpus: every defect line carries a self-contained statement', () => {
     const config = realG1_2Config()
-    const lines = config.snippet.code.split('\n')
+    const lines = snippetLines(config.snippet.code)
 
     const isBalanced = (line: string): boolean => {
       const opening = (line.match(/[([{]/g) ?? []).length
@@ -312,13 +368,23 @@ describe('defect-hunt in the course', () => {
     })
   })
 
-  it('covers security, logic and the hallucinated dependency, and declares at least five defects', () => {
+  it('covers security, logic and the hallucinated dependency, and declares exactly five defects', () => {
     const config = realG1_2Config()
     const kinds = new Set(config.defects.map((defect) => defect.kind))
 
     expect(kinds.has('security')).toBe(true)
     expect(kinds.has('logic')).toBe(true)
     expect(kinds.has('hallucinated-dependency')).toBe(true)
-    expect(config.defects.length).toBeGreaterThanOrEqual(5)
+
+    /**
+     * Exactement cinq, pas « au moins cinq ». Les trois premiers profils du
+     * tableau se posent sur `4 / 5 = 0,80`, la borne exacte du critère de
+     * ratio : à six défauts, `4 / 6 = 0,67` les ferait tous échouer et le
+     * tableau cesserait de dire ce qu'il prétend. Allonger le corpus est
+     * possible, mais alors les profils se dérivent de `defects.length` et
+     * ce test change avec eux — il ne doit pas laisser passer l'écart en
+     * silence.
+     */
+    expect(config.defects).toHaveLength(5)
   })
 })

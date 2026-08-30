@@ -42,10 +42,17 @@ const foundRatioAtLeast = (ratio: number, rule: CriterionRule): boolean => {
   return ratio >= threshold
 }
 
-/** « Au plus N marques posées à côté » : en poser exactement N tient encore. */
-const falsePositivesAtMost = (count: number, rule: CriterionRule): boolean => {
+/**
+ * Le score net de la revue — un point par ligne fautive marquée, un de moins
+ * par ligne saine marquée — contre son seuil, borne incluse.
+ *
+ * C'est cette règle qui remplace le comptage séparé des faux positifs : le
+ * barème les fait déjà payer un par un, et un second critère qui les
+ * recompterait les punirait deux fois pour la même marque.
+ */
+const netScoreAtLeast = (netScore: number, rule: CriterionRule): boolean => {
   const { threshold } = countRuleSchema.parse(rule)
-  return count <= threshold
+  return netScore >= threshold
 }
 
 /**
@@ -86,40 +93,48 @@ export class DefectHuntEvaluator implements GameEvaluator {
      * lecture, jamais un recalcul propre à chacune.
      */
     const reading = readReview(parsedConfig, trace)
-    const kindsFound = foundKinds(reading)
+
+    /**
+     * Les quatre lectures que les règles consomment, assemblées une fois.
+     * Elles voyagent groupées plutôt qu'en quatre arguments de plus : la
+     * limite du projet est de cinq paramètres, et une signature qui s'allonge
+     * à chaque règle ajoutée est le signal qu'il fallait un objet.
+     */
+    const verdictInputs: VerdictInputs = {
+      config: parsedConfig,
+      netScore: reading.netScore,
+      foundRatio: reading.foundRatio,
+      kindsFound: foundKinds(reading),
+      elapsedSeconds: trace.elapsedSeconds,
+    }
 
     return criteria.map((criterion) => ({
       criterionId: criterion.id,
-      satisfied: this.applyRule(
-        criterion.rule,
-        parsedConfig,
-        reading.foundRatio,
-        reading.falsePositiveLines.length,
-        kindsFound,
-        trace.elapsedSeconds,
-      ),
+      satisfied: this.applyRule(criterion.rule, verdictInputs),
     }))
   }
 
-  private applyRule(
-    rule: CriterionRule,
-    config: DefectHuntConfig,
-    foundRatio: number,
-    falsePositiveCount: number,
-    kindsFound: ReadonlySet<string>,
-    elapsedSeconds: number,
-  ): boolean {
+  private applyRule(rule: CriterionRule, inputs: VerdictInputs): boolean {
     switch (rule.type) {
+      case 'net-score-at-least':
+        return netScoreAtLeast(inputs.netScore, rule)
       case 'found-ratio-at-least':
-        return foundRatioAtLeast(foundRatio, rule)
-      case 'false-positives-at-most':
-        return falsePositivesAtMost(falsePositiveCount, rule)
+        return foundRatioAtLeast(inputs.foundRatio, rule)
       case 'kinds-found-including':
-        return kindsFoundIncluding(kindsFound, rule)
+        return kindsFoundIncluding(inputs.kindsFound, rule)
       case 'within-time-budget':
-        return withinTimeBudget(config, elapsedSeconds)
+        return withinTimeBudget(inputs.config, inputs.elapsedSeconds)
       default:
         throw new UnknownRuleError(rule.type)
     }
   }
+}
+
+/** Tout ce qu'une règle peut lire, et rien de plus. */
+type VerdictInputs = {
+  config: DefectHuntConfig
+  netScore: number
+  foundRatio: number
+  kindsFound: ReadonlySet<string>
+  elapsedSeconds: number
 }
