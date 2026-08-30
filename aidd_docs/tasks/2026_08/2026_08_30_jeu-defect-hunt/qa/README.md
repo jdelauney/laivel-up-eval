@@ -45,7 +45,17 @@ Le corpus déclarait alors la fuite sur `client.release` sans parenthèses — m
 
 Un relecteur qui diagnostiquait complètement et marquait les deux lignes sortait à `+1 − 1 = 0`. Celui qui n'en voyait que la moitié sortait à `+1`. **Le jeu payait mieux la lecture superficielle.**
 
-L'extrait a été réécrit une troisième fois : le `finally` existe, seules les parenthèses manquent, un contrôle d'autorisation visible ferme la ligne du routeur, et la réponse ne promet plus de pagination. Les deux lignes saines encore défendables sont désormais énumérées dans le test d'intégration, sous le nom `DEBATABLE_LINES`, avec un test qui casse si on en ajoute une troisième.
+L'extrait a été réécrit une troisième fois : le `finally` existe, seules les parenthèses manquent, un contrôle d'autorisation visible ferme la ligne du routeur, et la réponse ne promet plus de pagination.
+
+## Ce que la vérification ciblée a trouvé
+
+La troisième écriture fermait bien la fuite, mais faisait apparaître **la même forme sur l'injection SQL** : lier un paramètre oblige à passer le tableau de valeurs au site d'appel, donc `e4` avait lui aussi deux lieux de correction — la construction de la requête et son appel. Le constat n'avait pas disparu comme classe, il s'était déplacé d'un cran et se trouvait absorbé par un budget à zéro marge.
+
+Une troisième ligne saine défendable a également été signalée : `let client` sans type, implicitement `any`.
+
+Quatrième écriture, et la dernière : la requête et son appel tiennent sur une seule ligne, `let client` est typé. Il ne reste **qu'une** ligne saine défendable — `res.json({ items: rows })`, sans total ni curseur — pour une tolérance de deux. La marge est délibérée, et la liste vit sous le nom `DEBATABLE_LINES` dans le test d'intégration, avec le test du relecteur exhaustif qui casse si elle s'allonge à trois.
+
+Un second test, qui affirmait que le budget n'avait aucune marge, a été retiré : il épinglait une coïncidence de l'écriture d'alors, passait précisément dans le cas où il prétendait alerter, et son commentaire décrivait l'inverse de ce qu'il faisait.
 
 ## Ce que la décision produit du 30/08 a changé
 

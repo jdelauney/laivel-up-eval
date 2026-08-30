@@ -100,7 +100,7 @@ const playG1_2 = (
 
 /**
  * Les lignes du corpus réel de `config/course.json` : cinq défauts, sur les
- * lignes 2 (dépendance hallucinée), 10 (contrat), 11 (logique), 16 (sécurité)
+ * lignes 2 (dépendance hallucinée), 11 (contrat), 12 (logique), 17 (sécurité)
  * et 23 (ressource). Les autres lignes de l'extrait sont saines.
  *
  * Trois contraintes tiennent l'équité de ce corpus, et elles sont toutes
@@ -122,9 +122,9 @@ const playG1_2 = (
  */
 const DEFECT_LINES = {
   dependency: 2,
-  contract: 10,
-  logic: 11,
-  security: 16,
+  contract: 11,
+  logic: 12,
+  security: 17,
   resource: 23,
 }
 
@@ -136,22 +136,28 @@ const DEFECT_LINES = {
  * seule qui existe : toute autre ligne saine de l'extrait doit être
  * indéfendable, sinon le corpus punit la lecture correcte.
  *
- * Le seuil de score net en tolère deux, et cette liste en compte deux. Elle
- * n'a donc aucune marge : y ajouter une entrée sans bouger le seuil, c'est
- * livrer un jeu qui paie mieux le lecteur superficiel.
+ * Le seuil de score net en tolère deux sur les cinq défauts du corpus. La
+ * liste en compte une : c'est la marge, et elle est délibérée — le corpus a
+ * échoué deux fois de suite pour avoir supposé sa tolérance au lieu de
+ * l'énumérer.
  *
- * - ligne 17 : `client.query(sql)` — le relecteur qui marque le site d'appel
- *   de la requête plutôt que la construction de la chaîne ligne 16.
  * - ligne 19 : `res.json({ items: rows })` — la réponse ne porte ni total ni
  *   curseur, ce qu'un relecteur peut reprocher à un point d'entrée qui
- *   pagine.
+ *   pagine. Reproche d'hygiène d'API, pas défaut : il reste défendable.
  *
- * Deux domiciles qui existaient dans les écritures précédentes ont été
- * fermés dans le code, pas dans ce commentaire : l'absence de `finally`
- * (le vrai correctif de la fuite vivait alors sur deux lignes) et l'absence
- * de contrôle d'autorisation sur `:owner`.
+ * Quatre domiciles concurrents ont été fermés dans le code, pas dans ce
+ * commentaire, chacun après avoir été signalé :
+ *
+ * - l'absence de `finally` — le vrai correctif de la fuite vivait alors sur
+ *   deux lignes, dont une saine ;
+ * - l'appel `client.query(sql)` séparé de la construction de la requête —
+ *   lier un paramètre oblige à toucher le site d'appel, donc l'injection
+ *   avait elle aussi deux lieux de correction. Requête et appel tiennent
+ *   désormais sur une seule ligne ;
+ * - l'absence de contrôle d'autorisation sur `:owner` ;
+ * - un `let client` sans type, implicitement `any`.
  */
-const DEBATABLE_LINES = [17, 19]
+const DEBATABLE_LINES = [19]
 
 /**
  * Dérivé de l'extrait réel, jamais figé : un corpus réécrit plus long
@@ -209,7 +215,7 @@ const TABLE_FROM_PHASE_4 = [
     satisfied: { c1: true, c2: true, c3: false, c4: true },
   },
   {
-    // Marquer tout l'extrait rend cinq bonnes réponses et dix-neuf mauvaises :
+    // Marquer tout l'extrait rend cinq bonnes réponses et vingt-deux mauvaises :
     // le score net plonge, alors que la couverture reste pleine. C'est le
     // barème seul qui ferme la saturation, sans critère dédié.
     name: 'Le saturateur',
@@ -262,7 +268,7 @@ describe('defect-hunt in the course', () => {
     },
   )
 
-  it('separates the four profiles exactly as the table decides: each misses only its own criterion', () => {
+  it('separates every profile exactly as the table decides: each misses only its own criterion', () => {
     const relecteur = verificationDimension(
       playG1_2(FOUR_OF_FIVE_WITH_DEPENDENCY, 100),
     )
@@ -285,7 +291,7 @@ describe('defect-hunt in the course', () => {
   })
 
   /**
-   * Le cinquième profil, et le plus important : celui qui lit bien.
+   * Le profil décisif, ajouté après la revue indépendante : celui qui lit bien.
    *
    * Un relecteur méticuleux trouve les cinq défauts ET signale deux lignes
    * que le corpus ne déclare pas — un point de style, une lecture discutable.
@@ -306,28 +312,30 @@ describe('defect-hunt in the course', () => {
   })
 
   /**
-   * Le garde-fou qui manquait, et sans lequel le test précédent n'est que de
-   * l'arithmétique : il vérifiait `5 − 2 ≥ 3` en marquant deux imports
-   * irréprochables, et il aurait passé à l'identique sur un corpus dont
-   * quatre lignes saines étaient défendables.
+   * Le test précédent est celui qui casse si `DEBATABLE_LINES` s'allonge :
+   * à trois entrées, le relecteur exhaustif tombe à `5 − 3 = 2`, sous le
+   * seuil, et son score cesse d'être plein.
    *
-   * La liste des lignes discutables n'a aucune marge face au seuil. Ce test
-   * casse dès qu'on lui en ajoute une sans bouger le seuil, ce qui force la
-   * question à revenir sur la table plutôt qu'à passer en silence.
+   * Un second test qui aurait affirmé « une entrée de plus coulerait le
+   * relecteur exhaustif » a existé et a été retiré : il épinglait
+   * l'égalité `|DEBATABLE_LINES| = 2`, une coïncidence de l'écriture d'alors
+   * et non une propriété qu'on veuille tenir. Il passait précisément dans le
+   * cas où il prétendait alerter, et son commentaire décrivait l'inverse de
+   * ce qu'il faisait.
    */
-  it('leaves the debatable-line budget with no slack: one more would sink the exhaustive reviewer', () => {
-    const uneDeTrop = [
-      ...Object.values(DEFECT_LINES),
-      ...DEBATABLE_LINES,
-      FALSE_POSITIVE_LINE,
-    ]
+  it('lets a wrong mark cost exactly one point, no more', () => {
+    const juste = verificationDimension(
+      playG1_2([...Object.values(DEFECT_LINES)], 100),
+    )
+    const uneErreur = verificationDimension(
+      playG1_2([...Object.values(DEFECT_LINES), FALSE_POSITIVE_LINE], 100),
+    )
 
-    const dimension = verificationDimension(playG1_2(uneDeTrop, 100))
-    const netScoreSatisfied = dimension.contributions.find(
-      (contribution) => contribution.criterionId === 'g1-2-c1',
-    )?.satisfied
-
-    expect(netScoreSatisfied).toBe(false)
+    // Cinq bonnes réponses valent 5, cinq bonnes et une mauvaise valent 4 :
+    // les deux tiennent le seuil de 3, et le barème n'a donc pas d'effet de
+    // falaise sur une seule erreur.
+    expect(juste.score).toBe(1)
+    expect(uneErreur.score).toBe(1)
   })
 
   it('loads the real course and opens the Jugement critique group on the second situation, defect-hunt', () => {

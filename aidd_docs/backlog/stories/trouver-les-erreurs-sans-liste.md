@@ -52,4 +52,8 @@ Trois garde-fous le tiennent, tous dans le test d'intégration :
 2. Le marqueur de chaque défaut n'apparaît qu'une fois dans tout l'extrait.
 3. Les lignes saines encore défendables vivent dans une liste nommée, revue à la main, et un test casse dès qu'on lui en ajoute une sans bouger le seuil.
 
-Le troisième est né d'un échec des deux premiers. La fuite de connexion a d'abord été posée sur un retour anticipé, puis sur un `release` sans parenthèses dans un bloc sans `finally` : dans les deux cas le correctif complet vivait sur deux lignes, et un relecteur qui diagnostiquait juste en marquant les deux sortait **moins bien noté** que celui qui n'en voyait que la moitié. Un marqueur textuel unique ne prouve pas un lieu de correction unique.
+Le troisième est né d'un échec des deux premiers, et le corpus a dû être réécrit trois fois avant de tenir.
+
+La fuite de connexion a d'abord été posée sur un retour anticipé, puis sur un `release` sans parenthèses dans un bloc sans `finally` : dans les deux cas le correctif complet vivait sur deux lignes, et un relecteur qui diagnostiquait juste en marquant les deux sortait **moins bien noté** que celui qui n'en voyait que la moitié. Un marqueur textuel unique ne prouve pas un lieu de correction unique.
+
+La troisième écriture a fait apparaître la même forme sur l'injection SQL : lier un paramètre oblige à toucher aussi le site d'appel, donc la requête et son appel devaient tenir sur la même ligne. La leçon est générale — **un défaut dont le correctif s'étale sur deux lignes n'a rien à faire dans ce corpus**, quelle que soit sa nature.
