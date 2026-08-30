@@ -1,10 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { buildPracticeMapAnswer } from '../actions/build-practice-map-answer.action'
 import {
-  type Poles,
   type PracticeMapConfig,
   practiceMapConfigSchema,
-  type Quadrants,
 } from '../schema/config.schema'
 
 /** Les deux temps d'une lecture : poser, voir la révélation. */
@@ -42,8 +40,15 @@ export type Position = { intensity: number; rigor: number }
 /** Une pratique révélée : son repère, jamais sa place attendue. */
 export type Marker = { id: string; label: string; marker: string }
 
+/**
+ * Le clavier parcourt chaque axe en crans entiers : onze positions, de `0`
+ * à `1`. Le compte est la source, le pas en dérive — l'inverse laisserait
+ * l'arrondi de `snapToStep` sans treillis entier où retomber.
+ */
+const STEPS_PER_AXIS = 10
+
 /** Un pas de déplacement au clavier, identique sur les deux axes. */
-const NUDGE_STEP = 0.1
+const NUDGE_STEP = 1 / STEPS_PER_AXIS
 
 /**
  * Le milieu géométrique du plan, sur les deux axes. C'est là — et nulle
@@ -51,10 +56,34 @@ const NUDGE_STEP = 0.1
  * que c'est là que la croix est tracée à l'écran. Le seuil de notation
  * (`highRigorFrom`) ne doit jamais servir à formuler ce que le joueur lit
  * ou entend : il est localisable en deux flèches sinon.
+ *
+ * **Cette valeur est littérale, et le reste.** La seconde revue a relevé
+ * qu'elle vaut la même chose qu'`INTENSITY_MIDPOINT` dans
+ * `config.schema.ts`, sans que rien ne les lie. C'est voulu : l'une dit où
+ * le plan est coupé en deux à l'écran, l'autre sert à valider qu'un corpus
+ * répartit ses zones des deux côtés d'un axe. Deux notions distinctes qui
+ * coïncident. Les unifier ferait suivre à l'annonce une valeur de
+ * validation — la fuite du 31/08 sous une autre forme, et symétrique cette
+ * fois, donc invisible au test de régression qui garde la première.
  */
 const PLANE_MIDPOINT = 0.5
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value))
+
+/**
+ * Ramène une coordonnée sur le treillis du pas clavier. `0.1` n'a pas de
+ * représentation binaire exacte : l'accumuler fait dériver la coordonnée,
+ * et deux chemins vers la même position n'y arrivent pas à la même valeur.
+ * Ne s'applique qu'au clavier — un dépôt au pointeur reste continu au pixel
+ * près, comme le veut l'absence de case prédéfinie.
+ *
+ * L'arrondi passe par le **compte entier de crans**, jamais par une
+ * remultiplication par le pas : `Math.round(v / 0.1) * 0.1` laisse `0.3` et
+ * `0.7` dérivés, parce que `3 * 0.1 !== 0.3` en binaire. Diviser par le
+ * nombre de crans retombe sur la même valeur que la littérale.
+ */
+const snapToStep = (value: number): number =>
+  Math.round(value * STEPS_PER_AXIS) / STEPS_PER_AXIS
 
 /**
  * Le cycle de vie React d'une lecture, et rien d'autre. Aucune règle de
@@ -127,12 +156,30 @@ export const usePracticeMap = (
   }
 
   /**
-   * Déplace le jeton saisi d'un pas fixe sur un axe, borné dans `[0,1]`.
+   * Déplace le jeton saisi d'un pas fixe sur un axe, borné dans `[0,1]` et
+   * **ramené sur le treillis du pas**.
    *
    * Passe par la forme fonctionnelle de `setHeldPosition` : deux nudges
    * déclenchés dans le même tick — une flèche diagonale, ou deux touches
    * pressées avant le prochain rendu — liraient sinon la même valeur figée
    * de `heldPosition` et le second écraserait le premier.
+   *
+   * **L'arrondi n'est pas cosmétique.** Correction du 31/08, sur constat de
+   * la seconde revue indépendante. Sans lui, l'accumulation de `0.1` en
+   * binaire produisait vingt-cinq valeurs distinctes pour onze positions,
+   * et la coordonnée dépendait du **chemin** parcouru plutôt que de la case
+   * visée. Deux trajets vers la même colonne ne notaient pas pareil :
+   *
+   * ```
+   * p5, zone d'intensité [0.8, 1] :
+   *   trois fois Droite depuis le centre        → 0.7999999999999999  hors zone
+   *   sept fois Droite (buté à 1) puis deux Gauche → 0.8               en zone
+   * ```
+   *
+   * Les deux annonçaient les mêmes mots et rendaient deux verdicts. Cinq
+   * bords de zone du corpus réel étaient touchés, et le joueur à la souris
+   * n'avait pas l'équivalent — c'est exactement l'inégalité entre les deux
+   * chemins d'entrée que le reste du jeu s'attache à éviter.
    */
   const nudge = (axis: 'intensity' | 'rigor', direction: 1 | -1): void => {
     if (phase !== 'placing' || heldId === undefined) return
@@ -141,7 +188,7 @@ export const usePracticeMap = (
         ? current
         : {
             ...current,
-            [axis]: clamp01(current[axis] + direction * NUDGE_STEP),
+            [axis]: snapToStep(clamp01(current[axis] + direction * NUDGE_STEP)),
           },
     )
   }
@@ -240,8 +287,8 @@ export const usePracticeMap = (
 
   return {
     statement: parsed.statement,
-    poles: parsed.poles as Poles,
-    quadrants: parsed.quadrants as Quadrants,
+    poles: parsed.poles,
+    quadrants: parsed.quadrants,
     legend,
     placedTokens,
     heldId,

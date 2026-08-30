@@ -307,6 +307,45 @@ describe('use practice map', () => {
     expect(atThreshold).toBe(atMidpoint)
   })
 
+  /**
+   * Régression du 31/08, seconde revue indépendante. `nudge` accumulait
+   * `0.1` sans arrondi : vingt-cinq valeurs distinctes pour onze positions,
+   * et la coordonnée dépendait du chemin plutôt que de la position visée.
+   * Trois flèches Droite depuis le centre rendaient `0.7999999999999999`,
+   * hors de la zone `[0.8, 1]` de `p5` ; sept flèches Droite puis deux
+   * Gauche rendaient `0.8`, dedans. Mêmes mots annoncés, deux verdicts.
+   */
+  it('keeps keyboard steps on an exact lattice, whatever path reaches a position', () => {
+    const nudgeTo = (steps: readonly (1 | -1)[]) => {
+      const { result } = renderGame()
+      act(() => {
+        result.current.hold('p1')
+      })
+      act(() => {
+        result.current.place(0.5, 0.5)
+      })
+      act(() => {
+        result.current.hold('p1')
+      })
+      steps.forEach((direction) => {
+        act(() => {
+          result.current.nudge('intensity', direction)
+        })
+      })
+      return result.current.heldPosition?.intensity
+    }
+
+    // Trois crans à droite depuis le centre : la valeur exacte, pas 0,79999…
+    expect(nudgeTo([1, 1, 1])).toBe(0.8)
+    // Le chemin long, qui bute sur la borne haute avant de redescendre,
+    // arrive à la même valeur au bit près.
+    expect(nudgeTo([1, 1, 1, 1, 1, 1, 1, -1, -1])).toBe(0.8)
+    // Les deux autres valeurs que la remultiplication par le pas laissait
+    // dériver.
+    expect(nudgeTo([-1, -1])).toBe(0.3)
+    expect(nudgeTo([1, 1])).toBe(0.7)
+  })
+
   it('locks hold, place, nudge, release and submit once revealed', () => {
     const { result } = renderGame()
 
