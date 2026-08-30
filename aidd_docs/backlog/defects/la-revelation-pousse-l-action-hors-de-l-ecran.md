@@ -30,9 +30,11 @@ L'action passe sous la ligne de flottaison dès que la révélation est ouverte.
 | Gabarit | Dépassement sur `lie-detector`, manche `r1` |
 | --- | --- |
 | 390 × 844 | **597 px**, mesuré à `scrollY = 0` vérifié |
-| 1440 × 900 | 383 px, **mesure à refaire** — prise au repère contaminé, cf. ci-dessous |
+| 1440 × 900 | **383 px**, mesure valide |
 
-**Les premiers chiffres étaient faux, et de beaucoup.** La tournée annonçait 185 px sur mobile. Le navigateur piloté fait défiler la page pour amener un bouton hors écran dans sa zone cliquable avant de le cliquer, et ce décalage survivait au passage de manche puisque l'application ne recharge jamais. Toutes les lectures étaient donc courtes de l'offset accumulé. Reprise au bon repère, la mesure mobile est plus de trois fois pire.
+**Les premiers chiffres mobiles étaient faux, et de beaucoup — la mesure desktop, elle, a toujours tenu.** La tournée annonçait 185 px sur mobile. Le navigateur piloté fait défiler la page pour amener un bouton hors écran dans sa zone cliquable avant de le cliquer, et ce décalage survivait au passage de manche puisque l'application ne recharge jamais : la mesure mobile était donc courte de l'offset accumulé, et reprise au bon repère, elle ressort plus de trois fois pire (597 px, pas 185).
+
+La mesure desktop n'a jamais souffert de cette contamination : `qa/README.md` (point 3) le précise — `document.documentElement.scrollHeight` porte sur le document entier, pas sur la position de défilement, donc les 383 px restent la mesure prise, quel que soit le `scrollY` au moment de la lecture.
 
 ## Reproduction
 
