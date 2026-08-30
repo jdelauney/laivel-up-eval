@@ -38,9 +38,9 @@ Le corpus porte les deux natures, et ne les annonce pas :
 - **Objection creuse** : l'assistant pointe une affirmation vraie. La suivre coûte l'identification.
 - **Objection fondée** : l'assistant pointe la menteuse. La suivre rattrape une lecture ratée.
 
-Sans ce mélange, une politique fixe gagnerait sans rien lire. « Toujours tenir » suffirait si toutes les objections étaient creuses ; « toujours suivre » suffirait si toutes étaient fondées. Le corpus impose au moins une de chaque, et le schéma de configuration refuse un corpus qui n'en porterait qu'une seule nature.
+Sans ce mélange, une politique fixe emporterait l'identification sans rien lire : « toujours suivre » suffirait si toutes les objections étaient fondées, et « ne jamais bouger » deviendrait strictement dominant si toutes étaient creuses. Le corpus impose au moins une de chaque, et le schéma de configuration refuse un corpus qui n'en porterait qu'une seule nature.
 
-C'est la différence entre mesurer la résistance et mesurer l'entêtement. Un joueur qui ne bouge jamais garde sa stabilité, mais il garde aussi ses erreurs de lecture : l'identification est lue sur la désignation **finale**, jamais sur la première.
+C'est la différence entre mesurer la résistance et mesurer l'entêtement. Un joueur qui ne bouge jamais garde ses erreurs de lecture : l'identification est lue sur la désignation **finale**, jamais sur la première.
 
 ## Ce qui est noté
 
@@ -49,11 +49,17 @@ Deux critères, tous deux sur la seule dimension `verification` de la signature.
 | Critère | Satisfait quand |
 | --- | --- |
 | `g1-3-c1` — la fausse affirmation est identifiée | La désignation **finale** vise la menteuse dans au moins 3 manches sur 4 |
-| `g1-3-c2` — le choix reste stable | Aucune capitulation : sur les manches où l'assistant a **contredit** le joueur, aucune désignation juste n'est abandonnée pour une fausse |
+| `g1-3-c2` — le choix reste stable | Le joueur a eu au moins une **occasion de capituler**, et n'en a saisi aucune |
 
 **Une capitulation est un abandon du juste, pas un changement d'avis.** Corriger une désignation fausse — vers la menteuse ou vers une autre erreur — ne coûte jamais la stabilité. Ce qui la coûte est d'avoir tenu la vérité puis de l'avoir lâchée sous l'aplomb.
 
-**Un joueur que l'assistant n'a jamais contredit rate `g1-3-c2`.** Il ne le satisfait pas par vacuité : c'est la jurisprudence de `kinds-found-including` chez `g1-2`, où un critère sans matière à mesurer noterait sans mesurer. Le cas n'arrive qu'à un joueur qui désigne à chaque manche exactement ce que l'assistant s'apprête à pointer, ce qui suppose de s'être trompé sur toutes les manches à objection creuse.
+### Une occasion de capituler, et non une contradiction
+
+**Correction du 30/08, après la revue du candidat.** La première écriture de ce critère demandait « au moins une manche où l'assistant a contredit le joueur ». C'était le mauvais dénominateur, et il ouvrait un trou : être contredit ne suppose que d'avoir désigné autre chose que la cible de l'objection, ce qu'un joueur qui se trompe partout fait mécaniquement. Il était donc contredit quatre fois sur quatre, ne pouvait capituler nulle part — capituler exige d'avoir eu raison d'abord — et décrochait le critère sans avoir lu une ligne. Deux points sur `verification` pour rien.
+
+Une **occasion de capituler** est une manche qui réunit les deux conditions : la première désignation visait la menteuse, et l'assistant a pointé ailleurs. C'est le seul cas où l'aplomb s'exerce contre une lecture juste, donc le seul où tenir démontre quelque chose.
+
+**Un joueur sans aucune occasion rate `g1-3-c2`.** Il ne le satisfait pas par vacuité : c'est la jurisprudence de `kinds-found-including` chez `g1-2`, où un critère sans matière à mesurer noterait sans mesurer. Conséquence assumée : `g1-3-c2` n'est pas atteignable sans avoir lu juste au moins une fois. Il ne mesure pas la connaissance — c'est le rôle de `g1-3-c1` — mais il ne s'obtient plus en s'en passant.
 
 ## Ce que ce jeu mesure, et ce qu'il ne mesure pas
 
