@@ -99,7 +99,9 @@ describe('lie detector game, rendered', () => {
     )
 
     const visible = container.textContent ?? ''
-    expect(visible).not.toContain(config.rounds[0].claims[1].verification)
+    config.rounds[0].claims.forEach((entry) => {
+      expect(visible).not.toContain(entry.verification)
+    })
     expect(visible).not.toMatch(/menteuse/i)
   })
 
@@ -186,9 +188,11 @@ describe('lie detector game, rendered', () => {
 
   /**
    * Garde-fou de la passe : une objection fondée et une objection creuse
-   * doivent produire exactement le même arbre, seul l'argument variant. Ce
-   * test casse si une future passe fait porter la nature de l'objection par
-   * sa présentation.
+   * doivent produire exactement le même arbre, seul l'argument variant. La
+   * comparaison porte sur l'écran entier, pas seulement le sous-arbre de
+   * `ObjectionNote` (élargi le 30/08, revue F8) : une future passe qui
+   * marquerait la cible de l'objection ailleurs dans la grille — sur la
+   * carte visée, par exemple — casserait ce test au lieu de passer inaperçue.
    */
   it('renders a founded and a hollow objection with exactly the same structure', () => {
     // `X-b` est toujours la menteuse du corpus de test : viser `r1-b` rend
@@ -206,12 +210,11 @@ describe('lie detector game, rendered', () => {
     }
 
     const objectionMarkup = (cfg: typeof config): string => {
-      const { unmount } = render(
+      const { container, unmount } = render(
         <LieDetectorGame config={cfg} onSubmit={vi.fn()} />,
       )
       fireEvent.click(claimButton(new RegExp(cfg.rounds[0].claims[0].text)))
-      const label = screen.getByText("L'assistant")
-      const markup = label.parentElement?.outerHTML ?? ''
+      const markup = container.innerHTML
       unmount()
       return markup
     }
