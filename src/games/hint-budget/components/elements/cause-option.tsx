@@ -24,14 +24,17 @@ export const CauseOption = ({
   actual?: boolean
   verification?: string
 }) => {
+  // `selected` ne peut valoir `true` qu'à la révélation : `CutPanel` le
+  // dérive de `revelation?.cutCauseId`, `undefined` tant que la situation
+  // n'est pas tranchée. Avant la révélation, la carte ne porte donc jamais
+  // de marque de sélection — seul `aria-pressed` en garde trace pour le
+  // clavier et le lecteur d'écran.
   const revealed = actual !== undefined
   const stateLabel = revealed
     ? actual
       ? 'cause réelle'
       : 'écartée'
-    : selected
-      ? 'sélectionnée'
-      : 'candidate'
+    : 'candidate'
 
   const mark =
     revealed && actual ? (
@@ -45,12 +48,6 @@ export const CauseOption = ({
         aria-hidden
         className="size-3 text-plane-foreground/40"
         strokeWidth={1.5}
-      />
-    ) : selected ? (
-      <Disc
-        aria-hidden
-        className="size-3 text-plane-foreground"
-        fill="currentColor"
       />
     ) : (
       <Circle

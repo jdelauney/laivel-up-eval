@@ -196,14 +196,19 @@ export const useHintBudget = (
         }))
 
   // Le coût engagé des situations déjà closes : leur relevé complet, achats
-  // et pénalités éventuelles compris.
-  const completedCost = completedAttempts.reduce((total, attempt) => {
-    const situation = parsed.situations.find(
-      (entry) => entry.id === attempt.situationId,
-    )
-    if (situation === undefined) return total
-    return total + readOne(parsed, situation, attempt).cost
-  }, 0)
+  // et pénalités éventuelles compris. `Reading.totalCost` porte déjà cette
+  // somme ; un second cumul local ici aurait été la même règle écrite deux
+  // fois.
+  const completedSituations = parsed.situations.filter((situation) =>
+    completedAttempts.some((attempt) => attempt.situationId === situation.id),
+  )
+  const completedCost =
+    completedSituations.length === 0
+      ? 0
+      : readSituations(
+          { ...parsed, situations: completedSituations },
+          { attempts: [...completedAttempts] },
+        ).totalCost
 
   const currentHintCost =
     currentSituation === undefined

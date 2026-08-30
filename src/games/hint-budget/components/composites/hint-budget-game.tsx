@@ -61,6 +61,56 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
   const isLastSituation = situationNumber === situationsTotal
   const interactive = phase === 'playing'
 
+  const framingPanel = (
+    <section key="framing" className="border border-plane-rule bg-plane">
+      <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
+        Le cadrage
+      </header>
+      <div>
+        {framings.map((framing) => (
+          <FramingLine
+            key={framing.id}
+            text={framing.text}
+            retained={retainedIds.includes(framing.id)}
+            locked={framingPosted || !interactive}
+            onToggle={() => toggleFraming(framing.id)}
+          />
+        ))}
+      </div>
+      <footer className="border-plane-rule border-t px-3 py-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={framingPosted || !interactive}
+          onClick={postFraming}
+        >
+          {framingPosted ? 'Cadre transmis' : 'Transmettre ce cadre'}
+        </Button>
+      </footer>
+    </section>
+  )
+
+  const marketPanel = (
+    <HintMarket
+      key="market"
+      hints={hints}
+      interactive={interactive}
+      onBuy={buyHint}
+    />
+  )
+
+  /**
+   * Empilés en une seule colonne sous 640px, les deux panneaux ne peuvent
+   * plus être pairs au sens strict : l'un est structurellement au-dessus de
+   * l'autre sur un même écran. Alterner lequel selon la parité de la
+   * situation empêche au moins que l'un des deux gestes soit *toujours*
+   * favorisé sur l'ensemble d'une partie — au clavier comme visuellement,
+   * l'ordre DOM porte les deux à la fois. Limite assumée, écrite en phase 5 :
+   * ce n'est pas la parité par écran que la phase 3 visait, seulement
+   * l'absence de biais systématique sur les trois situations.
+   */
+  const cadrageFirst = (situationNumber - 1) % 2 === 0
+
   return (
     <div className="flex flex-col gap-3 sm:gap-6">
       <Statement text={statement} situationNumber={situationNumber} />
@@ -75,35 +125,10 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
 
       <IncidentBrief symptom={symptom} report={report} />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-6">
-        <section className="border border-plane-rule bg-plane">
-          <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
-            Le cadrage
-          </header>
-          <div>
-            {framings.map((framing) => (
-              <FramingLine
-                key={framing.id}
-                text={framing.text}
-                retained={retainedIds.includes(framing.id)}
-                locked={framingPosted}
-                onToggle={() => toggleFraming(framing.id)}
-              />
-            ))}
-          </div>
-          <footer className="border-plane-rule border-t px-3 py-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={framingPosted}
-              onClick={postFraming}
-            >
-              {framingPosted ? 'Cadre transmis' : 'Transmettre ce cadre'}
-            </Button>
-          </footer>
-        </section>
-
-        <HintMarket hints={hints} onBuy={buyHint} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
+        {cadrageFirst
+          ? [framingPanel, marketPanel]
+          : [marketPanel, framingPanel]}
       </div>
 
       <CutPanel
@@ -116,7 +141,7 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
       {phase === 'revealed' ? (
         <div>
           <Button type="button" size="lg" onClick={advance}>
-            {isLastSituation ? 'Groupe suivant' : 'Situation suivante'}
+            {isLastSituation ? 'Groupe suivant' : 'Incident suivant'}
           </Button>
         </div>
       ) : null}
@@ -133,9 +158,11 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
  */
 const HintMarket = ({
   hints,
+  interactive,
   onBuy,
 }: {
   hints: readonly HintView[]
+  interactive: boolean
   onBuy: (hintId: string) => void
 }) => {
   const shopHints = hints.filter((hint) => !hint.bought)
@@ -155,6 +182,7 @@ const HintMarket = ({
             label={hint.label}
             cost={hint.cost}
             bought={false}
+            interactive={interactive}
             onBuy={() => onBuy(hint.id)}
           />
         ))}
@@ -170,8 +198,8 @@ const HintMarket = ({
               label={hint.label}
               cost={hint.cost}
               bought
+              interactive={interactive}
               text={hint.text}
-              onBuy={() => onBuy(hint.id)}
             />
           ))}
           {collapsedBought.length > 0 ? (
@@ -186,8 +214,8 @@ const HintMarket = ({
                   label={hint.label}
                   cost={hint.cost}
                   bought
+                  interactive={interactive}
                   text={hint.text}
-                  onBuy={() => onBuy(hint.id)}
                 />
               ))}
             </details>
@@ -240,6 +268,14 @@ const Statement = ({
  * La situation courante sur le total, jamais le compte des situations déjà
  * résolues : un compteur de réussites transformerait les dernières
  * situations en calcul de seuil.
+ *
+ * Le mot affiché est « Incident », pas « Situation » : la coquille du
+ * parcours (`course-view.tsx`) porte déjà son propre « Situation N sur M »
+ * — le compte des vingt jeux du parcours, une échelle entièrement
+ * différente de celle-ci. Les deux libellés cohabitent à l'écran ; les six
+ * autres jeux évitent la collision en nommant chacun son unité autrement
+ * (« Manche », « Tour », « Étape », « Extrait »). Correction du 30/08, après
+ * revue.
  */
 const SituationNumber = ({
   situationNumber,
@@ -252,7 +288,7 @@ const SituationNumber = ({
     aria-live="polite"
     className="font-medium text-plane-foreground/50 text-xs uppercase tabular-nums tracking-[0.14em]"
   >
-    Situation {situationNumber} sur {situationsTotal}
+    Incident {situationNumber} sur {situationsTotal}
   </p>
 )
 

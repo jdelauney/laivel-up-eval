@@ -171,6 +171,37 @@ describe('hint budget game, rendered', () => {
     ).not.toBeInTheDocument()
   })
 
+  /**
+   * Garde-fou : `HintMarket` recevait `interactive` nulle part avant cette
+   * correction, un indice non acheté gardait un bouton « Acheter » d'apparence
+   * active dont le clic ne faisait plus rien une fois révélé — une
+   * affordance morte. Idem pour une lecture de cadrage jamais transmise.
+   */
+  it('disables every unbought hint button and every framing reading once the situation is revealed', () => {
+    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: new RegExp(config.situations[0].causes[0].text),
+      }),
+    )
+
+    config.situations[0].hints.slice(1).forEach((entry) => {
+      expect(
+        screen.getByRole('button', {
+          name: new RegExp(`acheter · ${entry.cost}`, 'i'),
+        }),
+      ).toBeDisabled()
+    })
+    config.situations[0].framings.forEach((entry) => {
+      expect(
+        screen.getByRole('button', {
+          name: new RegExp(entry.text),
+        }),
+      ).toBeDisabled()
+    })
+  })
+
   it('submits a trace with one attempt per situation, only once even if the passage action fires twice', () => {
     const onSubmit = vi.fn()
     render(<HintBudgetGame config={config} onSubmit={onSubmit} />)
@@ -184,10 +215,10 @@ describe('hint budget game, rendered', () => {
     }
 
     playSituation(0)
-    fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
+    fireEvent.click(screen.getByRole('button', { name: /incident suivant/i }))
 
     playSituation(1)
-    fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
+    fireEvent.click(screen.getByRole('button', { name: /incident suivant/i }))
 
     playSituation(2)
     fireEvent.click(screen.getByRole('button', { name: /groupe suivant/i }))
