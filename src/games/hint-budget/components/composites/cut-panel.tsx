@@ -43,6 +43,9 @@ export const CutPanel = ({
             interactive={interactive}
             onSelect={interactive ? () => onCut(cause.id) : undefined}
             actual={causeRevelation?.actual}
+            wasCut={
+              revelation !== undefined && cause.id === revelation.cutCauseId
+            }
             verification={causeRevelation?.verification}
           />
         )

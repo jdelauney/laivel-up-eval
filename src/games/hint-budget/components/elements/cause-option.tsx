@@ -14,12 +14,14 @@ export const CauseOption = ({
   interactive,
   onSelect,
   actual,
+  wasCut,
   verification,
 }: {
   text: string
   interactive: boolean
   onSelect?: () => void
   actual?: boolean
+  wasCut?: boolean
   verification?: string
 }) => {
   // Le clic est l'action elle-même — immédiate, irréversible — jamais un
@@ -29,11 +31,17 @@ export const CauseOption = ({
   // le 30/08, tour 2, avec la prop `selected` qui ne l'alimentait jamais
   // (elle ne pouvait valoir `true` qu'à la révélation, où cette branche ne
   // se rend plus).
+  //
+  // `wasCut` distingue, parmi les causes écartées, celle que le joueur a
+  // tranchée : sans elle, une tranche fausse laisse quatre cartes
+  // identiques et personne ne peut relier le verdict à son propre geste.
   const revealed = actual !== undefined
   const stateLabel = revealed
     ? actual
       ? 'cause réelle'
-      : 'écartée'
+      : wasCut
+        ? 'écartée — tranchée'
+        : 'écartée'
     : 'candidate'
 
   const mark =
@@ -42,6 +50,12 @@ export const CauseOption = ({
         aria-hidden
         className="size-3 text-plane-foreground"
         fill="currentColor"
+      />
+    ) : revealed && wasCut ? (
+      <Circle
+        aria-hidden
+        className="size-3 text-plane-foreground/70"
+        strokeWidth={2.5}
       />
     ) : revealed ? (
       <Circle

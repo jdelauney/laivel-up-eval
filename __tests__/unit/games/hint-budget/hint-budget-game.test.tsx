@@ -179,6 +179,33 @@ describe('hint budget game, rendered', () => {
   })
 
   /**
+   * W6 de la revue 2 : à la révélation, les quatre causes non réelles
+   * portaient toutes le même cercle fin et le même libellé « ÉCARTÉE » —
+   * rien ne distinguait celle que le joueur avait cliquée. `wasCut`
+   * (`cut-panel.tsx`, `cause-option.tsx`) porte désormais cette distinction.
+   */
+  it('marks the cause the player actually cut, distinct from a cause merely ruled out', () => {
+    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+
+    const wronglyCutCause = config.situations[0].causes[0]
+    const merelyRuledOutCause = config.situations[0].causes[2]
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: new RegExp(wronglyCutCause.text),
+      }),
+    )
+
+    const cutCard = screen.getByText(wronglyCutCause.text).closest('div')
+    const ruledOutCard = screen
+      .getByText(merelyRuledOutCause.text)
+      .closest('div')
+
+    expect(cutCard?.textContent).toMatch(/tranchée/i)
+    expect(ruledOutCard?.textContent).not.toMatch(/tranchée/i)
+  })
+
+  /**
    * Garde-fou : `HintMarket` recevait `interactive` nulle part avant cette
    * correction, un indice non acheté gardait un bouton « Acheter » d'apparence
    * active dont le clic ne faisait plus rien une fois révélé — une
