@@ -31,6 +31,14 @@ export const AmbiguityScanGame = ({ config, onSubmit }: GameComponentProps) => {
   } = useAmbiguityScan(config, onSubmit)
 
   if (phase === 'revealed') {
+    // Numérote les segments ambigus dans l'ordre du prompt — celui de
+    // `revelations`, qui suit déjà `parsed.segments` (hook, filtre stable) —
+    // pour poser un renvoi en exposant à l'endroit exact du passage, plutôt
+    // que de reconstituer la matière du prompt dans une liste à côté.
+    const noteNumberById = new Map(
+      revelations.map((entry, index) => [entry.id, index + 1]),
+    )
+
     return (
       <div className="flex flex-col gap-3 sm:gap-6">
         <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
@@ -38,16 +46,69 @@ export const AmbiguityScanGame = ({ config, onSubmit }: GameComponentProps) => {
         </p>
         <section className="border border-plane-rule bg-plane">
           <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
-            Ce que ces segments laissaient ouvert
+            {promptTitle}
           </header>
-          <div>
-            {revelations.map((entry) => (
+          {/* Le même prompt qu'en lecture, jamais un extrait : un passage
+           * ambigu ne se comprend qu'en le relisant dans sa phrase. Un
+           * segment ambigu se distingue par un filet **pointillé** — un
+           * signalement, en scan, reste plein — et par le renvoi en
+           * exposant qui le relie à sa lecture plus bas : deux marques
+           * structurelles, jamais une couleur seule.
+           *
+           * `leading-snug`, pas `leading-loose` comme en scan : l'aération
+           * de `PromptBody` réserve un couloir de clic autour de chaque
+           * bouton de segment, une raison qui disparaît ici — les segments
+           * ne sont plus interactifs, et resserrer réduit d'autant la
+           * hauteur du relevé, mesurée pousser « Continuer » hors du premier
+           * écran sur mobile (voir la fiche de surface). */}
+          <p className="px-3 py-2.5 text-plane-foreground text-sm leading-snug">
+            {segments.flatMap((segment, index) => {
+              const note = noteNumberById.get(segment.id)
+              const nodes = [
+                <span
+                  key={`${segment.id}-text`}
+                  className={
+                    note === undefined
+                      ? undefined
+                      : 'underline decoration-2 decoration-dotted underline-offset-4'
+                  }
+                >
+                  {segment.text}
+                </span>,
+              ]
+              if (note !== undefined) {
+                nodes.push(
+                  <sup
+                    key={`${segment.id}-note`}
+                    className="ml-0.5 font-medium text-[10px] text-plane-foreground/70 tabular-nums"
+                  >
+                    <span className="sr-only">renvoi </span>
+                    {note}
+                  </sup>,
+                )
+              }
+              if (index < segments.length - 1) {
+                nodes.push(<span key={`${segment.id}-sep`}> </span>)
+              }
+              return nodes
+            })}
+          </p>
+          {/* Les renvois, dans l'ordre où ils apparaissent dans le prompt
+           * ci-dessus — jamais un verdict sur le joueur, jamais son score :
+           * seulement ce que le passage laissait ouvert. */}
+          <div className="border-plane-rule border-t">
+            {revelations.map((entry, index) => (
               <div
                 key={entry.id}
-                className="border-plane-rule border-b px-3 py-2 last:border-b-0"
+                className="flex gap-2 border-plane-rule border-b px-3 py-1.5 last:border-b-0"
               >
-                <p className="text-plane-foreground text-sm">{entry.text}</p>
-                <p className="mt-1 text-plane-foreground/60 text-xs leading-relaxed">
+                <span
+                  aria-hidden="true"
+                  className="font-medium text-[10px] text-plane-foreground/55 tabular-nums"
+                >
+                  {index + 1}
+                </span>
+                <p className="text-plane-foreground/60 text-xs leading-snug">
                   {entry.reading}
                 </p>
               </div>

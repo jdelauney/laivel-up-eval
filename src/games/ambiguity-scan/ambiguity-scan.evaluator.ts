@@ -19,8 +19,22 @@ import { ambiguityScanConfigSchema } from './schema/config.schema'
 
 const GAME_TYPE = 'ambiguity-scan'
 
-const ambiguityNetShareAtLeastSchema = z.object({ threshold: z.number() })
-const clearSegmentsSparedAtLeastSchema = z.object({ threshold: z.number() })
+/**
+ * Seuil borné à `]0, 1]`, sur le modèle de `checkpoints.evaluator.ts:29` et
+ * `three-tracks.evaluator.ts:27-30`. La borne basse est **exclue** et non
+ * `min(0)` : à `threshold: 0` sur un corpus au plancher
+ * (`clearCount === ambiguousCount`), signaler tout le prompt donne
+ * `netHits = 0`, donc `0 >= 0` tiendrait la règle — l'exact contraire de la
+ * promesse du schéma de configuration (« tout surligner » perd quel que
+ * soit le seuil retenu par le parcours).
+ */
+const ambiguityNetShareAtLeastSchema = z.object({
+  threshold: z.number().gt(0).max(1),
+})
+/** Une part se lit entre `0` et `1`, jamais au-delà — même bornage de principe que `ambiguityNetShareAtLeastSchema`, sans le besoin d'exclure `0`. */
+const clearSegmentsSparedAtLeastSchema = z.object({
+  threshold: z.number().min(0).max(1),
+})
 
 class UnknownRuleError extends Error {
   constructor(ruleType: string) {
@@ -46,10 +60,14 @@ const ambiguityNetShareAtLeast = (
 
 /**
  * La part des segments clairs laissés tranquilles atteint au moins
- * `threshold`. Lit la **retenue**, jamais la couverture : distincte par
- * construction de `ambiguity-net-share-at-least` — un joueur qui signale
- * tout tient cette règle à zéro, un joueur qui ne signale rien la tient à
- * un tout en manquant l'autre règle.
+ * `threshold`. Lit la **retenue**, jamais la couverture — mais pas une
+ * quantité indépendante de `ambiguity-net-share-at-least` pour autant :
+ * les deux règles lisent `falsePositiveCount`, donc un même faux positif
+ * pénalise les deux à la fois, sur la même dimension `pilotage-contexte`.
+ * Recouvrement assumé, pas un oubli (`plan.md`, Phase 2 et *Decisions*) :
+ * signaler à l'aveugle coûte plus cher que mal lire en ayant vu juste. Un
+ * joueur qui signale tout tient cette règle à zéro, un joueur qui ne
+ * signale rien la tient à un tout en manquant l'autre règle.
  */
 const clearSegmentsSparedAtLeast = (
   inputs: VerdictInputs,

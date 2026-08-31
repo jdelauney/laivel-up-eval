@@ -34,7 +34,7 @@ const criteria: Criterion[] = [
   {
     id: 'c1',
     question:
-      'La part des segments ambigus réellement repérés dépasse-t-elle le seuil ?',
+      'Une fois retranchés les segments clairs signalés à tort, la part des segments ambigus repérés reste-t-elle suffisante ?',
     rule: { type: 'ambiguity-net-share-at-least', threshold: 0.5 },
     mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
   },
@@ -106,6 +106,40 @@ describe('ambiguity-scan evaluator', () => {
 
     expect(lenientResult).toBe(true)
     expect(strictResult).toBe(false)
+  })
+
+  it('rejects a c1 threshold of zero: on a minimal corpus, flagging everything would net exactly zero and satisfy it', () => {
+    const zeroThreshold: Criterion = {
+      ...criteria[0],
+      rule: { type: 'ambiguity-net-share-at-least', threshold: 0 },
+    }
+    expect(() => verdictOf(['s3'], [zeroThreshold])).toThrow()
+  })
+
+  it('rejects a c1 threshold outside ]0, 1]', () => {
+    const negative: Criterion = {
+      ...criteria[0],
+      rule: { type: 'ambiguity-net-share-at-least', threshold: -0.1 },
+    }
+    const tooHigh: Criterion = {
+      ...criteria[0],
+      rule: { type: 'ambiguity-net-share-at-least', threshold: 1.1 },
+    }
+    expect(() => verdictOf(['s3'], [negative])).toThrow()
+    expect(() => verdictOf(['s3'], [tooHigh])).toThrow()
+  })
+
+  it('rejects a c2 threshold outside [0, 1]', () => {
+    const negative: Criterion = {
+      ...criteria[1],
+      rule: { type: 'clear-segments-spared-at-least', threshold: -0.01 },
+    }
+    const tooHigh: Criterion = {
+      ...criteria[1],
+      rule: { type: 'clear-segments-spared-at-least', threshold: 1.01 },
+    }
+    expect(() => verdictOf(['s3'], [negative])).toThrow()
+    expect(() => verdictOf(['s3'], [tooHigh])).toThrow()
   })
 
   it('rejects a rule it does not know, naming the rule and the game', () => {

@@ -90,6 +90,23 @@ describe('ambiguity scan game, rendered', () => {
     expect(visible).not.toMatch(/correctement|manqué|réussi|raté|score/i)
   })
 
+  it('shows the whole prompt again at reveal, clear segments included, not a detached extract of the ambiguous ones', () => {
+    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: config.segments[2].text }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: /verrouiller mes signalements/i }),
+    )
+
+    config.segments
+      .filter((entry) => !entry.ambiguous)
+      .forEach((entry) => {
+        expect(screen.getByText(entry.text)).toBeInTheDocument()
+      })
+  })
+
   it('submits a trace of the flagged segments only once, even if continue fires twice', () => {
     const onSubmit = vi.fn()
     render(<AmbiguityScanGame config={config} onSubmit={onSubmit} />)

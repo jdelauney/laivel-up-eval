@@ -1701,7 +1701,7 @@
           "criteria": [
             {
               "id": "g6-2-c1",
-              "question": "La part des segments ambigus réellement repérés dépasse-t-elle le seuil ?",
+              "question": "Une fois retranchés les segments clairs signalés à tort, la part des segments ambigus repérés reste-t-elle suffisante ?",
               "rule": {
                 "type": "ambiguity-net-share-at-least",
                 "threshold": 0.5

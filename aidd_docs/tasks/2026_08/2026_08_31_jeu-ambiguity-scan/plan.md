@@ -40,10 +40,10 @@ Trace : `flaggedIds: string[]`, plus `parseAmbiguityScanTrace(answer, config)` q
 
 | Règle | Lit | Question du parcours |
 | --- | --- | --- |
-| `ambiguity-net-share-at-least` `{threshold}` | `netHits / ambiguousCount >= threshold` | « La part des segments ambigus réellement repérés dépasse-t-elle le seuil ? » |
+| `ambiguity-net-share-at-least` `{threshold}` | `netHits / ambiguousCount >= threshold` | « Une fois retranchés les segments clairs signalés à tort, la part des segments ambigus repérés reste-t-elle suffisante ? » |
 | `clear-segments-spared-at-least` `{threshold}` | `(clearCount - falsePositiveCount) / clearCount >= threshold` | « Les segments clairs ont-ils été laissés tranquilles ? » |
 
-Les deux règles lisent deux choses différentes, et aucune ne lit ce que lit l'autre : la première la couverture nette, la seconde la retenue. Surligner tout tient la seconde à `0` et la première à `<= 0`. Ne rien surligner tient la seconde à `1` et la première à `0`.
+Les deux règles ne lisent pas la même quantité, mais elles lisent toutes deux `falsePositiveCount` : la première lit la couverture des ambigus **pénalisée** par chaque segment clair signalé à tort, la seconde lit la seule retenue face aux segments clairs. Un faux positif pénalise donc les deux règles à la fois, sur la même dimension `pilotage-contexte` — recouvrement assumé, voir *Decisions*. Surligner tout tient la seconde à `0` et la première à `<= 0`. Ne rien surligner tient la seconde à `1` et la première à `0`.
 
 ### Phase 3 — Le jeu à l'écran
 
@@ -59,7 +59,7 @@ Soumission possible dès un segment signalé, et **jamais** avec zéro : sans qu
 
 - `src/games/register-games.ts` et `src/games/register-components.ts` : un bloc chacun.
 - `config/course.json` : `g6-2` passe de `test-bench` à `ambiguity-scan`, avec un corpus de **neuf segments** dont **quatre ambigus** — un prompt de commande de feature réaliste, écrit en français, où les quatre ambiguïtés sont des choses qu'une IA tranchera seule si on ne les tranche pas.
-- Deux critères, pesés **2** et **1**, tous deux sur `pilotage-contexte` en `measured`. Le mapping `harness` du placeholder disparaît : les six premiers groupes portent la signature, seul le septième porte les axes du référentiel.
+- Deux critères, pesés **2** et **1**, tous deux sur `pilotage-contexte` en `measured`. Le mapping `harness` du placeholder de `g6-2` disparaît — seul ce slot est touché par ce plan, les autres mappings `harness` des six premiers groupes restent en l'état et ne sont pas de son ressort.
 - Seuils : `0.5` pour `c1` (deux ambiguïtés nettes sur quatre), `0.8` pour `c2` (au plus un faux positif sur cinq segments clairs).
 
 ### Phase 5 — Les tests
@@ -71,7 +71,7 @@ Soumission possible dès un segment signalé, et **jamais** avec zéro : sans qu
 - aucune trace qui signale tous les segments ne tient `c1` ;
 - aucune trace qui ne signale rien ne tient `c1` ;
 - la trace parfaite (les quatre ambigus, rien d'autre) tient les deux critères ;
-- la part de traces au hasard qui tiennent `c1` **et** `c2` reste sous 10 %.
+- **profil par profil, pas en moyenne sur les 512 traces** — une moyenne uniforme est dominée par les traces à 5, 6, 7 signalements qu'aucun joueur ne produit. Pour chaque nombre `k` de signalements de 1 à 9, la part des traces à exactement `k` signalements qui tiennent `c1`, `c2`, et les deux ; le profil qui signale tout ; le profil qui ne signale rien ; une sélection de profils de lecture (`h` ambigus vus, `f` faux positifs) dont certains tiennent les deux critères et d'autres non. L'assertion qui compte : le meilleur profil aveugle reste strictement en dessous de la certitude d'une lecture correcte.
 
 ## Decisions
 
@@ -82,3 +82,4 @@ Soumission possible dès un segment signalé, et **jamais** avec zéro : sans qu
 | **Aucun chronomètre** | La story ne le demande pas, et `hint-budget` a déjà tranché : deux ressources rares en concurrence mesurent laquelle le joueur préfère |
 | La révélation donne la **seconde lecture** d'un segment ambigu, jamais le verdict du joueur | Un jeu déjà soumis peut être rejoué : afficher la correction ferait du second passage une recopie. Choix identique à `practice-map` et `hint-budget` |
 | Le seuil `c1` à `0.5` et non plus haut | Quatre ambiguïtés seulement : à `0.75`, un seul faux positif fait tomber le critère malgré une lecture correcte, et le critère mesurerait la retenue — ce que `c2` mesure déjà |
+| `c1` et `c2` lisent toutes deux `falsePositiveCount` et facturent donc deux fois la même erreur sur `pilotage-contexte`, plutôt que deux quantités disjointes | Assumé, pas corrigé. Sur le corpus réel (quatre ambigus, cinq clairs) : un joueur qui voit les 4 ambigus mais signale 3 clairs à tort sort à `0/3` (`c1 = (4−3)/4 = 0.25` manqué, `c2 = 2/5 = 0.4` manqué) ; un joueur qui n'en voit que 2 sans se tromper sort à `3/3` (`c1 = 2/4 = 0.5` tenu, `c2 = 5/5 = 1.0` tenu). Le geste qu'on veut réellement punir est signaler à l'aveugle, pas lire — même partiellement — et le double compte le rend plus coûteux que l'oubli d'une ambiguïté, jamais l'inverse |
