@@ -73,7 +73,9 @@ const config = {
 
 describe('hint budget game, rendered', () => {
   it('opens with the symptom, the report, the framing and the hints market all present at first render', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(config.situations[0].symptom)).toBeInTheDocument()
     expect(screen.getByText(config.situations[0].report[0])).toBeInTheDocument()
@@ -86,7 +88,9 @@ describe('hint budget game, rendered', () => {
   })
 
   it('announces the price of every hint before any purchase, with no hover or reveal needed', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     config.situations[0].hints.forEach((entry) => {
       expect(
@@ -98,7 +102,9 @@ describe('hint budget game, rendered', () => {
   })
 
   it('never buys more than one hint per click: a single click leaves the others available', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const [first] = config.situations[0].hints
     fireEvent.click(screen.getByRole('button', { name: /acheter · 5/i }))
@@ -110,7 +116,9 @@ describe('hint budget game, rendered', () => {
   })
 
   it('locks the framing at deposit: a click on a reading afterwards changes nothing', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const readingButton = screen.getByRole('button', {
       name: new RegExp(config.situations[0].framings[0].text),
@@ -134,7 +142,7 @@ describe('hint budget game, rendered', () => {
 
   it('leaks nothing before the reveal: no verification text, no unbought hint text, no mark distinguishing the two natures of framing reading', () => {
     const { container } = render(
-      <HintBudgetGame config={config} onSubmit={vi.fn()} />,
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
 
     const visible = container.textContent ?? ''
@@ -148,14 +156,18 @@ describe('hint budget game, rendered', () => {
   })
 
   it('announces no consequence before cutting: no wrong-cut penalty figures on screen', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.queryByText(/40/)).not.toBeInTheDocument()
     expect(screen.queryByText(/30/)).not.toBeInTheDocument()
   })
 
   it('reveals the actual cause and the verifications of every cause once the situation is cut', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -169,7 +181,9 @@ describe('hint budget game, rendered', () => {
   })
 
   it('the second gesture is unique: once revealed, no cause remains a clickable button', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -191,7 +205,9 @@ describe('hint budget game, rendered', () => {
    * (`cut-panel.tsx`, `cause-option.tsx`) porte désormais cette distinction.
    */
   it('marks the cause the player actually cut, distinct from a cause merely ruled out', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const wronglyCutCause = config.situations[0].causes[0]
     const merelyRuledOutCause = config.situations[0].causes[2]
@@ -218,7 +234,9 @@ describe('hint budget game, rendered', () => {
    * affordance morte. Idem pour une lecture de cadrage jamais transmise.
    */
   it('disables every unbought hint button and every framing reading once the situation is revealed', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -242,9 +260,44 @@ describe('hint budget game, rendered', () => {
     })
   })
 
-  it('submits a trace with one attempt per situation, only once even if the passage action fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<HintBudgetGame config={config} onSubmit={onSubmit} />)
+  it('locks a trace with one attempt per situation on the last cut, before the passage action is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <HintBudgetGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
+
+    const playSituation = (index: number) => {
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: new RegExp(config.situations[index].causes[1].text),
+        }),
+      )
+    }
+
+    playSituation(0)
+    fireEvent.click(screen.getByRole('button', { name: /incident suivant/i }))
+
+    playSituation(1)
+    fireEvent.click(screen.getByRole('button', { name: /incident suivant/i }))
+
+    playSituation(2)
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      attempts: { situationId: string }[]
+    }
+    expect(answer.attempts.map((entry) => entry.situationId)).toEqual([
+      's1',
+      's2',
+      's3',
+    ])
+  })
+
+  it('advances only once, even if the passage action fires twice at the last situation', () => {
+    const onAdvance = vi.fn()
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={onAdvance} />,
+    )
 
     const playSituation = (index: number) => {
       fireEvent.click(
@@ -264,15 +317,7 @@ describe('hint budget game, rendered', () => {
     fireEvent.click(screen.getByRole('button', { name: /groupe suivant/i }))
     fireEvent.click(screen.getByRole('button', { name: /groupe suivant/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      attempts: { situationId: string }[]
-    }
-    expect(answer.attempts.map((entry) => entry.situationId)).toEqual([
-      's1',
-      's2',
-      's3',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   /**
@@ -307,7 +352,8 @@ describe('hint budget game, rendered', () => {
       const { container, unmount } = render(
         <HintBudgetGame
           config={configWith(establishedId)}
-          onSubmit={vi.fn()}
+          onLock={vi.fn()}
+          onAdvance={vi.fn()}
         />,
       )
       const markup = container.innerHTML
@@ -321,7 +367,9 @@ describe('hint budget game, rendered', () => {
   })
 
   it('keeps the framing and the hints market both reachable from the initial focus order', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const framingButton = screen.getByRole('button', {
       name: new RegExp(config.situations[0].framings[0].text),
@@ -339,7 +387,9 @@ describe('hint budget game, rendered', () => {
    * jamais.
    */
   it('never qualifies the framing at the revelation, whatever the framing was', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     // Le panneau "Le cadrage" et son bouton "Transmettre ce cadre" restent
     // légitimement visibles après la tranche : ce texte de chrome n'est pas
@@ -364,7 +414,9 @@ describe('hint budget game, rendered', () => {
    * recomposé par la grille — sur le modèle de `lie-detector-game.test.tsx`.
    */
   it('keeps the framing list and the hints market in the corpus reading order for keyboard and screen-reader traversal', () => {
-    render(<HintBudgetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <HintBudgetGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const framingTexts = config.situations[0].framings.map(
       (entry) => entry.text,

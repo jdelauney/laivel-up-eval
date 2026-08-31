@@ -24,9 +24,10 @@ const config = {
   ],
 }
 
-const renderGame = (onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useConfidenceBet(config, onSubmit)),
+const renderGame = (onLock = vi.fn(), onAdvance = vi.fn()) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useConfidenceBet(config, onLock, onAdvance)),
 })
 
 const playSnippet = (
@@ -172,23 +173,60 @@ describe('use confidence bet', () => {
     expect(functionKeys).toEqual(['advance', 'engage', 'selectStake'])
   })
 
-  it('submits once, on the third snippet and never before', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace as soon as the third bet is engaged, before the passage action, and never before', () => {
+    const { result, onLock } = renderGame()
+
+    act(() => {
+      result.current.selectStake(90)
+    })
+    act(() => {
+      result.current.engage()
+    })
+    act(() => {
+      result.current.advance()
+    })
+    expect(onLock).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current.selectStake(10)
+    })
+    act(() => {
+      result.current.engage()
+    })
+    act(() => {
+      result.current.advance()
+    })
+    expect(onLock).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current.selectStake(50)
+    })
+    act(() => {
+      result.current.engage()
+    })
+
+    // Le troisième extrait engagé complète la trace : elle est écrite avant
+    // même que le joueur ait lu la révélation ou cliqué « Extrait suivant ».
+    expect(onLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('advances once, on the third snippet and never before', () => {
+    const { result, onAdvance } = renderGame()
 
     playSnippet(result, 90)
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onAdvance).not.toHaveBeenCalled()
 
     playSnippet(result, 10)
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onAdvance).not.toHaveBeenCalled()
 
     playSnippet(result, 50)
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
     expect(result.current.isComplete).toBe(true)
   })
 
   it('offers no way back: advancing once the game is complete changes nothing', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock, onAdvance } = renderGame()
 
     playSnippet(result, 90)
     playSnippet(result, 10)
@@ -198,17 +236,18 @@ describe('use confidence bet', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('submits a trace whose bets follow the config order', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     playSnippet(result, 90)
     playSnippet(result, 10)
     playSnippet(result, 50)
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       bets: { snippetId: string }[]
     }
     expect(answer.bets.map((bet) => bet.snippetId)).toEqual(['s1', 'f1', 'u1'])

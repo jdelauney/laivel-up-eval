@@ -27,9 +27,14 @@ const baseConfig = () => ({
   ],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useDefectHunt(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useDefectHunt(config, onLock, onAdvance)),
 })
 
 afterEach(() => {
@@ -67,8 +72,8 @@ describe('use defect hunt', () => {
     expect(result.current.markedLines.has(4)).toBe(false)
   })
 
-  it('does not carry a mark toggled off before submission, in the submitted trace', () => {
-    const { result, onSubmit } = renderGame()
+  it('does not carry a mark toggled off before submission, in the locked trace', () => {
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.toggleLine(2)
@@ -82,11 +87,8 @@ describe('use defect hunt', () => {
     act(() => {
       result.current.submitReview()
     })
-    act(() => {
-      result.current.advance()
-    })
 
-    const answer = onSubmit.mock.calls[0][0] as { markedLines: number[] }
+    const answer = onLock.mock.calls[0][0] as { markedLines: number[] }
     expect(answer.markedLines).toEqual([2])
   })
 
@@ -106,8 +108,24 @@ describe('use defect hunt', () => {
     expect(result.current.markedLines).toEqual(new Set([2]))
   })
 
-  it('submits the frozen trace only once, even if the passage action fires twice', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace only once, even if submitReview fires twice', () => {
+    const { result, onLock } = renderGame()
+
+    act(() => {
+      result.current.toggleLine(2)
+    })
+    act(() => {
+      result.current.submitReview()
+    })
+    act(() => {
+      result.current.submitReview()
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('advances only once, even if the passage action fires twice', () => {
+    const { result, onAdvance } = renderGame()
 
     act(() => {
       result.current.toggleLine(2)
@@ -122,7 +140,7 @@ describe('use defect hunt', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('never exposes a defect nature or line before the review is rendered', () => {
@@ -219,7 +237,7 @@ describe('use defect hunt', () => {
     const start = new Date('2024-01-01T00:00:00.000Z')
     vi.setSystemTime(start)
 
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     // Le temps réel avance, mais aucun battement d'intervalle n'a eu lieu :
     // l'état affiché reste donc figé à zéro.
@@ -229,11 +247,8 @@ describe('use defect hunt', () => {
     act(() => {
       result.current.submitReview()
     })
-    act(() => {
-      result.current.advance()
-    })
 
-    const answer = onSubmit.mock.calls[0][0] as { elapsedSeconds: number }
+    const answer = onLock.mock.calls[0][0] as { elapsedSeconds: number }
     expect(answer.elapsedSeconds).toBeCloseTo(1.234, 3)
     expect(result.current.elapsedSeconds).toBe(0)
   })

@@ -56,7 +56,37 @@ La règle existe précisément pour ça : une liste qui s'allonge finit par cach
 
 Un traitement dans un seul des deux jeux. La structure est identique chez les deux, et `aidd_docs/tasks/2026_08/2026_08_30_jeu-lie-detector/qa/README.md` établit qu'il s'agit du même motif, pas de deux défauts qui se ressemblent. Une barre d'action collante posée pour un seul jeu introduirait un motif d'interface que le produit n'a nulle part ailleurs.
 
+## Un troisième jeu, relevé le 31/08 : `ambiguity-scan`
+
+`ambiguity-scan` (`g6-2`), `src/games/ambiguity-scan/components/composites/ambiguity-scan-game.tsx`, état de révélation. Mesuré au navigateur piloté pendant la passe de surface de la réparation, session posée sur `g6-2`, à `scrollY = 0` vérifié :
+
+| Gabarit | Avant resserrage | Après resserrage |
+| --- | --- | --- |
+| 1440 × 900 | 136 px | **0 px** — tient |
+| 390 × 844 | 517 px | **364 px** — dépasse toujours |
+
+Le resserrage — `leading-snug` et paddings réduits sur le texte non interactif de la révélation, où la cible tactile de `leading-loose` n'a plus lieu d'être — a suffi sur desktop et pas sur mobile. Ce qui reste est hors de portée d'un correctif local : la coquille partagée du parcours — rampe des groupes repliée à l'horizontale, en-tête « Situation *n* sur *N* », titre du jeu, `LockedAnswerNotice` — pèse à elle seule environ 340 px des 844 px du gabarit mobile, avant le premier caractère du jeu.
+
+Ce jeu, et `flow-order` mesuré le même jour (révélation à 255 px de dépassement desktop et 714 px mobile), semblaient confirmer un diagnostic simple : la hauteur disponible n'existe pas, une correction jeu par jeu ne peut pas y arriver, et la seule piste serait la compression de la coquille sur petit écran.
+
+## Ce diagnostic est faux, et `wrong-assistant` le démontre le 31/08
+
+`wrong-assistant` (`g3-1`) a un fil de conversation qui **s'allonge à chaque tour** — le cas le plus défavorable du lot — et sa décision reste visible aux six mesures :
+
+| Gabarit | État initial | Fil le plus long | Révélation |
+| --- | --- | --- | --- |
+| 1440 × 900 | 613 px | 756 px | 898 px |
+| 390 × 844 | 744 px | 784 px | 836 px |
+
+Sa première version dépassait pourtant, jusqu'à 439 px à la révélation mobile, avec des panneaux à `max-h-[45vh] sm:max-h-[55vh]`. Ce qui a suffi : **plafonner et replier les deux panneaux qui s'allongent** — le fil à `max-h-[13vh] sm:max-h-[28vh]`, la liste de révélation à `max-h-[10vh] sm:max-h-[14vh]`.
+
+C'est exactement le remède que `DESIGN.md` prescrit dans la phrase même qui pose la règle : « Un journal, une pile de tours, une liste de choix passés **se plafonne et se replie**. » Les quatre jeux en défaut ne l'ont pas appliqué ; celui qui l'a appliqué tient. La coquille partagée n'est donc pas l'obstacle qu'on lui prêtait.
+
+**Conséquence sur la correction à mener** : ce n'est pas un chantier de coquille, c'est le même correctif à appliquer dans chacun des quatre jeux en défaut — plafonner ce qui s'allonge, et le mesurer aux deux gabarits. La mise en garde du haut de ce ticket reste valable sur un point : le plafond doit être le même motif partout, pas quatre inventions séparées.
+
 ## Evidence
 
 - `aidd_docs/tasks/2026_08/2026_08_30_jeu-lie-detector/qa/README.md` — les mesures et leurs captures, aux deux gabarits.
+- `aidd_docs/tasks/2026_08/2026_08_31_jeu-ambiguity-scan/review.md` — la passe de surface qui a produit les mesures du 31/08.
+- `.impeccable/surfaces/ity-scan-components-composites-ambiguity-scan-game-tsx.md` — le dépassement mobile résiduel, assumé par écrit plutôt que masqué.
 - `DESIGN.md`, « La surface d'un jeu » — la règle enfreinte, énoncée pour les vingt jeux.

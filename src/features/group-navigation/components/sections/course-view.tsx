@@ -10,7 +10,7 @@ import { LockedAnswerNotice } from '../elements/locked-answer-notice'
  * Un type non résolu se nomme à l'écran et laisse le reste debout.
  */
 export const CourseView = () => {
-  const { progress, rail, submit } = useCourse()
+  const { progress, rail, lock, advance } = useCourse()
   const game = progress === undefined ? undefined : progress.game
 
   return (
@@ -44,7 +44,8 @@ export const CourseView = () => {
             <GameSurface
               gameType={game.type}
               config={game.config}
-              onSubmit={submit}
+              onLock={lock}
+              onAdvance={advance}
             />
           </>
         )}
@@ -56,11 +57,13 @@ export const CourseView = () => {
 const GameSurface = ({
   gameType,
   config,
-  onSubmit,
+  onLock,
+  onAdvance,
 }: {
   gameType: string
   config: unknown
-  onSubmit: (answer: unknown) => void
+  onLock: (answer: unknown) => void
+  onAdvance: () => void
 }) => {
   const Game = resolveGameComponent(gameType)
 
@@ -79,5 +82,5 @@ const GameSurface = ({
     )
   }
 
-  return <Game config={config} onSubmit={onSubmit} />
+  return <Game config={config} onLock={onLock} onAdvance={onAdvance} />
 }

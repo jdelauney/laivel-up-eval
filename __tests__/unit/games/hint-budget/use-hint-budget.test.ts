@@ -61,9 +61,14 @@ const baseConfig = () => ({
   situations: [situation('s1'), situation('s2'), situation('s3')],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useHintBudget(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useHintBudget(config, onLock, onAdvance)),
 })
 
 describe('use hint budget', () => {
@@ -125,8 +130,8 @@ describe('use hint budget', () => {
     expect(result.current.retainedIds).toEqual(['s1-f1'])
   })
 
-  it('accepts a framing posted after a purchase, and the submitted trace records it as posted after one hint', () => {
-    const { result, onSubmit } = renderGame()
+  it('accepts a framing posted after a purchase, and the locked trace records it as posted after one hint', () => {
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.buyHint('s1-h1')
@@ -150,13 +155,12 @@ describe('use hint budget', () => {
       result.current.advance()
     })
     act(() => {
+      // La trace complète s'écrit ici, au verrou de la dernière situation —
+      // avant même que « advance » n'ait été rappelé.
       result.current.cut('s3-c2')
     })
-    act(() => {
-      result.current.advance()
-    })
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       attempts: {
         situationId: string
         framing: { afterHints: number } | null
@@ -210,8 +214,41 @@ describe('use hint budget', () => {
     expect(result.current.hints.some((entry) => entry.bought)).toBe(false)
   })
 
-  it('submits the trace only once, even if advance fires twice at the last situation', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace only once, at the last situation, even if cut fires twice', () => {
+    const { result, onLock } = renderGame()
+
+    const playSituation = (causeId: string) => {
+      act(() => {
+        result.current.cut(causeId)
+      })
+      act(() => {
+        result.current.advance()
+      })
+    }
+
+    playSituation('s1-c2')
+    playSituation('s2-c2')
+
+    act(() => {
+      result.current.cut('s3-c2')
+    })
+    act(() => {
+      result.current.cut('s3-c2')
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      attempts: { situationId: string }[]
+    }
+    expect(answer.attempts.map((entry) => entry.situationId)).toEqual([
+      's1',
+      's2',
+      's3',
+    ])
+  })
+
+  it('advances only once, even if advance fires twice at the last situation', () => {
+    const { result, onAdvance } = renderGame()
 
     const playSituation = (causeId: string) => {
       act(() => {
@@ -235,15 +272,7 @@ describe('use hint budget', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      attempts: { situationId: string }[]
-    }
-    expect(answer.attempts.map((entry) => entry.situationId)).toEqual([
-      's1',
-      's2',
-      's3',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the spent total free of the current situation penalty until it is revealed', () => {

@@ -69,7 +69,9 @@ afterEach(() => {
 
 describe('defect hunt game, rendered', () => {
   it('opens with the statement and the extract lines', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
     expect(lineOption(1)).toBeInTheDocument()
@@ -83,7 +85,7 @@ describe('defect hunt game, rendered', () => {
    */
   it('never tells how many defects the extract carries before the review is rendered', () => {
     const { container } = render(
-      <DefectHuntGame config={config} onSubmit={vi.fn()} />,
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
 
     /**
@@ -108,7 +110,9 @@ describe('defect hunt game, rendered', () => {
    * porte `tabIndex=0`, les autres sont hors du parcours de tabulation.
    */
   it('costs a single tab stop for the whole sheet', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const focusable = screen
       .getAllByRole('option')
@@ -119,7 +123,9 @@ describe('defect hunt game, rendered', () => {
   })
 
   it('reveals no defect nature, no faulty line and no threshold before the review is rendered', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.queryByText(/sécurité/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/dépendance hallucinée/i)).not.toBeInTheDocument()
@@ -127,7 +133,9 @@ describe('defect hunt game, rendered', () => {
   })
 
   it('marks a line on click, and unmarks it on a second click', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const line = lineOption(3)
     expect(line).toHaveAttribute('aria-selected', 'false')
@@ -140,7 +148,9 @@ describe('defect hunt game, rendered', () => {
   })
 
   it('walks the sheet and marks a line by keyboard alone: arrows move, space marks', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     lineOption(1).focus()
 
@@ -159,9 +169,11 @@ describe('defect hunt game, rendered', () => {
     expect(document.activeElement).toBe(lineOption(6))
   })
 
-  it('shows the count found, missed, and submits the marked lines with the elapsed duration', () => {
-    const onSubmit = vi.fn()
-    render(<DefectHuntGame config={config} onSubmit={onSubmit} />)
+  it('shows the count found, missed, and locks the marked lines with the elapsed duration, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <DefectHuntGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(lineOption(1))
     fireEvent.click(lineOption(3))
@@ -177,30 +189,46 @@ describe('defect hunt game, rendered', () => {
     expect(screen.getByText(/\+1 point/i)).toBeInTheDocument()
     expect(screen.getByText('Ce paquet n’existe pas.')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
-
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { markedLines: number[] }
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { markedLines: number[] }
     expect(answer.markedLines).toEqual([1, 2, 3])
   })
 
+  it('advances to the next situation only once continue is clicked', () => {
+    const onAdvance = vi.fn()
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={onAdvance} />,
+    )
+
+    fireEvent.click(lineOption(1))
+    fireEvent.click(screen.getByRole('button', { name: /rendre ma revue/i }))
+    expect(onAdvance).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
+
+    expect(onAdvance).toHaveBeenCalledTimes(1)
+  })
+
   it('does not carry a mark toggled off before the review is rendered', () => {
-    const onSubmit = vi.fn()
-    render(<DefectHuntGame config={config} onSubmit={onSubmit} />)
+    const onLock = vi.fn()
+    render(
+      <DefectHuntGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(lineOption(4))
     fireEvent.click(lineOption(4))
     fireEvent.click(lineOption(1))
 
     fireEvent.click(screen.getByRole('button', { name: /rendre ma revue/i }))
-    fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
 
-    const answer = onSubmit.mock.calls[0][0] as { markedLines: number[] }
+    const answer = onLock.mock.calls[0][0] as { markedLines: number[] }
     expect(answer.markedLines).toEqual([1])
   })
 
   it('locks the review at render: no more clickable line, the reported count unchanged', () => {
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(lineOption(1))
     fireEvent.click(screen.getByRole('button', { name: /rendre ma revue/i }))
@@ -213,16 +241,18 @@ describe('defect hunt game, rendered', () => {
     expect(screen.queryAllByRole('option')).toHaveLength(0)
   })
 
-  it('submits the trace only once, even if the passage action fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<DefectHuntGame config={config} onSubmit={onSubmit} />)
+  it('advances only once, even if the passage action fires twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={onAdvance} />,
+    )
 
     fireEvent.click(lineOption(1))
     fireEvent.click(screen.getByRole('button', { name: /rendre ma revue/i }))
     fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
     fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   /**
@@ -232,7 +262,9 @@ describe('defect hunt game, rendered', () => {
    */
   it('freezes the dial on the duration the review took once it is rendered', () => {
     vi.useFakeTimers()
-    render(<DefectHuntGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <DefectHuntGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     act(() => {
       vi.advanceTimersByTime(1500)
@@ -259,7 +291,8 @@ describe('defect hunt game, rendered', () => {
     render(
       <DefectHuntGame
         config={{ ...config, timeLimitSeconds: 1 }}
-        onSubmit={vi.fn()}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     )
 
