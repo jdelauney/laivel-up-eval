@@ -65,6 +65,17 @@ describe('level resolution', () => {
     expect(verdict.blocking).toHaveLength(1)
   })
 
+  it('shows the hint when the climbed target is the immediate next rung', () => {
+    // F3 — le cas courant : `nextLevel` (copper) est bien le successeur
+    // immédiat de `level` (green) dans l'ordre de la grille, donc le
+    // conseil rédigé pour ce cran-là décrit la bonne cible.
+    const verdict = resolveLevel(grid, axes(1, 1, 1, 0.66, 1))
+
+    expect(verdict.hint).toBe(
+      "Mener trois chantiers de front le même jour, chacun jusqu'au bout : c'est le passage à Copper.",
+    )
+  })
+
   it('treats a score sitting exactly on a min threshold as reaching it', () => {
     const verdict = resolveLevel(grid, axes(0.5, 0.5, 0.5, 0.33))
 
@@ -164,6 +175,37 @@ describe("the referential's gap", () => {
   })
 })
 
+describe('an unmeasured axis at the floor of the grid', () => {
+  it('lets unranked and blocking coincide on the same axis, and reaches for the lowest level', () => {
+    // F2, résidu R-C de la revue (sonde reproduite telle quelle) :
+    // `resolveClimbTarget(byOrder, -1, …)` part de `slice(0)`, donc inclut
+    // le niveau le plus bas. `taille` n'est pas mesurée : sa condition ne
+    // tient pas, mais ne viole pas non plus de borne `max` (un score inconnu
+    // n'est ni haut ni bas) — White n'est donc pas écarté et devient la
+    // cible. `unranked` (la raison de l'état non classé, sur White) et
+    // `blocking` (le plan, sur la même cible White) portent alors le même
+    // axe. Ce n'est pas une régression du domaine — `resolveLevel` reste
+    // honnête sur ce qu'il sait — c'est l'écran qui doit ne pas répéter la
+    // ligne (voir `summary-view.tsx`) et le plan qui doit ne pas afficher de
+    // cran visé absurde (voir `progression-plan.helper.ts`).
+    const verdict = resolveLevel(grid, [
+      dim('taille', 0, 'unmeasured'),
+      dim('harness', 0),
+      dim('intervention', 0),
+      dim('parallele', 0),
+    ])
+
+    expect(verdict.level).toBeUndefined()
+    expect(verdict.nextLevel?.id).toBe('white')
+    expect(verdict.unranked?.map((gap) => gap.condition.dimension)).toEqual([
+      'taille',
+    ])
+    expect(verdict.blocking.map((gap) => gap.condition.dimension)).toEqual([
+      'taille',
+    ])
+  })
+})
+
 describe('a reached level follows the same climb rule as an unranked one', () => {
   it('never offers a regressive next level, even when it holds the naive next order', () => {
     // La grille où `byOrder[position + 1]` serait « mid » — un niveau
@@ -207,6 +249,12 @@ describe('a reached level follows the same climb rule as an unranked one', () =>
     expect(verdict.blocking.map((gap) => gap.condition.dimension)).toEqual([
       'a',
     ])
+
+    // R-A de la revue, troisième passage : `mid` a été sauté, donc son
+    // absence ne dit rien sur `high` — mais `low.nextLevelHint` ('Monter.')
+    // ne décrit pas non plus `high`, c'est un texte écrit pour `mid`. Le
+    // conseil se tait plutôt que de désigner le mauvais cran.
+    expect(verdict.hint).toBeUndefined()
   })
 })
 

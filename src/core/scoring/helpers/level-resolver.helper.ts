@@ -57,7 +57,13 @@ export type LevelVerdict = {
    * `plan[0]`, pas sur un champ dédié. Vide quand `nextLevel` est absent.
    */
   blocking: readonly ConditionGap[]
-  /** Ce que le niveau atteint dit pour monter. Absent quand aucun n'est atteint. */
+  /**
+   * Ce que le niveau atteint dit pour monter. Absent quand aucun n'est
+   * atteint, et absent aussi quand `nextLevel` n'est pas le successeur
+   * immédiat du niveau atteint : `nextLevelHint` est rédigé dans la grille
+   * pour le cran juste au-dessus, et un texte qui décrit un cran sauté par
+   * la règle de montée contredirait le nom rendu sous « Niveau suivant ».
+   */
   hint: string | undefined
   /** La cible du plan de progression. Absente sans cible atteignable. */
   nextLevel: Level | undefined
@@ -240,6 +246,19 @@ export const resolveLevel = (
       ? []
       : sortByBlockingOrder(unmetConditionGaps(target, dimensions), grid)
 
+  // R-A de la revue : `nextLevelHint` est rédigé pour le cran immédiatement
+  // au-dessus. Quand `resolveClimbTarget` en saute un — un niveau
+  // intermédiaire dont une borne `max` est déjà dépassée —, ce texte
+  // décrirait un cran qu'on ne vise pas, à côté du nom d'un autre. Le plan
+  // de progression porte déjà le texte actionnable ; un conseil qui désigne
+  // le mauvais cran est pire que pas de conseil.
+  const naiveNext = byOrder[position + 1]
+  const isImmediateSuccessor =
+    target !== undefined &&
+    naiveNext !== undefined &&
+    target.id === naiveNext.id
+  const hint = isImmediateSuccessor ? reached.nextLevelHint : undefined
+
   return {
     level: reached,
     unranked: undefined,
@@ -247,7 +266,7 @@ export const resolveLevel = (
       holds(condition, dimensions),
     ),
     blocking,
-    hint: reached.nextLevelHint,
+    hint,
     nextLevel: target,
     noNextLevelReason:
       target === undefined

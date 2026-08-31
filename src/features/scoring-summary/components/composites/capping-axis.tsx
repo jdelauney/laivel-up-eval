@@ -14,7 +14,14 @@ type CappingAxisProps = Readonly<{
 
 const SUMMIT_MESSAGE =
   'Le sommet du référentiel est atteint : aucun axe ne plafonne plus.'
-const UNREACHABLE_MESSAGE =
+
+/**
+ * Exportée pour rester la source unique du texte : `SummaryView` la
+ * réutilise telle quelle dans « Ce qui vous ferait monter », pour le seul
+ * état où ce bloc-ci ne s'affiche pas (profil non classé — voir F2) et où
+ * la raison doit malgré tout être dite quelque part.
+ */
+export const UNREACHABLE_MESSAGE =
   "Aucun cran au-dessus n'est atteignable en montant : la grille n'en propose pas."
 
 /**

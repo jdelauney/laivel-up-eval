@@ -104,6 +104,24 @@ describe('signature block', () => {
     ).toBeInTheDocument()
   })
 
+  it("never borrows the referential's vocabulary for its own unranked reason", () => {
+    // F1, résidu R-D de la revue : `UnrankedReasonList` codait en dur
+    // « Le référentiel demande » ; la signature l'affichait telle quelle,
+    // à trois lignes de « la signature ne déplace aucun niveau » — deux
+    // phrases qui se contredisent, et la première désigne la mauvaise
+    // grille. L'entête est désormais une prop propre à chaque appelant.
+    const { container } = render(
+      <SignatureBlock signature={unrankedSignature()} />,
+    )
+
+    expect(container.textContent).not.toMatch(/référentiel/i)
+    expect(
+      screen.getByText(
+        'La lecture de signature demande, pour son premier cran :',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('writes that the signature never moves a level', () => {
     render(<SignatureBlock signature={reachedSignature()} />)
 

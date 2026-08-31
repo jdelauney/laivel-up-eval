@@ -6,6 +6,7 @@ import { SummaryView } from '../../../../src/features/scoring-summary/components
 import { SessionProvider } from '../../../../src/providers/session-context'
 import {
   buildTestFacade,
+  buildTestFacadeWithGameCount,
   buildTestFacadeWithoutSignature,
 } from '../../../fixtures/configuration'
 
@@ -149,5 +150,26 @@ describe('summary', () => {
     const { container } = renderSummary({ selected: ['p1', 'p3'] })
 
     expect(container.textContent).not.toMatch(/%/)
+  })
+
+  it('renders no capping section for an unranked profile, only the reason already named above', () => {
+    // F2 — reproduit la sonde de la revue avec une vraie façade : le seul
+    // jeu de ce parcours ne mappe que `harness`, donc `taille` reste
+    // entièrement non mesurée. `taille` ne viole pas de borne `max` (un
+    // score inconnu n'est ni haut ni bas), donc White reste la cible du
+    // plan et `unranked`/`blocking` coïncident sur le même axe (voir
+    // `level-resolver.test.ts`). L'écran ne doit pas répéter la ligne : la
+    // section « Ce qui plafonne » ne se rend pas pour un profil non classé.
+    renderSummary({ selected: [] }, () => buildTestFacadeWithGameCount(1))
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'Aucun niveau ne peut être annoncé',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 3, name: 'Ce qui plafonne' }),
+    ).not.toBeInTheDocument()
   })
 })

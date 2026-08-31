@@ -303,6 +303,58 @@ describe('progression plan', () => {
     ])
   })
 
+  it('offers no target when an unmeasured axis only guesses the starting band of the scale', () => {
+    // F2, résidu R-C : `gap.violated` n'est absent que pour un axe non
+    // mesuré ; la direction devinée pour une borne `max` à 0 retombe sur
+    // la bande de départ de l'échelle (`from: 0`), qui ne porte jamais de
+    // geste. L'afficher comme cible reproduirait la pathologie de DB-2 —
+    // « la condition demande aucune feature livrée avec l'IA » — sur un axe
+    // dont on ne sait même pas la valeur. Construit à la main plutôt que
+    // via `gap(...)` : le paramètre par défaut de ce helper recalcule
+    // `violated` dès qu'`undefined` lui est passé explicitement — c'est
+    // exactement la sémantique JS des paramètres par défaut — donc il ne
+    // peut pas exprimer le cas qu'`evaluateCondition` produit pour un axe
+    // non mesuré.
+    const blocking: ConditionGap[] = [
+      {
+        condition: { dimension: 'parallele', max: 0 },
+        dimension: unmeasuredDimension(
+          'parallele',
+          'Chantiers menés en parallèle',
+        ),
+        gap: undefined,
+        violated: undefined,
+      },
+    ]
+
+    const [step] = planProgression(grid, blocking)
+
+    expect(step.target).toBeUndefined()
+    expect(step.action).toBeUndefined()
+    expect(step.proof).toBeUndefined()
+  })
+
+  it('still guesses a positive band for an unmeasured axis on a min bound', () => {
+    // Le même axe non mesuré, mais une borne `min` : la supposition reste
+    // rendue tant qu'elle ne retombe pas sur la bande de départ — c'est
+    // seulement `from: 0` qui n'est jamais un cran à viser.
+    const blocking: ConditionGap[] = [
+      {
+        condition: { dimension: 'parallele', min: 1 },
+        dimension: unmeasuredDimension(
+          'parallele',
+          'Chantiers menés en parallèle',
+        ),
+        gap: undefined,
+        violated: undefined,
+      },
+    ]
+
+    const [step] = planProgression(grid, blocking)
+
+    expect(step.target).toEqual({ label: '3 chantiers et plus', from: 1 })
+  })
+
   it('renders a blocking unmeasured axis: measurement told, action present regardless', () => {
     const blocking = [
       gap(

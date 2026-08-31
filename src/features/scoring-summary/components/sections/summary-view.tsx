@@ -2,7 +2,7 @@ import { useSessionFacade } from '@/providers/session-context'
 import { Button } from '../../../../components/ui/button'
 import { useSessionStore } from '../../../../store/session.store'
 import { AxisProofRow } from '../composites/axis-proof-row'
-import { CappingAxis } from '../composites/capping-axis'
+import { CappingAxis, UNREACHABLE_MESSAGE } from '../composites/capping-axis'
 import { CriteriaTrail } from '../composites/criteria-trail'
 import { LevelBlock } from '../composites/level-block'
 import { ProgressionStep } from '../composites/progression-step'
@@ -26,10 +26,23 @@ export const SummaryView = () => {
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <div className="flex flex-1 flex-col gap-8 rounded-2xl border border-plane-rule p-6">
           <LevelBlock level={level} unrankedReason={unrankedReason} />
-          <CappingAxis
-            capping={plan[0]}
-            noNextLevelReason={level.noNextLevelReason}
-          />
+          {/*
+           * F2 — sans niveau atteint, `plan[0]` peut être le même axe que
+           * celui que `LevelBlock` vient déjà de nommer dans sa raison
+           * d'état non classé (`unrankedReason`) : quand le niveau le plus
+           * bas échoue sans violer de borne `max` — un axe non mesuré, par
+           * exemple — `resolveClimbTarget` le retient comme cible, et
+           * `blocking` coïncide avec `unranked`. Répéter la ligne sous
+           * « Ce qui plafonne » n'ajoute rien et se lit comme deux faits
+           * distincts. `LevelBlock` porte déjà les axes en cause : ce bloc
+           * ne se rend que pour un profil classé.
+           */}
+          {level.level !== undefined ? (
+            <CappingAxis
+              capping={plan[0]}
+              noNextLevelReason={level.noNextLevelReason}
+            />
+          ) : null}
         </div>
         {signature !== undefined ? (
           <div className="flex flex-1 rounded-2xl border border-plane-rule p-6">
@@ -43,11 +56,21 @@ export const SummaryView = () => {
           Ce qui vous ferait monter
         </h3>
         {plan.length === 0 ? (
-          <p className="text-plane-foreground/80 text-sm">
-            {level.noNextLevelReason === 'unreachable'
-              ? "Aucun cran au-dessus n'est atteignable en montant : la grille n'en propose pas."
-              : "Le sommet du référentiel est atteint : il n'y a plus de cran à ouvrir."}
-          </p>
+          // F4 — « aucun cran au-dessus n'est atteignable » n'a qu'une
+          // source à l'écran, `CappingAxis` (import ci-dessus). Elle ne s'y
+          // rend que pour un profil classé (F2) : ici, on ne la répète que
+          // pour le profil non classé, où `CappingAxis` est absent et où
+          // la raison doit malgré tout être dite quelque part. La paire
+          // « sommet atteint » garde ses deux phrases distinctes et
+          // complémentaires, correcte telle quelle.
+          level.level !== undefined &&
+          level.noNextLevelReason === 'unreachable' ? null : (
+            <p className="text-plane-foreground/80 text-sm">
+              {level.noNextLevelReason === 'unreachable'
+                ? UNREACHABLE_MESSAGE
+                : "Le sommet du référentiel est atteint : il n'y a plus de cran à ouvrir."}
+            </p>
+          )
         ) : (
           <ul className="flex flex-col border-plane-rule border-t">
             {plan.map((step) => (

@@ -92,8 +92,17 @@ const bandAtOrBelow = (scale: readonly DimensionBand[], max: number) =>
  * recalculée depuis un libellé. La direction se lit sur la borne qui a cédé
  * (`gap.violated`) : borne `min` violée, la bande la plus basse qui la
  * franchit ; borne `max` violée, la bande la plus haute qui n'y échappe pas.
- * Sans axe mesuré, aucune borne n'a cédé : on retombe sur celle que la
- * condition déclare.
+ *
+ * `gap.violated` n'est absent que pour un axe non mesuré (`evaluateCondition`
+ * ne le pose jamais autrement) : aucune borne n'a réellement cédé, la
+ * direction n'est qu'une supposition lue sur celle que la condition déclare.
+ * Cette supposition se tait quand elle retombe sur la bande de départ de
+ * l'échelle (`from: 0`) — F2, résidu R-C de la revue. Cette bande-là ne
+ * porte jamais de geste à faire : elle est le point de départ, pas un cran à
+ * atteindre. La présenter comme cible sur un axe qu'on n'a même pas mesuré
+ * afficherait un cran visé absurde (« aucune feature livrée avec l'IA », sur
+ * `taille`) plutôt que la vraie raison du blocage — que `describePlanStep`
+ * dit déjà : l'axe n'a pas été mesuré, aucune condition ne peut tenir.
  */
 const resolveTargetBand = (
   gridDimension: Dimension | undefined,
@@ -108,13 +117,14 @@ const resolveTargetBand = (
   if (gap.violated === 'min' && gap.condition.min !== undefined) {
     return bandAtOrAbove(scale, gap.condition.min)
   }
-  if (gap.condition.min !== undefined) {
-    return bandAtOrAbove(scale, gap.condition.min)
-  }
-  if (gap.condition.max !== undefined) {
-    return bandAtOrBelow(scale, gap.condition.max)
-  }
-  return undefined
+
+  const guessed =
+    gap.condition.min !== undefined
+      ? bandAtOrAbove(scale, gap.condition.min)
+      : gap.condition.max !== undefined
+        ? bandAtOrBelow(scale, gap.condition.max)
+        : undefined
+  return guessed?.from === 0 ? undefined : guessed
 }
 
 const resolveObservedBand = (
