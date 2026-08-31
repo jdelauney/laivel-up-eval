@@ -26,10 +26,12 @@ export const PracticeTray = ({
   entries,
   heldId,
   onHold,
+  onStartDrag,
 }: {
   entries: readonly LegendEntry[]
   heldId: string | undefined
   onHold: (practiceId: string) => void
+  onStartDrag: (practiceId: string, event: React.PointerEvent) => void
 }) => {
   const remaining = entries.filter((entry) => !entry.placed).length
 
@@ -47,6 +49,7 @@ export const PracticeTray = ({
             placed={entry.placed}
             held={entry.id === heldId}
             onHold={() => onHold(entry.id)}
+            onStartDrag={(event) => onStartDrag(entry.id, event)}
           />
         ))}
       </div>

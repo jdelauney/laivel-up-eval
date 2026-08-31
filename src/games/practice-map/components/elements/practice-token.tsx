@@ -19,19 +19,29 @@ export const PracticeToken = ({
   placed,
   held,
   onHold,
+  onStartDrag,
 }: {
   number: number
   label: string
   placed: boolean
   held: boolean
   onHold: () => void
+  onStartDrag: (event: React.PointerEvent) => void
 }) => (
   <button
     type="button"
     aria-pressed={held}
     aria-label={label}
+    // Le glisser part de la ligne elle-même : le joueur emmène la pratique
+    // sur le plan sans passer par un clic préalable. Le clic reste le
+    // chemin « saisir puis désigner », seul emprunté au clavier.
+    onPointerDown={onStartDrag}
     onClick={onHold}
-    className={`flex items-start gap-2 border px-2.5 py-1.5 text-left text-plane-foreground text-sm outline-plane-foreground -outline-offset-2 focus-visible:outline-2 ${
+    // `touch-none` : au doigt, le navigateur prendrait sinon le glisser
+    // pour un défilement de page et la ligne ne bougerait jamais.
+    // `select-none` : à la souris, il le prendrait pour une sélection de
+    // texte, et le joueur emmènerait le libellé surligné au lieu du jeton.
+    className={`flex touch-none select-none items-start gap-2 border px-2.5 py-1.5 text-left text-plane-foreground text-sm outline-plane-foreground -outline-offset-2 focus-visible:outline-2 ${
       held
         ? 'border-plane-foreground font-medium'
         : 'border-plane-rule hover:border-plane-foreground'

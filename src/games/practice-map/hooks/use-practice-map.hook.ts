@@ -125,19 +125,51 @@ export const usePracticeMap = (
   const [phase, setPhase] = useState<PracticeMapPhase>('placing')
   const submittedRef = useRef(false)
 
+  /**
+   * La saisie courante, doublée en référence.
+   *
+   * Un glisser attache ses gestionnaires **à l'appui**, et ceux-ci vivent
+   * jusqu'au lâcher sans qu'aucun rendu ne les remplace : ils liraient la
+   * valeur d'état d'avant la saisie — `undefined` — et chaque promenade
+   * comme chaque dépôt serait refusé par sa propre garde. La référence dit
+   * ce qui est saisi *maintenant*, l'état dit ce que l'écran affiche ; les
+   * deux ne changent jamais l'un sans l'autre, `holdToken` en est le seul
+   * chemin.
+   */
+  const heldIdRef = useRef<string | undefined>(undefined)
+
+  const holdToken = (practiceId: string | undefined): void => {
+    heldIdRef.current = practiceId
+    setHeldId(practiceId)
+  }
+
   /** Saisit un jeton, en réserve ou déjà posé, à sa position courante ou au centre du plan. */
   const hold = (practiceId: string): void => {
     if (phase !== 'placing') return
     const existing = placements.get(practiceId)
-    setHeldId(practiceId)
+    holdToken(practiceId)
     setHeldPosition(existing ?? { intensity: 0.5, rigor: 0.5 })
   }
 
   /** Repose le jeton saisi sans le placer. */
   const release = (): void => {
     if (phase !== 'placing') return
-    setHeldId(undefined)
+    holdToken(undefined)
     setHeldPosition(undefined)
+  }
+
+  /**
+   * Promène le jeton saisi jusqu'à cette coordonnée, bornée dans `[0,1]`,
+   * sans le poser : l'aperçu suit le pointeur pendant un glisser, et la
+   * position n'est acquise qu'au lâcher.
+   *
+   * **Aucun arrondi sur le treillis du pas clavier**, contrairement à
+   * `nudge` : un geste au pointeur reste continu au pixel près, comme le
+   * veut l'absence de case prédéfinie.
+   */
+  const designate = (intensity: number, rigor: number): void => {
+    if (phase !== 'placing' || heldIdRef.current === undefined) return
+    setHeldPosition({ intensity: clamp01(intensity), rigor: clamp01(rigor) })
   }
 
   /**
@@ -145,13 +177,24 @@ export const usePracticeMap = (
    * relâche. Remplace tout placement déjà existant pour cette pratique :
    * jamais un second placement pour la même pratique, la trace n'en porte
    * qu'un par construction et non par filtrage.
+   *
+   * Passe par la forme fonctionnelle de `setPlacements` pour la même raison
+   * que `designate` lit `heldIdRef` : un dépôt au lâcher part d'un
+   * gestionnaire créé à l'appui, dont la copie de `placements` date d'avant
+   * le geste.
    */
   const place = (intensity: number, rigor: number): void => {
-    if (phase !== 'placing' || heldId === undefined) return
-    const next = new Map(placements)
-    next.set(heldId, { intensity: clamp01(intensity), rigor: clamp01(rigor) })
-    setPlacements(next)
-    setHeldId(undefined)
+    const practiceId = heldIdRef.current
+    if (phase !== 'placing' || practiceId === undefined) return
+    setPlacements((current) => {
+      const next = new Map(current)
+      next.set(practiceId, {
+        intensity: clamp01(intensity),
+        rigor: clamp01(rigor),
+      })
+      return next
+    })
+    holdToken(undefined)
     setHeldPosition(undefined)
   }
 
@@ -182,7 +225,7 @@ export const usePracticeMap = (
    * chemins d'entrée que le reste du jeu s'attache à éviter.
    */
   const nudge = (axis: 'intensity' | 'rigor', direction: 1 | -1): void => {
-    if (phase !== 'placing' || heldId === undefined) return
+    if (phase !== 'placing' || heldIdRef.current === undefined) return
     setHeldPosition((current) =>
       current === undefined
         ? current
@@ -298,6 +341,7 @@ export const usePracticeMap = (
     markers,
     hold,
     release,
+    designate,
     place,
     nudge,
     submit,

@@ -163,3 +163,26 @@ Temps 2 — la révélation
 | 1 | Reposer une pratique déjà posée remplace son placement ; la soumission reste sans effet tant qu'une pratique est en réserve ; la façade ne reçoit qu'une seule soumission ; aucun repère n'est lisible avant la révélation |
 | 2 | Le plan ne porte aucune ligne de quadrant ; un jeton se saisit, se déplace et se pose au clavier seul ; la position atteinte est annoncée en mots dans une région `aria-live` ; aucun état n'est porté par la couleur seule |
 | 3 | `npm run test` passe, et le parcours clavier complet est couvert par un test |
+
+## Correction du 31/08 : le glisser-déposer manquait
+
+Signalé par le chef en jeu réel : « impossible de déplacer les pastilles en DnD, je peux juste cliquer dessus ».
+
+Le geste n'était pas cassé, il n'existait pas. Cette phase n'a câblé qu'un seul chemin au pointeur — « saisir puis désigner », deux clics — alors que la consigne du corpus promet depuis toujours « vous pouvez déplacer un jeton autant de fois que vous le voulez », que `DESIGN.md:94` range ce jeu parmi les glissers-déposers, et que `plan.md` raisonne sur « un glissement de jeton ». Un appui suivi d'un déplacement ne produisait rien : aucun `onPointerDown` nulle part dans le jeu.
+
+Trois gestes mènent désormais au même dépôt, aucun n'étant le repli d'un autre :
+
+| Geste | Chemin |
+| --- | --- |
+| Glisser un jeton et le lâcher sur le plan | `use-plane-drag.hook.ts` → `hold` puis `designate` à chaque déplacement, `place` au lâcher |
+| Saisir au clic puis désigner un point | inchangé — sous le seuil de trois pixels, un appui reste un clic |
+| Saisir puis déplacer aux flèches | inchangé |
+
+Fichiers touchés :
+
+- `helpers/read-plane-point.helper.ts` ✅ la conversion pixels → plan, extraite de `practice-plane.tsx` : le clic et le glisser doivent rendre la **même** coordonnée pour le même pixel.
+- `hooks/use-plane-drag.hook.ts` ✅ le geste, écouté sur `window` — un glisser commence sur un jeton et finit sur le plan, la capture implicite du doigt ne le laisserait jamais arriver au plan.
+- `hooks/use-practice-map.hook.ts` ✏️ `designate(intensity, rigor)` promène le jeton saisi sans le poser ; `heldIdRef` double `heldId` et `setPlacements` passe à sa forme fonctionnelle, sans quoi les gestionnaires créés à l'appui liraient l'état d'avant la saisie et refuseraient chaque dépôt.
+- `practice-plane.tsx`, `practice-tray.tsx`, `practice-token.tsx` ✏️ `onPointerDown` sur les jetons, `touch-none` et `select-none` sur les surfaces glissées.
+
+Un jeton lâché à côté du plan ne se pose pas et ne se supprime pas : le geste est abandonné, le dépôt existant reste. Quatre tests couvrent le glisser depuis la réserve, le déplacement d'un jeton déjà posé, le lâcher hors du plan et la survie du chemin au clic (`practice-map-game.test.tsx`).

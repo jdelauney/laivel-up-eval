@@ -129,6 +129,29 @@ const holdFromReserve = (label: string): void => {
   fireEvent.click(within(reserveSection()).getByRole('button', { name: label }))
 }
 
+/**
+ * Le geste réel du joueur à la souris ou au doigt : appuyer sur un jeton,
+ * l'emmener, le lâcher. Les événements qui suivent l'appui partent de la
+ * fenêtre, exactement comme en navigateur — c'est elle qui les voit tous,
+ * quel que soit l'élément survolé.
+ */
+const dragToken = (
+  token: HTMLElement,
+  to: { clientX: number; clientY: number },
+): void => {
+  fireEvent.pointerDown(token, { clientX: 400, clientY: 400, button: 0 })
+  fireEvent.pointerMove(window, to)
+  fireEvent.pointerUp(window, to)
+}
+
+/** Emmène une pratique de la réserve jusqu'à un point du plan. */
+const dragFromReserve = (
+  label: string,
+  to: { clientX: number; clientY: number },
+): void => {
+  dragToken(within(reserveSection()).getByRole('button', { name: label }), to)
+}
+
 describe('practice map game, rendered', () => {
   it('lists every practice in the permanent legend, and the submit action unavailable', () => {
     render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
@@ -415,5 +438,112 @@ describe('practice map game, rendered', () => {
     expect(
       screen.getByRole('button', { name: /soumettre la lecture/i }),
     ).toBeEnabled()
+  })
+
+  /**
+   * Le glisser-déposer, geste que la consigne promet depuis toujours
+   * (« vous pouvez déplacer un jeton autant de fois que vous le voulez »)
+   * et que le jeu n'offrait pas : seul « saisir puis désigner » était
+   * câblé, un appui suivi d'un déplacement ne produisait rien. Le jeton
+   * suit désormais le pointeur et se pose là où il est lâché.
+   */
+  it('places a token where the pointer drops it, dragged from the legend onto the plane', () => {
+    const onSubmit = vi.fn()
+    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+
+    dragFromReserve(config.practices[0].label, { clientX: 20, clientY: 20 })
+
+    expect(screen.getByText(/il reste 3 pratique/i)).toBeInTheDocument()
+
+    config.practices.slice(1).forEach((entry) => {
+      holdFromReserve(entry.label)
+      fireEvent.click(plane(), { clientX: 10, clientY: 10 })
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: /soumettre la lecture/i }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+
+    const answer = onSubmit.mock.calls[0][0] as {
+      placements: { practiceId: string; intensity: number; rigor: number }[]
+    }
+    // Le carré mocké est 100×100 à l'origine : (20, 20) est à un cinquième
+    // du bord gauche et à quatre cinquièmes du bas.
+    expect(answer.placements[0]).toEqual({
+      practiceId: config.practices[0].id,
+      intensity: 0.2,
+      rigor: 0.8,
+    })
+  })
+
+  it('moves an already-placed token by dragging its badge, replacing the placement without duplicating it', () => {
+    const onSubmit = vi.fn()
+    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+
+    config.practices.forEach((entry) => {
+      holdFromReserve(entry.label)
+      fireEvent.click(plane(), { clientX: 10, clientY: 10 })
+    })
+
+    dragToken(
+      within(plane()).getByRole('button', { name: config.practices[0].label }),
+      { clientX: 90, clientY: 40 },
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /soumettre la lecture/i }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+
+    const answer = onSubmit.mock.calls[0][0] as {
+      placements: { practiceId: string; intensity: number; rigor: number }[]
+    }
+    expect(answer.placements).toHaveLength(config.practices.length)
+    expect(answer.placements[0]).toEqual({
+      practiceId: config.practices[0].id,
+      intensity: 0.9,
+      rigor: 0.6,
+    })
+  })
+
+  /**
+   * Un jeton lâché à côté du plan ne se pose pas, et ne se supprime pas
+   * non plus : le geste est simplement abandonné.
+   */
+  it('places nothing when a token is dropped outside the plane, releasing it instead', () => {
+    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+
+    dragFromReserve(config.practices[0].label, { clientX: 400, clientY: 300 })
+
+    expect(screen.getByText(/il reste 4 pratique/i)).toBeInTheDocument()
+    expect(
+      within(reserveSection()).getByRole('button', {
+        name: config.practices[0].label,
+      }),
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  /**
+   * Le glisser n'a pas remplacé le clic : sous le seuil de déplacement, un
+   * appui reste un clic, le jeton reste saisi, et le joueur désigne
+   * ensuite son point — le seul chemin qu'une activation au clavier
+   * emprunte.
+   */
+  it('keeps the hold-then-designate path intact when the press does not move', () => {
+    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+
+    const row = within(reserveSection()).getByRole('button', {
+      name: config.practices[0].label,
+    })
+    fireEvent.pointerDown(row, { clientX: 400, clientY: 400, button: 0 })
+    fireEvent.pointerUp(window, { clientX: 401, clientY: 400 })
+    fireEvent.click(row)
+
+    expect(screen.getByText(/il reste 4 pratique/i)).toBeInTheDocument()
+    expect(row).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(plane(), { clientX: 10, clientY: 10 })
+
+    expect(screen.getByText(/il reste 3 pratique/i)).toBeInTheDocument()
   })
 })

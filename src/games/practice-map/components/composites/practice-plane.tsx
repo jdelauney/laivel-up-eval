@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
+import { readPlanePoint } from '../../helpers/read-plane-point.helper'
 import type { Poles, Quadrants } from '../../schema/config.schema'
 
 export type PlaneToken = {
@@ -100,12 +101,16 @@ const quadrantLabels = (
  * au pixel près : `handleClick` calcule toujours la même fraction `[0,1]`,
  * sans arrondi vers un centre de case.
  *
- * La conversion pixels → plan vit ici, et nulle part ailleurs : un clic ou
- * un tap sur le plan calcule la coordonnée `[0,1]` et la transmet telle
- * quelle.
+ * La conversion pixels → plan vit dans `read-plane-point.helper.ts`, et
+ * nulle part ailleurs : un clic sur le plan y calcule sa coordonnée, un
+ * glisser de jeton y calcule la sienne, et le même pixel rend la même
+ * coordonnée d'un geste à l'autre.
  *
- * Le plan est lui-même atteignable au clavier une fois qu'un jeton est
- * saisi : les flèches déplacent le jeton d'un pas fixe, Entrée et Espace le
+ * **Trois gestes mènent au même dépôt**, et aucun n'est le repli d'un
+ * autre : glisser un jeton jusqu'au point voulu (`use-plane-drag.hook.ts`),
+ * saisir un jeton puis désigner un point du plan au clic, ou saisir puis
+ * déplacer aux flèches. Le plan est atteignable au clavier dès qu'un jeton
+ * est saisi : les flèches le déplacent d'un pas fixe, Entrée et Espace le
  * posent, Échap le relâche sans le placer.
  *
  * **Le plan reste carré, et prend toute la largeur de sa colonne.**
@@ -124,6 +129,7 @@ const quadrantLabels = (
  * les plus étroites, et n'est jamais atteint aux gabarits réels.
  */
 export const PracticePlane = ({
+  planeRef,
   placedTokens,
   heldToken,
   poles,
@@ -134,7 +140,12 @@ export const PracticePlane = ({
   onPlace,
   onRelease,
   onHoldToken,
+  onStartDragToken,
 }: {
+  // Le cadre du plan appartient au glisser-déposer, qui lit sa géométrie à
+  // chaque déplacement du pointeur : la référence vient donc de lui, et le
+  // plan s'y accroche pour le clavier comme pour le clic.
+  planeRef: React.RefObject<HTMLDivElement | null>
   placedTokens: readonly PlaneToken[]
   // Le jeton saisi, à sa position candidate — affiché en aperçu tant qu'il
   // n'est pas posé.
@@ -148,19 +159,20 @@ export const PracticePlane = ({
   onPlace: () => void
   onRelease: () => void
   onHoldToken: (practiceId: string) => void
+  onStartDragToken: (practiceId: string, event: React.PointerEvent) => void
 }) => {
-  const planeRef = useRef<HTMLDivElement>(null)
-
   useEffect(() => {
     if (interactive) planeRef.current?.focus()
-  }, [interactive])
+  }, [interactive, planeRef])
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>): void => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    const intensity = (event.clientX - rect.left) / rect.width
-    const rigor = 1 - (event.clientY - rect.top) / rect.height
-    onDesignate(intensity, rigor)
+    const point = readPlanePoint(
+      event.currentTarget,
+      event.clientX,
+      event.clientY,
+    )
+    if (point === undefined) return
+    onDesignate(point.intensity, point.rigor)
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -208,7 +220,7 @@ export const PracticePlane = ({
           tabIndex={interactive ? 0 : -1}
           onClick={handleClick}
           onKeyDown={handleKeyDown}
-          className="relative aspect-square min-h-28 w-full overflow-hidden border border-plane-rule bg-plane"
+          className="relative aspect-square min-h-28 w-full select-none overflow-hidden border border-plane-rule bg-plane"
         >
           {/* La croix centrale et les quatre quadrants : un calque
            * purement visuel, sans effet sur le dépôt. `pointer-events-none`
@@ -245,11 +257,19 @@ export const PracticePlane = ({
                 type="button"
                 title={token.label}
                 aria-label={token.label}
+                // Le glisser part d'ici ; le clic reste le chemin
+                // « saisir puis désigner », et le seul chemin qu'une
+                // activation au clavier emprunte.
+                onPointerDown={(event) => onStartDragToken(token.id, event)}
                 onClick={(event) => {
                   event.stopPropagation()
                   onHoldToken(token.id)
                 }}
-                className="group relative flex size-6.25 items-center justify-center rounded-full border border-plane-foreground bg-plane font-medium text-[11px] text-plane-foreground tabular-nums"
+                // `touch-none` : sans lui, le navigateur interprète le
+                // glisser du doigt comme un défilement de page et le jeton
+                // ne bouge jamais. `select-none` : son pendant à la souris,
+                // qui y verrait une sélection de texte.
+                className="group relative flex size-6.25 touch-none select-none items-center justify-center rounded-full border border-plane-foreground bg-plane font-medium text-[11px] text-plane-foreground tabular-nums"
               >
                 {token.number}
                 {/* Le libellé complet, caché au repos, révélé au focus —

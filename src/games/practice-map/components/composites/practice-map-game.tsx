@@ -1,5 +1,6 @@
 import { Button } from '../../../../components/ui/button'
 import type { GameComponentProps } from '../../../types/game-component'
+import { usePlaneDrag } from '../../hooks/use-plane-drag.hook'
 import { usePracticeMap } from '../../hooks/use-practice-map.hook'
 import { MarkerLine } from '../elements/marker-line'
 import { PracticePlane } from './practice-plane'
@@ -32,12 +33,23 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
     markers,
     hold,
     release,
+    designate,
     place,
     nudge,
     submit,
     advance,
     positionLabel,
   } = usePracticeMap(config, onSubmit)
+
+  // Le glisser-déposer ne connaît que quatre gestes du jeu — saisir,
+  // promener, poser, renoncer — et le cadre du plan qu'il mesure. Aucune
+  // règle du jeu ne descend jusqu'à lui.
+  const { planeRef, startDrag } = usePlaneDrag({
+    onHold: hold,
+    onMove: designate,
+    onDrop: place,
+    onCancel: release,
+  })
 
   if (phase === 'revealed') {
     return (
@@ -129,6 +141,7 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
        * la page bien plus bas. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_16rem] sm:gap-6">
         <PracticePlane
+          planeRef={planeRef}
           placedTokens={placedTokens}
           heldToken={heldToken}
           poles={poles}
@@ -142,8 +155,14 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
           }}
           onRelease={release}
           onHoldToken={hold}
+          onStartDragToken={startDrag}
         />
-        <PracticeTray entries={legend} heldId={heldId} onHold={hold} />
+        <PracticeTray
+          entries={legend}
+          heldId={heldId}
+          onHold={hold}
+          onStartDrag={startDrag}
+        />
       </div>
 
       <div>
