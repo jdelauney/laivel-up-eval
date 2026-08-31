@@ -146,36 +146,12 @@ describe('game session facade', () => {
     ])
   })
 
-  it('previews a stored run without opening it', () => {
-    const persistence = new MemoryPersistence()
-    const played = buildFacade(persistence)
-    played.start('Alice')
-    played.submitAnswer(goodAnswer)
-
-    const fresh = buildFacade(persistence)
-
-    expect(fresh.storedRun()).toEqual({
-      playerName: 'Alice',
-      submitted: 1,
-      total: 1,
-    })
-    expect(fresh.hasSession()).toBe(false)
-  })
-
-  it('previews nothing when the stored state is not a session', () => {
-    const persistence = new MemoryPersistence()
-    persistence.write({ unrelated: true })
-
-    expect(buildFacade(persistence).storedRun()).toBeUndefined()
-  })
-
   it('ignores a stored state that is readable but out of contract', () => {
     const persistence = new MemoryPersistence()
     persistence.write({ playerName: 'Alice' })
 
     const facade = buildFacade(persistence)
 
-    expect(facade.storedRun()).toBeUndefined()
     expect(() => facade.resume()).not.toThrow()
     expect(facade.resume()).toBe(false)
   })
@@ -231,19 +207,6 @@ describe('game session facade', () => {
     expect(resumed.playerName()).toBe('Alice')
   })
 
-  it('previews the repository of a stored run', () => {
-    const persistence = new MemoryPersistence()
-    const played = buildFacade(persistence)
-    played.start('Alice', 'alice/atelier')
-
-    expect(buildFacade(persistence).storedRun()).toEqual({
-      playerName: 'Alice',
-      repository: 'alice/atelier',
-      submitted: 0,
-      total: 1,
-    })
-  })
-
   it('resumes a run stored before the repository field existed', () => {
     const persistence = new MemoryPersistence()
     persistence.write({
@@ -271,7 +234,6 @@ describe('game session facade', () => {
 
     const facadeOnBadStore = buildFacade(persistence)
 
-    expect(facadeOnBadStore.storedRun()).toBeUndefined()
     expect(facadeOnBadStore.resume()).toBe(false)
   })
 

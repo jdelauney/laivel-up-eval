@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import type { RepositorySlug } from '@/core/contracts/repository-slug.schema'
 import { useSessionFacade } from '@/providers/session-context'
 import type { RailGroup } from '../../../components/group-rail/composites/group-rail'
@@ -7,17 +7,14 @@ import { useSessionStore } from '../../../store/session.store'
 import { estimateCourseMinutes } from '../helpers/estimate-course-minutes.helper'
 
 /**
- * Démarre une session neuve, reprend celle qui existe, ou l'efface. Le hook ne
- * décide rien : il interroge la façade et range le résultat dans le store.
- *
- * La reprise n'est jamais automatique — l'accueil montre la partie enregistrée
- * et laisse le joueur choisir.
+ * Démarre une session neuve. Le hook ne décide rien : il interroge la façade
+ * et range le résultat dans le store. La reprise d'une partie enregistrée est
+ * automatique, au montage de l'application — voir `useRestoreRun` — ce hook
+ * ne s'occupe que du premier départ.
  */
 export const useOnboarding = () => {
   const facade = useSessionFacade()
   const openCourse = useSessionStore((state) => state.openCourse)
-  const showSummary = useSessionStore((state) => state.showSummary)
-  const [storedRun, setStoredRun] = useState(() => facade.storedRun())
 
   /**
    * Aucune position à montrer : l'accueil donne la forme du parcours, pas
@@ -36,36 +33,8 @@ export const useOnboarding = () => {
     [facade, openCourse],
   )
 
-  /**
-   * Une partie terminée se reprend sur son verdict, pas sur un parcours vide.
-   * Sans ce test, reprendre après la dernière situation menait à un écran
-   * « aucune situation en cours » sans issue.
-   */
-  const resume = useCallback((): boolean => {
-    if (!facade.resume()) return false
-
-    const progress = facade.getProgress()
-    openCourse(
-      {
-        playerName: facade.playerName() ?? '',
-        repository: facade.designatedRepository(),
-      },
-      progress,
-    )
-    if (progress.finished) showSummary()
-    return true
-  }, [facade, openCourse, showSummary])
-
-  const discard = useCallback((): void => {
-    facade.resetSession()
-    setStoredRun(undefined)
-  }, [facade])
-
   return {
     start,
-    resume,
-    discard,
-    storedRun,
     rail,
     totalSituations,
     estimatedMinutes,

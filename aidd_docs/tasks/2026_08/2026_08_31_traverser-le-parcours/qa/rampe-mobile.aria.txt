@@ -1,0 +1,8 @@
+- list "Progression dans le parcours":
+  - listitem "Jugement critique, 3 jeux, en cours"
+  - listitem "Pilotage du contexte, 3 jeux, à venir"
+  - listitem "Résilience, 3 jeux, à venir"
+  - listitem "Sécurité et responsabilité, 2 jeux, à venir"
+  - listitem "Architecture, 2 jeux, à venir"
+  - listitem "Qualité du prompt, 2 jeux, à venir"
+  - listitem "Les axes du référentiel, 5 jeux, à venir"

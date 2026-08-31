@@ -151,15 +151,12 @@ describe('onboarding view', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('shows the repository of a stored run on its resume card', () => {
-    const persistence = new MemoryPersistence()
-    const played = buildTestFacade(persistence)
-    played.start('Alice', 'alice/atelier')
+  it('names the rail as the shape of the course, not a progress in it', () => {
+    renderOnboarding()
 
-    renderOnboarding(persistence)
-
-    expect(screen.getByText('Partie en cours')).toBeInTheDocument()
-    expect(screen.getByText('alice/atelier')).toBeInTheDocument()
+    expect(
+      screen.getByRole('list', { name: /forme du parcours/i }),
+    ).toBeInTheDocument()
   })
 
   it('states the frame before any input: duration, groups and situations', () => {
@@ -178,11 +175,11 @@ describe('onboarding view', () => {
   })
 
   /**
-   * Le primo-arrivant est le seul lecteur de ce cadre, et c'est justement
-   * celui à qui la carte de reprise ne s'affiche pas. Sans cette ligne, la
-   * durée annoncée se lit comme un bloc insécable.
+   * L'accueil n'affiche plus jamais de carte de reprise : elle est
+   * automatique, au montage de l'application. Cette ligne reste le seul
+   * endroit qui annonce la reprise à un primo-arrivant.
    */
-  it('says the run can be interrupted, to someone who has never played', () => {
+  it('says the run can be interrupted, with no resume card to show it otherwise', () => {
     renderOnboarding()
 
     expect(screen.queryByText('Partie en cours')).not.toBeInTheDocument()
@@ -241,24 +238,6 @@ describe('onboarding view', () => {
     )
   })
 
-  /**
-   * La carte de reprise fait partie de l'accueil : elle porte du texte que le
-   * premier balayage ne voit pas, faute de partie enregistrée.
-   */
-  it('never states a scoring vocabulary word next to a stored run either', () => {
-    const persistence = new MemoryPersistence()
-    const played = buildTestFacade(persistence)
-    played.start('Alice', 'alice/atelier')
-
-    const { container } = renderOnboarding(persistence)
-    const renderedWords = wordsRenderedBy(container)
-
-    expect(screen.getByText('Partie en cours')).toBeInTheDocument()
-    for (const forbiddenWord of SCORING_VOCABULARY) {
-      expect(renderedWords).not.toContain(forbiddenWord)
-    }
-  })
-
   it('never restates a scoring grid dimension label anywhere on the screen', () => {
     const { container } = renderOnboarding()
 
@@ -282,22 +261,6 @@ describe('onboarding view', () => {
     const renderedText = renderedTextOf(container)
 
     expect(renderedText).toContain(firstDimension.label.toLowerCase())
-  })
-
-  it('keeps the frame stated above the resume card of a stored run', () => {
-    const persistence = new MemoryPersistence()
-    const played = buildTestFacade(persistence)
-    played.start('Alice')
-
-    renderOnboarding(persistence)
-
-    const frameDuration = screen.getByText('Estimation')
-    const resumeCard = screen.getByText('Partie en cours')
-
-    expect(
-      frameDuration.compareDocumentPosition(resumeCard) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
   })
 
   describe('missing repository notice', () => {

@@ -17,7 +17,7 @@ flowchart TD
 ## Zones
 
 - `src/components/` : UI générique sans état métier. `ui/` tient les primitifs shadcn installés par la CLI — Biome les exclut du lint.
-- `src/features/` : `onboarding/`, `group-navigation/`, `scoring-summary/`. Gabarit interne `components/` · `hooks/` · `actions/` · `schema/`, seuls les niveaux utilisés sont créés.
+- `src/features/` : `onboarding/`, `group-navigation/`, `scoring-summary/`, `session-restore/`. Gabarit interne `components/` · `hooks/` · `actions/` · `schema/`, seuls les niveaux utilisés sont créés.
 - `src/games/` : un sous-dossier par jeu, plus les deux fichiers de câblage `register-games.ts` (evaluator, schémas) et `register-components.ts` (le composant), et `types/game-component.ts`. **Reste à la racine, pas sous `features/`** : c'est un système de plugins à contrat formel, un contributeur doit voir en cinq secondes où ajouter un jeu.
 - `src/core/` : `entities/`, `contracts/` (schémas Zod et `helpers/parse-config.helper.ts`), `ports/` (interfaces), `commands/`, `registry/` (`game-registry.ts` seul), `scoring/` (stratégie de pondération et helpers de bande et de résolution de niveau), `session/` (façade et `run-replay.helper.ts`).
 - `src/infrastructure/` : un sous-dossier par port implémenté — `clock/` (`system`, `fixed`), `persistence/`.
