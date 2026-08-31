@@ -37,8 +37,23 @@ const MAX_SHARE_DENOMINATOR = 3
  * Le plafond du chronomètre, en secondes par item. Sans lui, un corpus
  * futur pourrait desserrer `durationSeconds` jusqu'à annuler la contrainte
  * de temps, et le jeu ne mesurerait plus « sans le temps de chercher ».
+ *
+ * Fixé à **3**, pas 2. La revue du 31/08 a mesuré qu'un plafond de deux
+ * secondes par item, appliqué au corpus réel de douze pratiques, exigeait
+ * 351 mots/minute soutenus **plus** un verdict par carte — au-dessus de la
+ * vitesse de lecture silencieuse d'une prose non fictionnelle courante
+ * (environ 240 mots/minute). Sous ce régime, le jeu mesurait la vitesse de
+ * lecture, pas la connaissance : un lecteur honnête n'avait jamais le temps
+ * de boucler le lot, quand bien même il connaîtrait chaque réponse. Trois
+ * secondes par item laisse la place à une lecture réelle à 240 mots/minute
+ * d'un corpus aux libellés courts, plus un temps de jugement par carte,
+ * tout en conservant une pression réelle : le budget reste très inférieur à
+ * ce qu'il faudrait pour chercher une réponse. `brute-force.test.ts` épingle
+ * le débit exigé par le corpus **réel** du parcours contre ce plafond, pour
+ * qu'un futur corpus plus bavard fasse rougir un test plutôt que de rouvrir
+ * la fuite en silence.
  */
-const MAX_SECONDS_PER_ITEM = 2
+const MAX_SECONDS_PER_ITEM = 3
 
 const baseConfigSchema = z.object({
   statement: z.string().min(1),

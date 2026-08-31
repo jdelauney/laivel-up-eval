@@ -37,13 +37,16 @@ export type ItemRevelation = {
  * rejeu du projet interdit l'aléatoire non semé — même décision que
  * `initialOrder` dans `flow-order`.
  *
- * **Le gel à l'expiration est le seul chemin déclenché par le temps.**
+ * **Le gel à l'expiration se déclenche par deux chemins, jamais un troisième.**
+ * Le chemin passif : l'effet sur `expired`, qui bascule au tick suivant de
+ * `useCountdown` (250 ms). Le chemin actif : `sort()` lui-même, qui relit le
+ * temps frais à chaque geste et gèle immédiatement s'il tombe après la
+ * limite — sans attendre ce tick. Les deux appellent le même `freeze()`,
+ * donc un tri arrivé après la seconde limite n'entre jamais dans la trace,
+ * y compris dans le quart de seconde où `phase` n'a pas encore bougé.
  * `sort()` ne fait plus rien une fois `'frozen'` atteint, et le compte à
  * rebours s'arrête le même rendu — `running` de `useCountdown` retombe à
- * `false` dès que la phase quitte `'sorting'`. Un tri arrivé après la
- * seconde limite n'entre donc jamais dans la trace : `freeze()` capture la
- * durée et fige les verdicts au même instant, avant que le geste suivant
- * ne puisse s'exécuter.
+ * `false` dès que la phase quitte `'sorting'`.
  *
  * Le hook n'expose **jamais** `keep` ni `reason` avant leur heure : la
  * carte courante ne porte que `id` et `label`, et `revelations` reste vide
@@ -117,6 +120,15 @@ export const useKeepOrToss = (
    * Trie la carte courante. Ne fait plus rien une fois `'frozen'` atteint —
    * aucun autre chemin ne rouvre le tri.
    *
+   * **Se garde sur une lecture fraîche du temps, pas sur `phase`.** `phase`
+   * ne bascule à `'frozen'` qu'au tick suivant de `useCountdown` (250 ms) :
+   * entre l'instant où le budget expire et ce tick, `phase` vaut encore
+   * `'sorting'`, et un tri déposé dans cette fenêtre entrait dans la trace
+   * avant ce correctif — constat de la revue du 31/08. `readElapsedSeconds`
+   * recalcule depuis `Date.now()` à l'instant de l'appel, jamais depuis
+   * l'état affiché qui porte ce même quart de seconde de retard : un geste
+   * arrivé après la limite gèle immédiatement le lot au lieu d'être compté.
+   *
    * Passe par la forme fonctionnelle de `setVerdicts` : deux tris déclenchés
    * dans le même tick liraient sinon la même valeur figée de `verdicts` et
    * le second écraserait le premier au lieu de s'y ajouter — la même faute
@@ -124,8 +136,13 @@ export const useKeepOrToss = (
    */
   const sort = (kept: boolean): void => {
     if (phase !== 'sorting' || currentItem === undefined) return
-    const itemId = currentItem.id
 
+    if (readElapsedSeconds() >= parsed.durationSeconds) {
+      freeze(verdictsRef.current)
+      return
+    }
+
+    const itemId = currentItem.id
     setVerdicts((current) => {
       const next = new Map(current)
       next.set(itemId, kept)

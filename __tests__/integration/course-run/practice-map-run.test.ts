@@ -33,6 +33,7 @@ import {
   nullPracticeMapAnswer,
   shiftedDownPracticeMapAnswer,
 } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur réel : le vrai registre, la vraie façade, la
@@ -329,6 +330,13 @@ describe('practice-map in the course', () => {
      * conforme suffit — ici, aucune carte triée.
      */
     if (game.type === 'keep-or-toss') return { verdicts: [], elapsedSeconds: 0 }
+    /**
+     * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan : ce
+     * test mesure `pilotage-contexte`, jamais `resilience`, donc n'importe
+     * quelle trace conforme suffit — voir `defaultWrongAssistantAnswer`.
+     */
+    if (game.type === 'wrong-assistant')
+      return defaultWrongAssistantAnswer(game.config)
     return { selected: [] }
   }
 

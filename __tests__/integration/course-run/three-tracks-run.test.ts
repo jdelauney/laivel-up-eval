@@ -24,6 +24,7 @@ import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur de production : le vrai parcours, la vraie grille,
@@ -152,6 +153,13 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
    * trace conforme suffit — ici, aucune carte triée.
    */
   if (game.type === 'keep-or-toss') return { verdicts: [], elapsedSeconds: 0 }
+  /**
+   * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan : ce
+   * test mesure `parallele`, jamais `resilience`, donc n'importe quelle
+   * trace conforme suffit — voir `defaultWrongAssistantAnswer`.
+   */
+  if (game.type === 'wrong-assistant')
+    return defaultWrongAssistantAnswer(game.config)
   return { selected: [] }
 }
 

@@ -27,14 +27,16 @@ const config = {
 const criteria: Criterion[] = [
   {
     id: 'c1',
-    question: 'Le taux de bon classement dépasse-t-il le seuil ?',
+    question:
+      "La part de pratiques bien classées sur l'ensemble du lot atteint-elle le seuil ?",
     rule: { type: 'correct-share-at-least', threshold: 0.75 },
     mapping: [{ dimension: 'verification', weight: 2 }],
   },
   {
     id: 'c2',
-    question: 'Le tri a-t-il été bouclé dans le temps imparti ?',
-    rule: { type: 'sorting-completed-in-time' },
+    question:
+      "Le lot a-t-il été trié en entier avant la fin du temps imparti, avec un classement qui dépasse ce qu'un seul geste répété aurait obtenu ?",
+    rule: { type: 'sorting-completed-beyond-blind-floor' },
     mapping: [{ dimension: 'verification', weight: 1 }],
   },
 ]
@@ -72,7 +74,7 @@ describe('keep-or-toss evaluator', () => {
     expect(verdict.c2).toBe(false)
   })
 
-  it('misses c1 alone for a fast but wrong sort, all eight items flipped', () => {
+  it('misses both criteria for a fast but wrong sort, all eight items flipped: 0/8 sits well under the blind floor of 4/8', () => {
     const verdict = verdictFor({
       verdicts: config.items.map((entry) => ({
         itemId: entry.id,
@@ -82,7 +84,7 @@ describe('keep-or-toss evaluator', () => {
     })
 
     expect(verdict.c1).toBe(false)
-    expect(verdict.c2).toBe(true)
+    expect(verdict.c2).toBe(false)
   })
 
   it('misses both criteria for an unfinished, otherwise perfect, sort', () => {
@@ -96,6 +98,50 @@ describe('keep-or-toss evaluator', () => {
     expect(verdict.c2).toBe(false)
   })
 
+  /**
+   * Constat 1 de la revue du 31/08 : avant le correctif, `c2` ne lisait que
+   * `completedInTime` et « tout garder » — le geste unique répété, aucune
+   * carte lue — le tenait en douze gestes. Ce lot est équilibré 4/4 :
+   * garder tout obtient exactement `4/8 = 0.5`, le plancher du geste
+   * unique. `0.5` n'est pas strictement au-dessus de lui-même : le critère
+   * doit rester manqué malgré un tri complet et dans le budget.
+   */
+  it('misses c2 for the blind single-gesture profile — keeping everything — even complete and within budget', () => {
+    const verdict = verdictFor({
+      verdicts: config.items.map((entry) => ({ itemId: entry.id, kept: true })),
+      elapsedSeconds: 1,
+    })
+
+    expect(verdict.c1).toBe(false)
+    expect(verdict.c2).toBe(false)
+  })
+
+  it('misses c2 for the blind single-gesture profile — tossing everything — the mirror case', () => {
+    const verdict = verdictFor({
+      verdicts: config.items.map((entry) => ({
+        itemId: entry.id,
+        kept: false,
+      })),
+      elapsedSeconds: 1,
+    })
+
+    expect(verdict.c1).toBe(false)
+    expect(verdict.c2).toBe(false)
+  })
+
+  it('satisfies c2 for one correct verdict beyond the blind floor (5/8 > 4/8), complete and in time', () => {
+    const verdict = verdictFor({
+      verdicts: fullCorrectAnswer.verdicts.map((entry, index) =>
+        index < 3 ? { ...entry, kept: !entry.kept } : entry,
+      ),
+      elapsedSeconds: 1,
+    })
+
+    // 5 justes sur 8 : au-dessus du plancher (4/8), sous le seuil de c1 (0.75).
+    expect(verdict.c1).toBe(false)
+    expect(verdict.c2).toBe(true)
+  })
+
   it('rejects an unknown rule type', () => {
     expect(() =>
       evaluator.evaluate(fullCorrectAnswer, config, [
@@ -104,6 +150,39 @@ describe('keep-or-toss evaluator', () => {
           question: '?',
           rule: { type: 'introuvable' },
           mapping: [{ dimension: 'verification', weight: 1 }],
+        },
+      ]),
+    ).toThrow()
+  })
+
+  /**
+   * Constat 9 de la revue du 31/08 : un seuil déclaré dans le parcours qui
+   * ne dépasse pas le plancher du geste unique répété rendrait ce dernier
+   * gagnant sans qu'aucun test unitaire ne rougisse. Ce lot est équilibré
+   * 4/4, plancher `0.5` : un seuil de `0.5` ou moins doit faire échouer le
+   * chargement, pas silencieusement laisser passer « tout garder ».
+   */
+  it('throws when the declared threshold of correct-share-at-least does not exceed the blind floor of this lot', () => {
+    expect(() =>
+      evaluator.evaluate(fullCorrectAnswer, config, [
+        {
+          id: 'c1',
+          question: '?',
+          rule: { type: 'correct-share-at-least', threshold: 0.5 },
+          mapping: [{ dimension: 'verification', weight: 2 }],
+        },
+      ]),
+    ).toThrow(/plancher du geste unique/)
+  })
+
+  it('rejects a correct-share-at-least threshold outside [0, 1] at the rule schema itself', () => {
+    expect(() =>
+      evaluator.evaluate(fullCorrectAnswer, config, [
+        {
+          id: 'c1',
+          question: '?',
+          rule: { type: 'correct-share-at-least', threshold: 1.5 },
+          mapping: [{ dimension: 'verification', weight: 2 }],
         },
       ]),
     ).toThrow()

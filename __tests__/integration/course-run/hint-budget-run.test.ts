@@ -32,6 +32,7 @@ import projectSignature from '../../../config/signature.json'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur réel : le vrai registre, la vraie façade, la
@@ -749,6 +750,13 @@ describe('hint-budget in the course', () => {
        */
       if (game.type === 'keep-or-toss')
         return { verdicts: [], elapsedSeconds: 0 }
+      /**
+       * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan :
+       * ce test ne mesure pas `resilience`, donc n'importe quelle trace
+       * conforme suffit — voir `defaultWrongAssistantAnswer`.
+       */
+      if (game.type === 'wrong-assistant')
+        return defaultWrongAssistantAnswer(game.config)
       return { selected: [] }
     }
 

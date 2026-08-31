@@ -10,6 +10,7 @@ import { PracticeMapGame } from './practice-map/components/composites/practice-m
 import { TestBenchGame } from './test-bench/components/composites/test-bench-game'
 import { ThreeTracksGame } from './three-tracks/components/composites/three-tracks-game'
 import type { GameComponent } from './types/game-component'
+import { WrongAssistantGame } from './wrong-assistant/components/composites/wrong-assistant-game'
 
 /**
  * Le jumeau interface de `core/registry/register-games.ts`. Deuxième et
@@ -32,6 +33,7 @@ const components: Record<string, GameComponent> = {
   'ambiguity-scan': AmbiguityScanGame,
   'flow-order': FlowOrderGame,
   'keep-or-toss': KeepOrTossGame,
+  'wrong-assistant': WrongAssistantGame,
 }
 
 export const resolveGameComponent = (

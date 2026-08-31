@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Button } from '../../../../components/ui/button'
 import type { CurrentItem } from '../../hooks/use-keep-or-toss.hook'
 import { PracticeCard } from '../elements/practice-card'
@@ -19,6 +20,14 @@ import { CountdownBar } from './countdown-bar'
  * (`autoFocus` sur « Garder ») rend les flèches actives dès l'arrivée sur
  * l'écran, sans exiger un premier clic.
  *
+ * **Un clic sur la carte ne doit pas faire mourir le clavier.** `PracticeCard`
+ * est un `<div>` non focusable et purement décoratif ; un clic dessus — un
+ * geste naturel, on clique ce qu'on regarde — retirait le focus vers
+ * `<body>` sans aucun signal, et les flèches cessaient de répondre jusqu'au
+ * prochain `Tab`. `keepButtonRef` reste le point de rattrapage : cliquer la
+ * carte y replace le focus, exactement ce que fait déjà `autoFocus` à
+ * l'arrivée sur l'écran. Constat de la revue du 31/08.
+ *
  * Purement présentationnel : elle affiche ce qu'on lui donne, elle ne
  * connaît ni le hook ni la configuration.
  */
@@ -39,6 +48,8 @@ export const SortingDeck = ({
   announcement: string
   onSort: (kept: boolean) => void
 }) => {
+  const keepButtonRef = useRef<HTMLButtonElement>(null)
+
   const onArrowSort = (event: React.KeyboardEvent): void => {
     if (event.key === 'ArrowLeft') {
       event.preventDefault()
@@ -48,6 +59,10 @@ export const SortingDeck = ({
       event.preventDefault()
       onSort(false)
     }
+  }
+
+  const onCardAreaClick = (): void => {
+    keepButtonRef.current?.focus()
   }
 
   return (
@@ -63,11 +78,12 @@ export const SortingDeck = ({
       </p>
 
       {currentItem === undefined ? null : (
-        <PracticeCard label={currentItem.label} />
+        <PracticeCard label={currentItem.label} onClick={onCardAreaClick} />
       )}
 
       <div className="grid grid-cols-2 gap-3">
         <Button
+          ref={keepButtonRef}
           type="button"
           variant="outline"
           size="lg"

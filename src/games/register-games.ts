@@ -30,6 +30,9 @@ import { TestBenchEvaluator } from '@/games/test-bench/test-bench.evaluator'
 import { threeTracksAnswerSchema } from '@/games/three-tracks/schema/answer.schema'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
 import { ThreeTracksEvaluator } from '@/games/three-tracks/three-tracks.evaluator'
+import { wrongAssistantAnswerSchema } from '@/games/wrong-assistant/schema/answer.schema'
+import { wrongAssistantConfigSchema } from '@/games/wrong-assistant/schema/config.schema'
+import { WrongAssistantEvaluator } from '@/games/wrong-assistant/wrong-assistant.evaluator'
 import { GameRegistry } from '../core/registry/game-registry'
 import { testBenchConfigSchema } from './test-bench/schema/config.schema'
 
@@ -105,6 +108,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new KeepOrTossEvaluator(),
     configSchema: keepOrTossConfigSchema,
     answerSchema: keepOrTossAnswerSchema,
+  })
+
+  registry.register('wrong-assistant', {
+    evaluator: new WrongAssistantEvaluator(),
+    configSchema: wrongAssistantConfigSchema,
+    answerSchema: wrongAssistantAnswerSchema,
   })
 
   return registry

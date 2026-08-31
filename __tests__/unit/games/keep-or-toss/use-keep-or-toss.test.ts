@@ -166,6 +166,46 @@ describe('use keep or toss', () => {
     expect(result.current.sortedCount).toBe(1)
   })
 
+  /**
+   * Constat 8 de la revue du 31/08 : `phase` ne bascule à `'frozen'` qu'au
+   * tick suivant de `useCountdown` (250 ms), jamais à l'instant exact où le
+   * budget expire. Le test original avançait de 2500 ms sur un budget de
+   * 2000 ms — largement après le tick qui gèle déjà à 2000/2250 ms — et ne
+   * visitait donc jamais la fenêtre litigieuse. Ici, `vi.setSystemTime`
+   * avance l'horloge réelle sans exécuter le `setInterval` : `phase` reste
+   * `'sorting'`, exactement la situation où un tri déposé aurait avant le
+   * correctif de `sort()` (lecture fraîche de `readElapsedSeconds`) été
+   * accepté et compté dans la trace.
+   */
+  it('rejects a sort attempted 100ms past the budget, even before the next 250ms tick would flip the phase to frozen', () => {
+    vi.useFakeTimers()
+    const start = new Date('2024-01-01T00:00:00.000Z')
+    vi.setSystemTime(start)
+
+    const { result } = renderGame({ ...baseConfig(), durationSeconds: 2 })
+
+    act(() => {
+      result.current.sort(true)
+    })
+    expect(result.current.sortedCount).toBe(1)
+    // Aucun tick de `setInterval` n'a encore eu lieu : la phase resterait
+    // 'sorting' sans la lecture fraîche que `sort()` fait elle-même.
+    expect(result.current.phase).toBe('sorting')
+
+    act(() => {
+      vi.setSystemTime(new Date(start.getTime() + 2100))
+    })
+
+    act(() => {
+      result.current.sort(false)
+    })
+
+    // Le second geste, déposé 100 ms après la limite, n'entre pas dans la
+    // trace : le lot se gèle sur son état d'avant ce geste.
+    expect(result.current.sortedCount).toBe(1)
+    expect(result.current.phase).toBe('frozen')
+  })
+
   it('captures a duration below the budget for a lot frozen by expiry, not the last displayed tick', () => {
     vi.useFakeTimers()
     const { result, onSubmit } = renderGame({

@@ -1084,45 +1084,96 @@
       "games": [
         {
           "id": "g3-1",
-          "type": "test-bench",
+          "type": "wrong-assistant",
           "label": "L'IA se trompe. Et vous ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Un assistant vous rend une fonctionnalité et commente son propre travail. Répondez-lui à mesure qu'il parle : un choix posé ne se reprend pas.",
+            "rootId": "n1",
+            "nodes": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "n1",
+                "speaker": "assistant",
+                "message": "Voilà, c'est prêt. J'ai lancé toute la suite de tests avant de vous la remettre : tout est vert, vous pouvez fusionner sans relire le diff.",
+                "flawed": true,
+                "flaw": "Seuls les tests unitaires ont tourné. Les deux tests d'intégration qui couvrent ce module n'ont jamais été exécutés sur cette branche, et l'un des deux échoue.",
+                "replies": [
+                  { "id": "n1-accept", "text": "Va pour la fusion, je ne relis pas.", "stance": "accept", "nextId": "c1" },
+                  { "id": "n1-challenge", "text": "Un vendredi soir, ça me semble aller vite.", "stance": "challenge", "nextId": "n2" },
+                  { "id": "n1-verify", "text": "Montrez-moi le rapport complet de la suite.", "stance": "verify", "nextId": "n2" }
+                ]
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "n2",
+                "speaker": "assistant",
+                "message": "Vous avez raison, seuls les tests unitaires sont passés. Sinon, les dépendances du module sont toutes épinglées à une version précise et à jour.",
+                "flawed": false,
+                "replies": [
+                  { "id": "n2-1", "text": "Notez ça, et voyons la suite.", "stance": "accept", "nextId": "n3" }
+                ]
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "n3",
+                "speaker": "assistant",
+                "message": "Toutes les dépendances du module sont épinglées à une version précise et à jour, aucune n'a de faille connue.",
+                "flawed": true,
+                "flaw": "Le paquet de parsing utilisé est fixé sur `latest`, pas sur une version précise, et sa version courante porte une faille corrigée depuis trois semaines en amont.",
+                "replies": [
+                  { "id": "n3-accept", "text": "Parfait, ça peut rester tel quel.", "stance": "accept", "nextId": "c2" },
+                  { "id": "n3-challenge", "text": "« Toutes », vraiment, sans exception ?", "stance": "challenge", "nextId": "n4" },
+                  { "id": "n3-reformulate", "text": "Fixez chaque dépendance à une version précise avant qu'on continue.", "stance": "reformulate", "nextId": "n4" }
+                ]
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "n4",
+                "speaker": "assistant",
+                "message": "D'accord, je fige chaque dépendance à une version précise avant la prochaine remise.",
+                "flawed": false,
+                "replies": [
+                  { "id": "n4-1", "text": "Notez ça aussi, et voyons la suite.", "stance": "accept", "nextId": "n5" }
+                ]
+              },
+              {
+                "id": "n5",
+                "speaker": "assistant",
+                "message": "Dernier point : la fonctionnalité gère bien le cas où le champ est vide, j'ai testé ce cas précis avant de vous la remettre.",
+                "flawed": true,
+                "flaw": "Le cas du champ vide n'est pas traité : la fonction lève une exception non interceptée dès qu'elle reçoit une chaîne vide, jamais testée avant cette remise.",
+                "replies": [
+                  { "id": "n5-accept", "text": "C'est réglé, on peut passer en production.", "stance": "accept", "nextId": "c1" },
+                  { "id": "n5-challenge", "text": "Ce cas précis, vous l'avez vu passer où, au juste ?", "stance": "challenge" },
+                  { "id": "n5-reformulate", "text": "Ajoutez un test sur le champ vide avant qu'on referme ce point.", "stance": "reformulate" }
+                ]
+              },
+              {
+                "id": "c1",
+                "speaker": "assistant",
+                "message": "La fusion est passée sans relecture. Le pipeline de nuit signale un test d'intégration en échec sur cette branche, déjà en production.",
+                "flawed": false,
+                "consequence": "Une fusion acceptée sans vérification a laissé partir un test d'intégration en échec jusqu'en production.",
+                "replies": [
+                  { "id": "c1-1", "text": "Compris, j'ouvre un correctif tout de suite.", "stance": "accept" }
+                ]
+              },
+              {
+                "id": "c2",
+                "speaker": "assistant",
+                "message": "Le paquet resté sur `latest` a été mis à jour cette nuit côté registre : la faille corrigée en amont touche maintenant directement cette branche.",
+                "flawed": false,
+                "consequence": "Une dépendance laissée sur `latest` a fait entrer une faille connue dans la branche, sans qu'aucune version n'ait jamais été figée.",
+                "replies": [
+                  { "id": "c2-1", "text": "Je fige les versions et je relance l'analyse.", "stance": "accept" }
+                ]
               }
             ]
           },
           "criteria": [
             {
               "id": "g3-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Chaque erreur rencontrée a-t-elle été repérée avant d'être acceptée ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "flaws-caught-before-accepting"
               },
               "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2
-                },
                 {
                   "dimension": "resilience",
                   "weight": 2
@@ -1131,15 +1182,12 @@
             },
             {
               "id": "g3-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "La branche reformuler ou vérifier a-t-elle été choisie au moins deux fois ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "corrective-replies-at-least",
+                "threshold": 2
               },
               "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1
-                },
                 {
                   "dimension": "resilience",
                   "weight": 1
@@ -1359,86 +1407,86 @@
           "label": "Garder ou jeter ?",
           "config": {
             "statement": "Ces pratiques ont été relevées sur un dépôt réel. Gardez celles qui tiennent, jetez celles qui exposent.",
-            "durationSeconds": 20,
+            "durationSeconds": 30,
             "items": [
               {
                 "id": "p1",
-                "label": "Chiffrer les secrets au repos avec un gestionnaire dédié",
+                "label": "Désactiver un compte après cinq échecs",
                 "keep": true,
-                "reason": "Un secret en clair dans une base ou un fichier devient lisible dès qu'un accès de lecture fuite ; un gestionnaire dédié le protège même si la base fuite."
+                "reason": "Un compte qui reste actif après des tentatives répétées laisse une attaque par force brute continuer sans limite ; le désactiver temporairement casse l'essai."
               },
               {
                 "id": "p2",
-                "label": "Valider et échapper les entrées utilisateur côté serveur",
-                "keep": true,
-                "reason": "Une entrée non validée côté serveur reste exploitable même si le client la filtre déjà — le client se contourne, le serveur reste la seule limite fiable."
-              },
-              {
-                "id": "p3",
-                "label": "Stocker le mot de passe administrateur dans le dépôt, à côté du code",
-                "keep": false,
-                "reason": "Un mot de passe commité reste dans l'historique même après suppression du fichier, lisible par quiconque clone le dépôt."
-              },
-              {
-                "id": "p4",
-                "label": "Faire tourner les clés d'API à intervalle régulier",
-                "keep": true,
-                "reason": "Une clé qui tourne réduit la fenêtre d'exploitation d'une fuite passée, y compris une fuite jamais détectée."
-              },
-              {
-                "id": "p5",
-                "label": "Désactiver la vérification du certificat TLS pour accélérer les tests",
+                "label": "Désactiver la vérification TLS pour aller plus vite",
                 "keep": false,
                 "reason": "Désactiver la vérification TLS en test laisse fréquemment ce réglage traîner jusqu'en production, où il expose à l'interception."
               },
               {
-                "id": "p6",
-                "label": "Partager un jeton d'accès unique entre tous les membres de l'équipe",
+                "id": "p3",
+                "label": "Simplifier l'accès en partageant un jeton unique",
                 "keep": false,
                 "reason": "Un jeton partagé ne distingue plus qui a agi ; le retirer à une personne oblige à le changer pour toute l'équipe."
               },
               {
-                "id": "p7",
-                "label": "Limiter les droits d'un compte de service au strict périmètre requis",
+                "id": "p4",
+                "label": "Valider et échapper les entrées côté serveur",
                 "keep": true,
-                "reason": "Un compte de service élargi au-delà de son besoin devient une cible plus rentable qu'un compte limité au strict périmètre."
+                "reason": "Une entrée non validée côté serveur reste exploitable même si le client la filtre déjà — le client se contourne, le serveur reste la seule limite fiable."
+              },
+              {
+                "id": "p5",
+                "label": "Chiffrer les secrets au repos",
+                "keep": true,
+                "reason": "Un secret en clair dans une base ou un fichier devient lisible dès qu'un accès de lecture fuite ; le chiffrer le protège même si la base fuite."
+              },
+              {
+                "id": "p6",
+                "label": "Stocker le mot de passe dans le code",
+                "keep": false,
+                "reason": "Un mot de passe commité reste dans l'historique même après suppression du fichier, lisible par quiconque clone le dépôt."
+              },
+              {
+                "id": "p7",
+                "label": "Refuser par défaut tout accès non autorisé",
+                "keep": true,
+                "reason": "Un accès qui reste possible tant qu'il n'est pas explicitement refusé oublie tôt ou tard un cas non prévu ; le refuser par défaut ferme cette faille par construction."
               },
               {
                 "id": "p8",
-                "label": "Construire les requêtes SQL par concaténation de chaînes",
+                "label": "Simplifier l'accueil en donnant les droits admin",
+                "keep": false,
+                "reason": "Des droits administrateur donnés par défaut à chaque nouveau compte offrent plus que ce dont il a besoin, et à chaque compromission plus qu'elle ne devrait obtenir."
+              },
+              {
+                "id": "p9",
+                "label": "Accélérer les requêtes par concaténation SQL",
                 "keep": false,
                 "reason": "Une requête construite par concaténation laisse passer une valeur qui change la requête elle-même — l'injection SQL classique."
               },
               {
-                "id": "p9",
-                "label": "Journaliser les tentatives d'authentification échouées",
+                "id": "p10",
+                "label": "Bloquer le déploiement si un scan échoue",
                 "keep": true,
-                "reason": "Sans journal des échecs d'authentification, une tentative de force brute passe inaperçue jusqu'à ce qu'elle réussisse."
+                "reason": "Un déploiement qui ignore un scan en échec propage une dépendance vulnérable déjà connue, alors que le scan venait justement de la repérer."
               },
               {
-                "id": "p10",
-                "label": "Laisser le port de débogage ouvert sur l'environnement de production",
+                "id": "p11",
+                "label": "Faciliter le support en laissant le port ouvert",
                 "keep": false,
                 "reason": "Un port de débogage ouvert en production expose des commandes internes à quiconque l'atteint sur le réseau."
               },
               {
-                "id": "p11",
-                "label": "Appliquer les correctifs de sécurité du moteur dans les jours qui suivent leur publication",
-                "keep": true,
-                "reason": "Un correctif de sécurité non appliqué laisse une faille déjà publique, donc déjà recherchée, ouverte plus longtemps que nécessaire."
-              },
-              {
                 "id": "p12",
-                "label": "Accorder les droits administrateur par défaut à tout nouveau compte",
-                "keep": false,
-                "reason": "Des droits administrateur par défaut donnent à chaque nouveau compte plus que ce dont il a besoin, et à chaque compromission plus qu'elle ne devrait obtenir."
+                "label": "Journaliser les échecs d'authentification",
+                "keep": true,
+                "reason": "Sans journal des échecs d'authentification, une tentative de force brute passe inaperçue jusqu'à ce qu'elle réussisse."
               }
             ]
           },
           "criteria": [
             {
               "id": "g4-2-c1",
-              "question": "Le taux de bon classement dépasse-t-il le seuil ?",
+              "question": "La part de pratiques bien classées sur l'ensemble du lot, cartes non triées comprises, atteint-elle le seuil ?",
               "rule": {
                 "type": "correct-share-at-least",
                 "threshold": 0.75
@@ -1452,9 +1500,9 @@
             },
             {
               "id": "g4-2-c2",
-              "question": "Le tri a-t-il été bouclé dans le temps imparti ?",
+              "question": "Le lot a-t-il été trié en entier avant la fin du temps imparti, avec un classement qui dépasse ce qu'un seul geste répété sur tout le lot aurait obtenu ?",
               "rule": {
-                "type": "sorting-completed-in-time"
+                "type": "sorting-completed-beyond-blind-floor"
               },
               "mapping": [
                 {

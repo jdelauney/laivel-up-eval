@@ -84,18 +84,20 @@ describe('keep-or-toss brute force over the real g4-2 corpus', () => {
     expect(config.items.filter((entry) => !entry.keep)).toHaveLength(6)
   })
 
-  it('never satisfies c1 for keeping everything', () => {
+  it('never satisfies c1 or c2 for keeping everything — the blind single gesture sits exactly at, never above, its own floor', () => {
     const verdict = verdictFor(
       itemIds.map((itemId) => ({ itemId, kept: true })),
     )
     expect(verdict['g4-2-c1']).toBe(false)
+    expect(verdict['g4-2-c2']).toBe(false)
   })
 
-  it('never satisfies c1 for tossing everything', () => {
+  it('never satisfies c1 or c2 for tossing everything, the mirror case', () => {
     const verdict = verdictFor(
       itemIds.map((itemId) => ({ itemId, kept: false })),
     )
     expect(verdict['g4-2-c1']).toBe(false)
+    expect(verdict['g4-2-c2']).toBe(false)
   })
 
   it('satisfies both criteria for a perfect sort, completed within the budget', () => {
@@ -125,30 +127,56 @@ describe('keep-or-toss brute force over the real g4-2 corpus', () => {
     }
   })
 
+  /**
+   * Non négociable de ce chantier : après le correctif A1, le meilleur
+   * profil aveugle doit rester strictement sous le pire profil de lecture
+   * correcte qui passe encore, **sur les deux critères**, pas seulement
+   * `c1`. Ces quatre profils (garder tout et jeter tout sont testés plus
+   * haut) ne lisent pas une seule carte ; chacun est mesuré à la main contre
+   * le corpus réel : les trois obtiennent exactement `6/12 = 0.5`, la part
+   * du geste unique répété sur ce lot (six « garder », six « jeter ») —
+   * aucun n'atteint le seuil de `c1` (0,75) ni ne dépasse strictement le
+   * plancher de `c2` (0,5, comparaison stricte).
+   */
   describe('profils aveugles, déterministes', () => {
-    it('keeping the first half and tossing the second, block by block, still fails c1', () => {
+    it('keeping the first half and tossing the second, block by block: 6/12, misses both criteria', () => {
       const half = Math.floor(itemIds.length / 2)
       const trace = itemIds.map((itemId, index) => ({
         itemId,
         kept: index < half,
       }))
-      expect(verdictFor(trace)['g4-2-c1']).toBe(false)
+      const verdict = verdictFor(trace)
+      expect(verdict['g4-2-c1']).toBe(false)
+      expect(verdict['g4-2-c2']).toBe(false)
     })
 
-    it('alternating keep/toss from the first card fails c1 (8/12 correct, still under the threshold)', () => {
+    it('alternating keep/toss from the first card: 6/12 on this corpus, misses both criteria', () => {
       const trace = itemIds.map((itemId, index) => ({
         itemId,
         kept: index % 2 === 0,
       }))
-      expect(verdictFor(trace)['g4-2-c1']).toBe(false)
+      const verdict = verdictFor(trace)
+      expect(verdict['g4-2-c1']).toBe(false)
+      expect(verdict['g4-2-c2']).toBe(false)
     })
 
-    it('alternating toss/keep from the first card fails c1 (4/12 correct)', () => {
+    it('alternating toss/keep from the first card: 6/12 on this corpus, misses both criteria', () => {
       const trace = itemIds.map((itemId, index) => ({
         itemId,
         kept: index % 2 === 1,
       }))
-      expect(verdictFor(trace)['g4-2-c1']).toBe(false)
+      const verdict = verdictFor(trace)
+      expect(verdict['g4-2-c1']).toBe(false)
+      expect(verdict['g4-2-c2']).toBe(false)
+    })
+
+    it('the worst passing correct-read profile (3 mistakes, 9/12) still clears both criteria that every blind profile above misses', () => {
+      // Référence commune aux deux axes : `n=3` reste le pire profil de
+      // lecture correcte qui tient encore `c1` (voir plus bas), et il tient
+      // `c2` de la même certitude puisque 9/12 = 0.75 > 0.5.
+      const verdict = verdictFor(perfectTraceWithMistakes(3))
+      expect(verdict['g4-2-c1']).toBe(true)
+      expect(verdict['g4-2-c2']).toBe(true)
     })
   })
 
@@ -176,17 +204,25 @@ describe('keep-or-toss brute force over the real g4-2 corpus', () => {
       12: 1,
     }
 
-    const byCorrectCount: Map<number, { total: number; c1: number }> = (() => {
-      const counts = new Map<number, { total: number; c1: number }>()
+    const byCorrectCount: Map<
+      number,
+      { total: number; c1: number; c2: number }
+    > = (() => {
+      const counts = new Map<
+        number,
+        { total: number; c1: number; c2: number }
+      >()
 
       for (let mask = 0; mask < 2 ** itemIds.length; mask++) {
         const trace = fullTraceFromMask(mask)
         const correctCount = trace.filter(
           (verdict) => expectedKeepById.get(verdict.itemId) === verdict.kept,
         ).length
-        const entry = counts.get(correctCount) ?? { total: 0, c1: 0 }
+        const entry = counts.get(correctCount) ?? { total: 0, c1: 0, c2: 0 }
         entry.total += 1
-        if (verdictFor(trace)['g4-2-c1']) entry.c1 += 1
+        const verdict = verdictFor(trace)
+        if (verdict['g4-2-c1']) entry.c1 += 1
+        if (verdict['g4-2-c2']) entry.c2 += 1
         counts.set(correctCount, entry)
       }
 
@@ -220,31 +256,72 @@ describe('keep-or-toss brute force over the real g4-2 corpus', () => {
       expect(passing).toBe(299)
       expect(passing / total).toBeCloseTo(299 / 4096, 10)
     })
+
+    /**
+     * Constat 1, corrigé (A1). Avant le correctif, `c2` tenait pour les
+     * 4096 traces complètes rendues dans le budget, sans exception — il ne
+     * séparait « a fini » de « n'a pas fini ». `maxSingleGestureShare` vaut
+     * `6/12 = 0,5` sur ce corpus équilibré 6/6 : `c2` exige désormais
+     * `correctCount > 6`, strictement, donc `j >= 7`. `C(12,7..12)` :
+     * `792 + 495 + 220 + 66 + 12 + 1 = 1586`.
+     */
+    it('c2 holds for every trace at j >= 7, and for none below — the strict blind floor at j = 6 stays excluded', () => {
+      byCorrectCount.forEach((entry, j) => {
+        expect(entry.c2).toBe(j >= 7 ? entry.total : 0)
+      })
+    })
+
+    it('the share of the 4096 complete traces that hold c2 is exactly 1586/4096, far from the "always true" it used to be', () => {
+      const total = [...byCorrectCount.values()].reduce(
+        (sum, entry) => sum + entry.total,
+        0,
+      )
+      const passing = [...byCorrectCount.values()].reduce(
+        (sum, entry) => sum + entry.c2,
+        0,
+      )
+
+      expect(total).toBe(4096)
+      expect(passing).toBe(1586)
+      expect(passing / total).toBeCloseTo(1586 / 4096, 10)
+    })
   })
 
   describe('profils de lecture correcte avec n erreurs', () => {
     /**
-     * Chiffres réels épinglés : `correctShare = (12 - n) / 12`. Le seuil
-     * `0,75` tombe pile à `n = 3` (9/12), inclus par la borne `>=` — le
-     * pire profil de lecture qui tient encore `c1`.
+     * Chiffres réels épinglés : `correctShare = (12 - n) / 12`. Le seuil de
+     * `c1` (`0,75`) tombe pile à `n = 3` (9/12), inclus par sa borne `>=` —
+     * le pire profil de lecture qui tient encore `c1`. Le plancher de `c2`
+     * (`0,5`, strict) tombe pile à `n = 6` (6/12) — exclu, puisque la
+     * comparaison est stricte — donc `n = 5` (7/12) est le pire profil qui
+     * tient encore `c2`. Les deux planchers ne coïncident pas : `c1` est le
+     * plus exigeant des deux, exactement ce que prévoit le plan (« deux
+     * lectures différentes »).
      */
-    const profiles: Array<{ mistakes: number; passesC1: boolean }> = [
-      { mistakes: 0, passesC1: true },
-      { mistakes: 1, passesC1: true },
-      { mistakes: 2, passesC1: true },
-      { mistakes: 3, passesC1: true },
-      { mistakes: 4, passesC1: false },
+    const profiles: Array<{
+      mistakes: number
+      passesC1: boolean
+      passesC2: boolean
+    }> = [
+      { mistakes: 0, passesC1: true, passesC2: true },
+      { mistakes: 1, passesC1: true, passesC2: true },
+      { mistakes: 2, passesC1: true, passesC2: true },
+      { mistakes: 3, passesC1: true, passesC2: true },
+      { mistakes: 4, passesC1: false, passesC2: true },
+      { mistakes: 5, passesC1: false, passesC2: true },
+      { mistakes: 6, passesC1: false, passesC2: false },
     ]
 
     it.each(profiles)(
-      'n=$mistakes erreur(s) -> c1=$passesC1',
-      ({ mistakes, passesC1 }) => {
+      'n=$mistakes erreur(s) -> c1=$passesC1, c2=$passesC2',
+      ({ mistakes, passesC1, passesC2 }) => {
         const verdict = verdictFor(perfectTraceWithMistakes(mistakes))
         expect(verdict['g4-2-c1']).toBe(passesC1)
+        expect(verdict['g4-2-c2']).toBe(passesC2)
       },
     )
 
-    it('the best blind profile over the 4096 complete traces stays strictly below the certainty of the worst passing correct-read profile', () => {
+    it('the best blind profile over the 4096 complete traces stays strictly below the certainty of the worst passing correct-read profile, on c1', () => {
       const bestBlindShare = 299 / 4096
       const worstPassing = profiles
         .filter((profile) => profile.passesC1)
@@ -254,6 +331,33 @@ describe('keep-or-toss brute force over the real g4-2 corpus', () => {
       const worstPassingCertainty = verdict['g4-2-c1'] ? 1 : 0
 
       expect(worstPassingCertainty).toBe(1)
+      expect(bestBlindShare).toBeLessThan(worstPassingCertainty)
+    })
+
+    /**
+     * Le même invariant, sur `c2` cette fois — la « règle non négociable »
+     * du chantier : le meilleur profil aveugle ne doit pas seulement rester
+     * sous le pire profil de lecture correcte sur `c1`, mais sur les deux
+     * critères. Le meilleur profil aveugle mesuré ici (`garder tout`,
+     * `jeter tout`, et les trois profils déterministes ci-dessus) obtient
+     * au mieux `6/12 = 0,5`, pile le plancher — jamais au-dessus, donc `c2`
+     * manqué à chaque fois. Le pire profil de lecture correcte qui tient
+     * encore `c2` est `n = 5` (7/12 = 0,583).
+     */
+    it('the best blind profile stays strictly below the worst passing correct-read profile on c2 too, not just c1', () => {
+      const bestBlindShare = 6 / 12 // garder tout, jeter tout, et les trois profils déterministes ci-dessus
+      const worstPassing = profiles
+        .filter((profile) => profile.passesC2)
+        .reduce((max, profile) => Math.max(max, profile.mistakes), 0)
+
+      const verdict = verdictFor(perfectTraceWithMistakes(worstPassing))
+      const worstPassingCertainty = verdict['g4-2-c2'] ? 1 : 0
+
+      expect(worstPassing).toBe(5)
+      expect(worstPassingCertainty).toBe(1)
+      // Le geste unique répété (0,5) n'atteint jamais le plancher qu'il
+      // définit lui-même : la comparaison stricte le maintient toujours en
+      // dessous du pire profil de lecture correcte qui passe encore.
       expect(bestBlindShare).toBeLessThan(worstPassingCertainty)
     })
   })

@@ -27,6 +27,7 @@ import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur de production : le vrai parcours, le vrai registre,
@@ -155,6 +156,13 @@ const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
    * recevable puisqu'un tri inachevé est le sujet même du jeu.
    */
   if (game.type === 'keep-or-toss') return { verdicts: [], elapsedSeconds: 0 }
+  /**
+   * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan : ce
+   * test mesure `intervention`, jamais `resilience`, donc n'importe quelle
+   * trace conforme suffit — voir `defaultWrongAssistantAnswer`.
+   */
+  if (game.type === 'wrong-assistant')
+    return defaultWrongAssistantAnswer(game.config)
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),

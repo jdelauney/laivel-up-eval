@@ -118,6 +118,67 @@ describe('keep or toss game, rendered', () => {
     expect(afterArrow).toBe(afterClick)
   })
 
+  /**
+   * Constat 4 de la revue du 31/08 : un clic sur la carte — un `<div>` non
+   * focusable — retirait le focus vers `<body>`, et la flèche suivante ne
+   * faisait plus rien, silencieusement. L'ancien test envoyait `keyDown`
+   * directement sur le bouton, ce qui présupposait le focus au lieu de le
+   * vérifier ; celui-ci part du geste réel — un clic sur la carte — puis
+   * interroge `document.activeElement`, jamais un élément choisi d'avance.
+   *
+   * `jsdom` ne rejoue pas le comportement natif d'un vrai navigateur qui
+   * retire le focus au `mousedown` sur un élément non focusable — un simple
+   * `fireEvent.click` n'y suffit pas à reproduire la panne. Le focus est
+   * donc explicitement retiré au bouton d'abord (`blur()`), ce qui rejoue
+   * l'état exact que la panne laissait derrière elle en navigateur réel ;
+   * sans le correctif de `SortingDeck` (le clic sur la carte replaçant le
+   * focus), ce test échouerait.
+   */
+  it('restores focus to Garder when the card itself is clicked, so the arrow keys keep working', () => {
+    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+
+    const keepButton = screen.getByRole('button', { name: /garder/i })
+    keepButton.blur()
+    expect(document.activeElement).not.toBe(keepButton)
+
+    fireEvent.click(screen.getByText(config.items[0].label))
+
+    expect(document.activeElement).toBe(keepButton)
+  })
+
+  it('reaches the exact same state through ArrowLeft as through a click on Garder, even after a stray click on the card', () => {
+    const { unmount } = render(
+      <KeepOrTossGame config={config} onSubmit={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /garder/i }))
+    const afterClick = screen.getByText(config.items[1].label).textContent
+    unmount()
+
+    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    // Le geste naturel qui tuait le clavier avant le correctif : cliquer la
+    // carte, pas le bouton.
+    fireEvent.click(screen.getByText(config.items[0].label))
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowLeft' })
+    const afterArrow = screen.getByText(config.items[1].label).textContent
+
+    expect(afterArrow).toBe(afterClick)
+  })
+
+  it('announces the current card label in an aria-live region, so a screen reader hears the next card without leaving the button', () => {
+    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+
+    const card = screen.getByText(config.items[0].label)
+    expect(card.closest('[aria-live]')).toHaveAttribute('aria-live', 'polite')
+
+    fireEvent.click(screen.getByRole('button', { name: /garder/i }))
+
+    const nextCard = screen.getByText(config.items[1].label)
+    expect(nextCard.closest('[aria-live]')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    )
+  })
+
   it('freezes after the last card, showing neither the verdict nor a running score, then reveals on request', () => {
     render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
 
@@ -133,8 +194,10 @@ describe('keep or toss game, rendered', () => {
       expect(screen.getByText(entry.label)).toBeInTheDocument()
       expect(screen.getByText(entry.reason)).toBeInTheDocument()
     })
-    expect(screen.getAllByText('à garder')).toHaveLength(4)
-    expect(screen.getAllByText('à jeter')).toHaveLength(4)
+    // Deux camps, chacun son titre — plus de chip « à garder »/« à jeter »
+    // par ligne depuis la refonte de la révélation (constat 5).
+    expect(screen.getByText('Gardées')).toBeInTheDocument()
+    expect(screen.getByText('Jetées')).toBeInTheDocument()
   })
 
   it('never reveals what the player answered, only the expected verdict and reason', () => {

@@ -39,13 +39,13 @@ Vrai ici et nulle part ailleurs dans ce groupe : c'est le chronomètre, et lui s
 
 | Bande | Ce qu'elle porte | Pourquoi elle est là |
 | --- | --- | --- |
-| Consigne | Qu'il faut garder ou jeter, que le temps gèle le lot | Jamais les critères : ni le seuil de bon classement, ni celui de complétion |
+| Consigne | Qu'il faut garder ou jeter | Ni les critères, ni le cadre du temps : la consigne réelle ne dit ni la durée, ni le fait que le temps gèle le lot — corrigé le 31/08, cette ligne affirmait à tort le contraire (voir « Correctifs du 31/08 ») |
 | Temps restant | Le budget qui se retire, en trait et en chiffre | Remplace tout retour immédiat — c'est la seule pression que le joueur ressent |
 | Compte trié | `N sur 12 triée(s)` | Le seul repère de progression ; jamais un compte de justes |
-| La carte | Le libellé de la pratique courante, seul | Rien qui trahisse le verdict attendu |
+| La carte | Le libellé de la pratique courante, seul, annoncé en `aria-live="polite"` | Rien qui trahisse le verdict attendu ; l'annonce évite qu'un joueur au clavier ne trie à l'aveugle (corrigé le 31/08) |
 | Garder / Jeter | Deux boutons de poids égal, aux mêmes libellés que les flèches clavier | Les deux destinations, sans qu'aucune ne domine visuellement l'autre |
 | Le gel | Un état neutre : « le tri est figé », le compte final, un seul bouton | La fin du geste, avant que le joueur ne demande à voir le compte réel |
-| La révélation | Chaque pratique, le verdict attendu, le pourquoi | Jamais le verdict du joueur, jamais le score |
+| La révélation | Deux camps — Gardées, Jetées — chacun ses pratiques et leur pourquoi | Jamais le verdict du joueur, jamais le score ; la matière propre du jeu plutôt qu'une bande empruntée à `practice-map` (corrigé le 31/08) |
 
 ## Ce qui ne se négocie pas
 
@@ -60,7 +60,7 @@ Vrai ici et nulle part ailleurs dans ce groupe : c'est le chronomètre, et lui s
 
 | S'énonce | Se tait |
 | --- | --- |
-| Qu'il faut garder ou jeter, et que le temps gèle le lot | Le seuil de bon classement, et celui de complétion |
+| Qu'il faut garder ou jeter | Le temps gèle le lot, le seuil de bon classement, et celui de complétion |
 | Le temps restant et le compte de cartes triées | Combien sont justes parmi elles |
 | Que le tri est figé, une fois le temps écoulé ou le lot fini | Le score, avant la révélation |
 | À la révélation, le verdict attendu et le pourquoi de chaque pratique | Ce que le joueur avait répondu |
@@ -69,7 +69,17 @@ Vrai ici et nulle part ailleurs dans ce groupe : c'est le chronomètre, et lui s
 
 - Les deux boutons Garder / Jeter portent l'écoute clavier des flèches directement — aucun conteneur muet rendu interactif à côté, chaque contrôle interactif porte son propre geste.
 - Le trait du temps restant n'est pas annoncé à chaque battement : seule l'annonce de palier (`aria-live="polite"`, à 30, 10 et 5 secondes selon ce que le budget permet d'atteindre) l'est, en région masquée visuellement.
+- **La carte courante est annoncée** (`aria-live="polite"` sur `PracticeCard`, corrigé le 31/08) : un joueur au lecteur d'écran entend le libellé suivant sans quitter le bouton pour aller le chercher ailleurs sur la page.
+- **Un clic sur la carte ne casse plus le clavier** (corrigé le 31/08) : la carte porte un geste de rattrapage à la souris seule, qui restaure le focus sur « Garder » si un clic dessus l'avait fait glisser vers `<body>`. Ce geste n'a pas d'équivalent clavier — le clavier atteint déjà les boutons directement, il n'a jamais besoin de cliquer la carte.
 - Le nom accessible des boutons Garder et Jeter est leur libellé visible, sans rien y concaténer.
+
+## Correctifs du 31/08
+
+La revue indépendante du 31/08 a relevé trois écarts entre cette fiche et le composant qu'elle décrit, corrigés dans le même geste que le code :
+
+- Cette fiche affirmait que la consigne annonçait « que le temps gèle le lot ». Faux : la consigne réelle de `config/course.json` (« Gardez celles qui tiennent, jetez celles qui exposent ») ne dit ni la durée, ni le gel. La correction porte sur cette fiche et sur le JSDoc du composant, pas sur la consigne elle-même, hors du périmètre confié.
+- Cette fiche passait sous silence l'absence d'annonce de la carte courante — corrigée par un `aria-live="polite"` sur `PracticeCard` (voir « Accessibilité »).
+- La révélation, décrite ici comme une simple liste à deux paragraphes, est redessinée en deux camps (`RevealedCamps`) : l'ancienne version recopiait `MarkerLine` de `practice-map` classe pour classe, ce que `DESIGN.md` interdit (« Vingt jeux, vingt surfaces »).
 
 ## Hors périmètre
 

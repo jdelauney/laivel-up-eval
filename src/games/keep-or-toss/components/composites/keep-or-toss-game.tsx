@@ -1,6 +1,8 @@
 import { Button } from '../../../../components/ui/button'
 import type { GameComponentProps } from '../../../types/game-component'
 import { useKeepOrToss } from '../../hooks/use-keep-or-toss.hook'
+import { FrozenPanel } from './frozen-panel'
+import { RevealedCamps } from './revealed-camps'
 import { SortingDeck } from './sorting-deck'
 
 /**
@@ -13,12 +15,24 @@ import { SortingDeck } from './sorting-deck'
  * ne sait à aucun moment s'il vient de bien classer une pratique, seulement
  * combien de temps il lui reste et combien de cartes il a déjà triées.
  *
- * La consigne annonce le cadre — qu'il faut garder ou jeter, que le temps
- * gèle le lot — jamais ce qui est noté : ni le seuil de bon classement, ni
- * celui de complétion. `DESIGN.md`, « Un jeu ne dit jamais ce qu'il note. »
+ * La consigne annonce qu'il faut garder ou jeter — jamais ce qui est noté :
+ * ni le seuil de bon classement, ni celui de complétion, ni même le fait
+ * que le temps gèle le lot. `DESIGN.md`, « Un jeu ne dit jamais ce qu'il
+ * note. » (Ce dernier point était faux ici avant la revue du 31/08 : le
+ * commentaire, tout comme la fiche de surface, affirmait que la consigne
+ * annonçait le gel, ce que la consigne réelle ne dit pas — corrigé aux deux
+ * endroits plutôt que d'ajouter l'annonce absente à la consigne elle-même,
+ * hors du périmètre confié.)
+ *
+ * Trois vues, une par phase, chacune dans son propre fichier —
+ * `SortingDeck` pendant le tri, `FrozenPanel` au gel, `RevealedCamps` à la
+ * révélation — plutôt qu'une seule fonction qui les porterait toutes les
+ * trois : la revue a relevé que la précédente version, 101 lignes, dépassait
+ * largement les 30 lignes par fonction de
+ * `.claude/skills/user-clean-code-typescript`.
  *
  * Seule cette composition connaît le hook et `GameComponentProps` : la
- * pile et la carte restent des vues pures.
+ * pile, le gel et la révélation restent des vues pures.
  */
 export const KeepOrTossGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
@@ -42,35 +56,7 @@ export const KeepOrTossGame = ({ config, onSubmit }: GameComponentProps) => {
         <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
           {statement}
         </p>
-        <section className="border border-plane-rule bg-plane">
-          <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
-            Ce que chaque pratique était
-          </header>
-          <div>
-            {revelations.map((entry) => (
-              <div
-                key={entry.id}
-                className="border-plane-rule border-b px-3 py-2 last:border-b-0"
-              >
-                <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="text-plane-foreground text-sm">
-                    {entry.label}
-                  </span>
-                  <span
-                    className={`font-semibold text-[10px] uppercase tracking-[0.16em] ${
-                      entry.keep ? 'text-nominal' : 'text-missed'
-                    }`}
-                  >
-                    {entry.keep ? 'à garder' : 'à jeter'}
-                  </span>
-                </p>
-                <p className="mt-1 max-w-[68ch] text-plane-foreground/70 text-xs leading-relaxed">
-                  {entry.reason}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <RevealedCamps revelations={revelations} />
         <div>
           <Button type="button" size="lg" onClick={advance}>
             Continuer
@@ -86,15 +72,7 @@ export const KeepOrTossGame = ({ config, onSubmit }: GameComponentProps) => {
         <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
           {statement}
         </p>
-        <section className="flex flex-col items-start gap-3 border border-plane-rule bg-plane px-4 py-6">
-          <p className="font-medium text-plane-foreground/70 text-xs uppercase tracking-[0.14em]">
-            Le tri est figé
-          </p>
-          <p className="text-plane-foreground text-sm leading-relaxed">
-            {sortedCount} carte{sortedCount === 1 ? '' : 's'} sur {total} ont
-            reçu un verdict.
-          </p>
-        </section>
+        <FrozenPanel sortedCount={sortedCount} total={total} />
         <div>
           <Button type="button" size="lg" onClick={reveal}>
             Voir la révélation

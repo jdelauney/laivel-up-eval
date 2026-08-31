@@ -120,10 +120,10 @@ describe('keep-or-toss config schema', () => {
     expect(() => keepOrTossConfigSchema.parse(config)).not.toThrow()
   })
 
-  it('rejects durationSeconds at or above the two-seconds-per-item cap', () => {
+  it('rejects durationSeconds at or above the three-seconds-per-item cap', () => {
     const config = validConfig()
-    // Huit items : le plafond est 16, strictement.
-    config.durationSeconds = 16
+    // Huit items : le plafond est 24, strictement.
+    config.durationSeconds = 24
 
     const issue = firstIssue(config)
     expect(issue.path).toEqual(['durationSeconds'])
@@ -132,7 +132,7 @@ describe('keep-or-toss config schema', () => {
 
   it('accepts durationSeconds one second under the per-item cap', () => {
     const config = validConfig()
-    config.durationSeconds = 15
+    config.durationSeconds = 23
 
     expect(() => keepOrTossConfigSchema.parse(config)).not.toThrow()
   })
