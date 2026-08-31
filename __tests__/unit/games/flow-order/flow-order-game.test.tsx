@@ -39,7 +39,9 @@ const config = {
 
 describe('flow order game, rendered', () => {
   it("lists every step as a button in the corpus's initial order, position on the left", () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const buttons = screen.getAllByRole('button')
     expect(buttons.map((button) => button.textContent)).toEqual([
@@ -54,14 +56,18 @@ describe('flow order game, rendered', () => {
   })
 
   it('never reveals a note before the frieze is locked', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const visible = document.body.textContent ?? ''
     expect(visible).not.toMatch(/Note du|Note de|Note des/)
   })
 
   it('moves a step down one notch on ArrowDown, and announces its new position', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const firstCard = screen.getByRole('button', {
       name: `Position 1 : ${config.steps[2].label}`,
@@ -75,7 +81,9 @@ describe('flow order game, rendered', () => {
   })
 
   it('grabs a card on the first click, drops it before the target on the second', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const grabbed = screen.getByRole('button', {
       name: `Position 6 : ${config.steps[3].label}`,
@@ -95,7 +103,9 @@ describe('flow order game, rendered', () => {
   })
 
   it('grabs a card and drops it after the last card when moving down, reaching the last position', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     // 'cadrage' joue en position 2 ; on la saisit et on la dépose au contact
     // de la dernière carte, 'tests' en position 6 — un dépôt vers le bas
@@ -115,7 +125,9 @@ describe('flow order game, rendered', () => {
   })
 
   it('releases a grabbed card on Escape, without moving it', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const grabbed = screen.getByRole('button', {
       name: `Position 6 : ${config.steps[3].label}`,
@@ -139,7 +151,9 @@ describe('flow order game, rendered', () => {
   })
 
   it('exposes the played position in the accessible name, and the frieze as an ordered list', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(
       screen.getByRole('button', {
@@ -154,7 +168,9 @@ describe('flow order game, rendered', () => {
   })
 
   it('reveals every step in expected order with its note, never a verdict on the player', () => {
-    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: /verrouiller la frise/i }),
@@ -168,9 +184,26 @@ describe('flow order game, rendered', () => {
     expect(visible).not.toMatch(/correctement|manqué|réussi|raté|score|exact/i)
   })
 
-  it('submits the played order only once, even if continue fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<FlowOrderGame config={config} onSubmit={onSubmit} />)
+  it('locks the played order on lock, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <FlowOrderGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /verrouiller la frise/i }),
+    )
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { orderedIds: string[] }
+    expect(answer.orderedIds).toEqual(config.initialOrder)
+  })
+
+  it('advances only once, even if continue fires twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <FlowOrderGame config={config} onLock={vi.fn()} onAdvance={onAdvance} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: /verrouiller la frise/i }),
@@ -178,8 +211,6 @@ describe('flow order game, rendered', () => {
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { orderedIds: string[] }
-    expect(answer.orderedIds).toEqual(config.initialOrder)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 })

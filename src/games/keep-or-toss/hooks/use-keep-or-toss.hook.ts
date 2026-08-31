@@ -55,7 +55,8 @@ export type ItemRevelation = {
  */
 export const useKeepOrToss = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -71,7 +72,8 @@ export const useKeepOrToss = (
   const [frozenAnswer, setFrozenAnswer] = useState<
     KeepOrTossAnswer | undefined
   >(undefined)
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   // Le chronomètre tourne tant que le tri n'est pas gelé, et s'arrête net
   // au gel : `phase !== 'sorting'` retombe `running` à `false` le même
@@ -150,18 +152,27 @@ export const useKeepOrToss = (
     })
   }
 
-  /** Passe de `'frozen'` à `'revealed'` : un geste du joueur, jamais automatique. */
+  /**
+   * Passe de `'frozen'` à `'revealed'` : un geste du joueur, jamais
+   * automatique. Écrit la trace déjà figée (`onLock`) au même geste — avant
+   * que la révélation ne soit lue, jamais après.
+   * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+   */
   const reveal = (): void => {
     if (phase !== 'frozen') return
+    if (frozenAnswer === undefined || lockedRef.current) return
+    lockedRef.current = true
+
+    onLock(frozenAnswer)
     setPhase('revealed')
   }
 
-  /** Transmet la trace déjà figée à la façade, une seule fois. */
+  /** Passe au jeu suivant, une seule fois. */
   const advance = (): void => {
     if (phase !== 'revealed') return
-    if (frozenAnswer === undefined || submittedRef.current) return
-    submittedRef.current = true
-    onSubmit(frozenAnswer)
+    if (advancedRef.current) return
+    advancedRef.current = true
+    onAdvance()
   }
 
   const revelations: readonly ItemRevelation[] =

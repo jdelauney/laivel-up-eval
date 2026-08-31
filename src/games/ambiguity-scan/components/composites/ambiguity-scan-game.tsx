@@ -16,7 +16,11 @@ import { PromptBody } from './prompt-body'
  * Seule cette composition connaît le hook et `GameComponentProps` : le
  * composite du prompt et l'élément de segment restent des vues pures.
  */
-export const AmbiguityScanGame = ({ config, onSubmit }: GameComponentProps) => {
+export const AmbiguityScanGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     promptTitle,
@@ -28,7 +32,7 @@ export const AmbiguityScanGame = ({ config, onSubmit }: GameComponentProps) => {
     toggle,
     submit,
     advance,
-  } = useAmbiguityScan(config, onSubmit)
+  } = useAmbiguityScan(config, onLock, onAdvance)
 
   if (phase === 'revealed') {
     // Numérote les segments ambigus dans l'ordre du prompt — celui de

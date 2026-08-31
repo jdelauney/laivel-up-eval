@@ -35,6 +35,13 @@ export type SegmentRevelation = {
  * fait rien tant qu'aucun segment n'est signalé, et `toggle` / `submit` ne
  * font plus rien une fois la phase `'revealed'` atteinte.
  *
+ * `submit` écrit la trace (`onLock`) au moment même où il bascule sur la
+ * révélation — jamais après qu'elle a été lue. Un rechargement pendant la
+ * révélation retrouve donc le jeu déjà soumis, jamais rejouable dans son état
+ * d'avant :
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance` ne fait plus que passer au jeu suivant (`onAdvance`).
+ *
  * Le hook n'expose **jamais** `ambiguous` ni `reading` avant leur heure :
  * `segments` ne porte que `id`, `text` et `flagged`, et `revelations` reste
  * vide tant que la phase n'est pas `'revealed'`. Ce qui n'est pas exposé ne
@@ -42,7 +49,8 @@ export type SegmentRevelation = {
  */
 export const useAmbiguityScan = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -53,7 +61,8 @@ export const useAmbiguityScan = (
 
   const [flaggedIds, setFlaggedIds] = useState<ReadonlySet<string>>(new Set())
   const [phase, setPhase] = useState<AmbiguityScanPhase>('scanning')
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   /** Bascule le signalement d'un segment. Ne fait rien une fois révélé. */
   const toggle = (segmentId: string): void => {
@@ -68,20 +77,28 @@ export const useAmbiguityScan = (
 
   const canSubmit = flaggedIds.size > 0
 
-  /** Verrouille la lecture : ne fait rien tant qu'aucun segment n'est signalé. */
+  /**
+   * Verrouille la lecture : ne fait rien tant qu'aucun segment n'est signalé.
+   * Écrit la trace immédiatement, avant de basculer sur la révélation — le
+   * verrou précède ce qu'il montre, jamais l'inverse.
+   */
   const submit = (): void => {
     if (phase !== 'scanning') return
     if (!canSubmit) return
+    if (lockedRef.current) return
+    lockedRef.current = true
+
+    onLock(buildAmbiguityScanAnswer(parsed, [...flaggedIds]))
     setPhase('revealed')
   }
 
-  /** Transmet la trace à la façade, une seule fois. */
+  /** Passe au jeu suivant, une seule fois. */
   const advance = (): void => {
     if (phase !== 'revealed') return
-    if (submittedRef.current) return
-    submittedRef.current = true
+    if (advancedRef.current) return
+    advancedRef.current = true
 
-    onSubmit(buildAmbiguityScanAnswer(parsed, [...flaggedIds]))
+    onAdvance()
   }
 
   const segments: readonly SegmentView[] = parsed.segments.map((segment) => ({

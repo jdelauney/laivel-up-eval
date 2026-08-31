@@ -2,10 +2,16 @@ import { useMemo, useState } from 'react'
 import { buildTestBenchAnswer } from '../actions/submit-test-bench.action'
 import { testBenchConfigSchema } from '../schema/config.schema'
 
-/** L'état React de la saisie. Aucune règle métier ici. */
+/**
+ * L'état React de la saisie. Aucune règle métier ici.
+ *
+ * Aucune révélation ne s'affiche dans ce jeu : `submit` écrit la trace
+ * (`onLock`) et avance (`onAdvance`) dans le même geste.
+ */
 export const useTestBench = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas d'une frappe à l'autre : la valider à chaque
   // rendu était du travail jeté.
@@ -22,13 +28,14 @@ export const useTestBench = (
   }
 
   const submit = (): void => {
-    onSubmit(
+    onLock(
       buildTestBenchAnswer(
         selected,
         parsed.propositions.map((proposition) => proposition.id),
       ),
     )
     setSelected(new Set())
+    onAdvance()
   }
 
   return {

@@ -29,7 +29,13 @@ const config = {
 
 describe('ambiguity scan game, rendered', () => {
   it('lists every segment as an unpressed toggle, and the lock action unavailable', () => {
-    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     config.segments.forEach((entry) => {
       expect(screen.getByRole('button', { name: entry.text })).toHaveAttribute(
@@ -44,7 +50,13 @@ describe('ambiguity scan game, rendered', () => {
   })
 
   it('flags a segment on click, without revealing which segments are ambiguous', () => {
-    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: config.segments[0].text }),
@@ -59,7 +71,13 @@ describe('ambiguity scan game, rendered', () => {
   })
 
   it('makes the lock action available as soon as one segment is flagged', () => {
-    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: config.segments[2].text }),
@@ -71,7 +89,13 @@ describe('ambiguity scan game, rendered', () => {
   })
 
   it('reveals the ambiguous segments and their reading, never a verdict on the player', () => {
-    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: config.segments[2].text }),
@@ -91,7 +115,13 @@ describe('ambiguity scan game, rendered', () => {
   })
 
   it('shows the whole prompt again at reveal, clear segments included, not a detached extract of the ambiguous ones', () => {
-    render(<AmbiguityScanGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: config.segments[2].text }),
@@ -107,9 +137,11 @@ describe('ambiguity scan game, rendered', () => {
       })
   })
 
-  it('submits a trace of the flagged segments only once, even if continue fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<AmbiguityScanGame config={config} onSubmit={onSubmit} />)
+  it('locks a trace of the flagged segments on lock, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <AmbiguityScanGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: config.segments[4].text }),
@@ -120,13 +152,33 @@ describe('ambiguity scan game, rendered', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /verrouiller mes signalements/i }),
     )
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { flaggedIds: string[] }
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { flaggedIds: string[] }
     // La trace suit l'ordre de la configuration (s3 avant s5), jamais celui
     // dans lequel le joueur a cliqué.
     expect(answer.flaggedIds).toEqual(['s3', 's5'])
+  })
+
+  it('advances only once, even if continue fires twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <AmbiguityScanGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: config.segments[4].text }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: /verrouiller mes signalements/i }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 })

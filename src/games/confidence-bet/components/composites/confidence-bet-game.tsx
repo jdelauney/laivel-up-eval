@@ -20,7 +20,11 @@ import { BetLedger } from './bet-ledger'
  * fait que la moyenne par nature compte. `DESIGN.md`, « Un jeu ne dit jamais
  * ce qu'il note. »
  */
-export const ConfidenceBetGame = ({ config, onSubmit }: GameComponentProps) => {
+export const ConfidenceBetGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     snippet,
@@ -37,7 +41,7 @@ export const ConfidenceBetGame = ({ config, onSubmit }: GameComponentProps) => {
     selectStake,
     engage,
     advance,
-  } = useConfidenceBet(config, onSubmit)
+  } = useConfidenceBet(config, onLock, onAdvance)
 
   if (isComplete || snippet === undefined) return null
 

@@ -10,10 +10,16 @@ import { type Choice, checkpointsConfigSchema } from '../schema/config.schema'
  *
  * Le journal est en ajout seul. Aucun retour en arrière n'est exposé, donc
  * aucun n'est possible : une décision tranchée est tranchée.
+ *
+ * Aucune révélation ne s'affiche dans ce jeu entre le dernier choix et le
+ * passage au suivant : `choose` écrit la trace (`onLock`) et avance
+ * (`onAdvance`) dans le même geste, au sixième choix — rien n'est montré
+ * entre les deux qu'un rechargement pourrait exploiter.
  */
 export const useCheckpoints = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas d'un choix à l'autre : la valider à chaque rendu
   // était du travail jeté.
@@ -41,7 +47,8 @@ export const useCheckpoints = (
     /** La soumission part au sixième choix, une seule fois. */
     if (next.length < parsed.stages.length) return
     submitted.current = true
-    onSubmit(buildCheckpointsAnswer(parsed, next))
+    onLock(buildCheckpointsAnswer(parsed, next))
+    onAdvance()
   }
 
   const journal: readonly Decision[] = state.decisions

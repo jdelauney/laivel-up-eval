@@ -26,10 +26,15 @@ export type TrackView = {
  *
  * Le registre est en ajout seul : un tour clos rejoint `playedTurns` et n'en
  * ressort jamais, aucune fonction n'est exposée pour l'en retirer.
+ *
+ * Aucune révélation ne s'affiche dans ce jeu entre le dernier tour et le
+ * passage au suivant : `closeTurn` écrit la trace (`onLock`) et avance
+ * (`onAdvance`) dans le même geste, au dernier tour.
  */
 export const useThreeTracks = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas d'un tour à l'autre : la valider à chaque rendu
   // était du travail jeté.
@@ -117,7 +122,8 @@ export const useThreeTracks = (
     /** Soumet au dernier tour, une seule fois, par l'action. */
     if (next.length < parsed.turns || submitted.current) return
     submitted.current = true
-    onSubmit(buildThreeTracksAnswer(parsed, next))
+    onLock(buildThreeTracksAnswer(parsed, next))
+    onAdvance()
   }
 
   return {

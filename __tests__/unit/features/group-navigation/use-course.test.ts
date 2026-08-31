@@ -64,7 +64,7 @@ describe('course navigation', () => {
     ])
   })
 
-  it('submits the answer and advances the position', () => {
+  it('locks the answer, writing it before anything advances', () => {
     const facade = buildFacade()
     facade.start('Alice')
     useSessionStore
@@ -77,7 +77,28 @@ describe('course navigation', () => {
     const { result } = renderCourse(facade)
 
     act(() => {
-      result.current.submit({ selected: ['p1', 'p3'] })
+      result.current.lock({ selected: ['p1', 'p3'] })
+    })
+
+    expect(useSessionStore.getState().progress?.submitted).toBe(1)
+    expect(facade.auditTrail()).toHaveLength(1)
+  })
+
+  it('advances the position once lock and advance both fire', () => {
+    const facade = buildFacade()
+    facade.start('Alice')
+    useSessionStore
+      .getState()
+      .openCourse(
+        { playerName: 'Alice', repository: undefined },
+        facade.getProgress(),
+      )
+
+    const { result } = renderCourse(facade)
+
+    act(() => {
+      result.current.lock({ selected: ['p1', 'p3'] })
+      result.current.advance()
     })
 
     expect(useSessionStore.getState().progress?.submitted).toBe(1)
@@ -97,7 +118,8 @@ describe('course navigation', () => {
     const { result } = renderCourse(facade)
 
     act(() => {
-      result.current.submit({ selected: ['p1', 'p3'] })
+      result.current.lock({ selected: ['p1', 'p3'] })
+      result.current.advance()
     })
 
     expect(useSessionStore.getState().screen).toBe('summary')
@@ -118,7 +140,7 @@ describe('course navigation', () => {
 
     expect(() =>
       act(() => {
-        result.current.submit({ selected: 'p1' })
+        result.current.lock({ selected: 'p1' })
       }),
     ).toThrow()
 

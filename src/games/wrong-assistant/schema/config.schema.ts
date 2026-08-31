@@ -102,7 +102,16 @@ const reachesConsequence = (
  *   confier au corpus ;
  * - **aucune réponse qui n'est pas une acceptation d'un nœud défectueux ne
  *   mène à un nœud portant une `consequence`** : sans quoi la conséquence
- *   cesserait d'être le signal d'une acceptation à tort.
+ *   cesserait d'être le signal d'une acceptation à tort ;
+ * - **tous les nœuds offrent le même nombre de réponses**, nœuds sains
+ *   compris — sinon le nombre de boutons affichés partitionne à lui seul
+ *   défectueux et sains, sans qu'il faille lire un message (revue du 31/08,
+ *   `aidd_docs/tasks/2026_08/2026_08_31_jeu-wrong-assistant/review.md`,
+ *   constat 2) ;
+ * - **aucune position dans la liste ne porte la même `stance` sur tous les
+ *   nœuds** — sinon la position remplace la lecture : « toujours le dernier
+ *   bouton » deviendrait une stratégie gagnante à l'aveugle (même revue,
+ *   constat 1).
  */
 export const wrongAssistantConfigSchema = baseConfigSchema.superRefine(
   (config, context) => {
@@ -261,6 +270,51 @@ export const wrongAssistantConfigSchema = baseConfigSchema.superRefine(
         code: 'custom',
         path: ['nodes'],
         message: 'aucun nœud sain déclaré, au moins 1 requis',
+      })
+    }
+
+    // Revue du 31/08 (aidd_docs/tasks/2026_08/2026_08_31_jeu-wrong-assistant/review.md,
+    // constat 2) : un corpus qui donne 3 réponses aux nœuds défectueux et 1 seule
+    // aux nœuds sains laisse le nombre de boutons affichés trahir, à lui seul,
+    // quel tour ment — sans lire un message. Un seul nombre de réponses par
+    // nœud, sains compris, ferme ce séparateur.
+    if (config.nodes.length > 0) {
+      const replyCount = config.nodes[0].replies.length
+      config.nodes.forEach((node, nodeIndex) => {
+        if (node.replies.length === replyCount) return
+
+        context.addIssue({
+          code: 'custom',
+          path: ['nodes', nodeIndex, 'replies'],
+          message: `le nœud « ${node.id} » offre ${node.replies.length} réponse(s), quand tous les nœuds doivent en offrir ${replyCount}`,
+        })
+      })
+    }
+
+    // Revue du 31/08 (même document, constat 1) : quand un nœud place toujours
+    // `accept` en position 1 et la corrective en dernière position, la position
+    // dans la liste devient la `stance` — un joueur qui clique aveuglément le
+    // même rang à chaque tour tient alors le critère sans avoir rien lu. Refusé
+    // dès qu'une position donnée porte la même `stance` sur tous les nœuds.
+    const maxReplyCount = config.nodes.reduce(
+      (max, node) => Math.max(max, node.replies.length),
+      0,
+    )
+    for (let position = 0; position < maxReplyCount; position += 1) {
+      const nodesWithPosition = config.nodes.filter(
+        (node) => node.replies.length > position,
+      )
+      if (nodesWithPosition.length < 2) continue
+
+      const stancesAtPosition = new Set(
+        nodesWithPosition.map((node) => node.replies[position].stance),
+      )
+      if (stancesAtPosition.size > 1) continue
+
+      context.addIssue({
+        code: 'custom',
+        path: ['nodes'],
+        message: `la position ${position + 1} porte toujours la stance « ${nodesWithPosition[0].replies[position].stance} », sur les ${nodesWithPosition.length} nœuds qui l'offrent : la position trahirait la stance`,
       })
     }
 

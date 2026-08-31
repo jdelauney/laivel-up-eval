@@ -26,9 +26,14 @@ const baseConfig = () => ({
   rounds: [round('r1', 'r1-b'), round('r2', 'r2-a'), round('r3', 'r3-a')],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useLieDetector(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useLieDetector(config, onLock, onAdvance)),
 })
 
 describe('use lie detector', () => {
@@ -174,8 +179,47 @@ describe('use lie detector', () => {
     expect(result.current.objection).toBeUndefined()
   })
 
-  it('submits the trace only once, even if advance fires twice at the last round', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace on the last round, before advance is even called — and only once', () => {
+    const { result, onLock } = renderGame()
+
+    const playRound = (claimId: string) => {
+      act(() => {
+        result.current.designate(claimId)
+      })
+      act(() => {
+        result.current.hold()
+      })
+      act(() => {
+        result.current.advance()
+      })
+    }
+
+    playRound('r1-b')
+    playRound('r2-b')
+
+    act(() => {
+      result.current.designate('r3-b')
+    })
+    act(() => {
+      // La désignation finale de la dernière manche écrit déjà la trace : un
+      // second hold ne fait plus rien (phase 'revealed'), et ne la
+      // dupliquerait pas de toute façon.
+      result.current.hold()
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      picks: { roundId: string }[]
+    }
+    expect(answer.picks.map((entry) => entry.roundId)).toEqual([
+      'r1',
+      'r2',
+      'r3',
+    ])
+  })
+
+  it('advances only once, even if advance fires twice at the last round', () => {
+    const { result, onAdvance } = renderGame()
 
     const playRound = (claimId: string) => {
       act(() => {
@@ -205,14 +249,6 @@ describe('use lie detector', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      picks: { roundId: string }[]
-    }
-    expect(answer.picks.map((entry) => entry.roundId)).toEqual([
-      'r1',
-      'r2',
-      'r3',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 })

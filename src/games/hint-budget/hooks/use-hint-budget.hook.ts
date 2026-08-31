@@ -70,13 +70,23 @@ const readOne = (
  * `framing` posé, ou une fois la situation révélée — il n'existe tout
  * simplement plus de geste qui les rappellerait.
  *
+ * La dernière situation verrouillée écrit la trace complète (`onLock`) au
+ * même geste qui bascule sur sa révélation — jamais après qu'elle a été
+ * lue : un rechargement pendant la révélation de la dernière situation
+ * retrouve le jeu déjà soumis, jamais rejouable dans son état d'avant.
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance()` fait toujours passer à la situation suivante en local pour les
+ * situations intermédiaires ; à la dernière, il ne fait plus que passer au
+ * jeu suivant (`onAdvance`), la trace ayant déjà été écrite.
+ *
  * Le hook n'expose **jamais** `established`, `actual`, `verification`, ni le
  * `text` d'un indice non acheté, avant leur heure : ce qui n'est pas exposé
  * ne peut pas fuiter à l'écran.
  */
 export const useHintBudget = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -91,9 +101,11 @@ export const useHintBudget = (
   const [completedAttempts, setCompletedAttempts] = useState<
     readonly Attempt[]
   >([])
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   const currentSituation = parsed.situations[situationIndex]
+  const isLastSituation = situationIndex === parsed.situations.length - 1
 
   /** Ne fait rien une fois le cadre déposé, et rien après la tranche. */
   const toggleFraming = (framingId: string): void => {
@@ -123,31 +135,46 @@ export const useHintBudget = (
     setBoughtHintIds((current) => [...current, hintId])
   }
 
-  /** Clôt la situation et bascule sur `revealed`. */
+  /**
+   * Clôt la situation et bascule sur `revealed`. À la dernière situation,
+   * écrit la trace complète (`onLock`) avant de basculer — jamais après.
+   */
   const cut = (causeId: string): void => {
     if (phase !== 'playing') return
     setCutCauseId(causeId)
     setPhase('revealed')
-  }
 
-  /**
-   * Passe à la situation suivante, ou soumet la trace **une seule fois** à
-   * la dernière, via un `useRef` d'appel unique, sur le modèle de
-   * `useLieDetector`.
-   */
-  const advance = (): void => {
-    if (phase !== 'revealed') return
-    if (currentSituation === undefined || cutCauseId === undefined) return
+    if (!isLastSituation || currentSituation === undefined) return
+    if (lockedRef.current) return
+    lockedRef.current = true
 
     const finishedAttempt: Attempt = {
       situationId: currentSituation.id,
       framing,
       boughtHintIds: [...boughtHintIds],
-      cutCauseId,
+      cutCauseId: causeId,
     }
-    const isLastSituation = situationIndex === parsed.situations.length - 1
+    onLock(
+      buildHintBudgetAnswer(parsed, [...completedAttempts, finishedAttempt]),
+    )
+  }
+
+  /**
+   * Passe à la situation suivante en local, ou au jeu suivant **une seule
+   * fois** à la dernière — la trace y a déjà été écrite par `cut`, `advance`
+   * ne fait plus que prévenir la façade.
+   */
+  const advance = (): void => {
+    if (phase !== 'revealed') return
+    if (currentSituation === undefined || cutCauseId === undefined) return
 
     if (!isLastSituation) {
+      const finishedAttempt: Attempt = {
+        situationId: currentSituation.id,
+        framing,
+        boughtHintIds: [...boughtHintIds],
+        cutCauseId,
+      }
       setCompletedAttempts((current) => [...current, finishedAttempt])
       setSituationIndex((index) => index + 1)
       setPhase('playing')
@@ -158,11 +185,9 @@ export const useHintBudget = (
       return
     }
 
-    if (submittedRef.current) return
-    submittedRef.current = true
-    onSubmit(
-      buildHintBudgetAnswer(parsed, [...completedAttempts, finishedAttempt]),
-    )
+    if (advancedRef.current) return
+    advancedRef.current = true
+    onAdvance()
   }
 
   const framings: readonly FramingView[] =

@@ -32,13 +32,23 @@ export type ClaimRevelation = {
  * `revealed`, aucune branche ne la rappelle — il n'existe tout simplement
  * plus de geste qui la ferait bouger.
  *
+ * La dernière manche verrouillée écrit la trace complète (`onLock`) au même
+ * geste qui bascule sur sa révélation — jamais après qu'elle a été lue : un
+ * rechargement pendant la révélation de la dernière manche retrouve le jeu
+ * déjà soumis, jamais rejouable dans son état d'avant.
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance()` fait toujours passer à la manche suivante en local pour les
+ * manches intermédiaires ; à la dernière, il ne fait plus que passer au jeu
+ * suivant (`onAdvance`), la trace ayant déjà été écrite.
+ *
  * Le hook n'expose **jamais** `lying`, ni l'objection, avant que le joueur
  * ait posé sa première désignation : ce qui n'est pas exposé ne peut pas
  * fuiter à l'écran.
  */
 export const useLieDetector = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -49,9 +59,32 @@ export const useLieDetector = (
   const [firstPickId, setFirstPickId] = useState<string | undefined>(undefined)
   const [finalPickId, setFinalPickId] = useState<string | undefined>(undefined)
   const [completedPicks, setCompletedPicks] = useState<readonly Pick[]>([])
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   const currentRound = parsed.rounds[roundIndex]
+  const isLastRound = roundIndex === parsed.rounds.length - 1
+
+  /**
+   * Pose la désignation finale de la manche courante, bascule sur la
+   * révélation. À la dernière manche, écrit la trace complète (`onLock`)
+   * avant de basculer — jamais après.
+   */
+  const lockRound = (claimId: string): void => {
+    setFinalPickId(claimId)
+    setPhase('revealed')
+
+    if (!isLastRound || currentRound === undefined) return
+    if (firstPickId === undefined || lockedRef.current) return
+    lockedRef.current = true
+
+    const finishedPick: Pick = {
+      roundId: currentRound.id,
+      firstPickId,
+      finalPickId: claimId,
+    }
+    onLock(buildLieDetectorAnswer(parsed, [...completedPicks, finishedPick]))
+  }
 
   /**
    * Avant le premier geste : pose la première désignation, verrouille-la,
@@ -66,36 +99,32 @@ export const useLieDetector = (
       return
     }
     if (phase === 'objection') {
-      setFinalPickId(claimId)
-      setPhase('revealed')
+      lockRound(claimId)
     }
   }
 
   /** Maintient la désignation courante, sans repasser par une affirmation cliquée. */
   const hold = (): void => {
     if (phase !== 'objection' || firstPickId === undefined) return
-    setFinalPickId(firstPickId)
-    setPhase('revealed')
+    lockRound(firstPickId)
   }
 
   /**
-   * Passe à la manche suivante, ou soumet la trace **une seule fois** à la
-   * dernière manche, via un `useRef` d'appel unique, sur le modèle de
-   * `useDefectHunt`.
+   * Passe à la manche suivante en local, ou au jeu suivant **une seule
+   * fois** à la dernière manche — la trace y a déjà été écrite par
+   * `lockRound`, `advance` ne fait plus que prévenir la façade.
    */
   const advance = (): void => {
     if (phase !== 'revealed') return
     if (currentRound === undefined) return
     if (firstPickId === undefined || finalPickId === undefined) return
 
-    const finishedPick: Pick = {
-      roundId: currentRound.id,
-      firstPickId,
-      finalPickId,
-    }
-    const isLastRound = roundIndex === parsed.rounds.length - 1
-
     if (!isLastRound) {
+      const finishedPick: Pick = {
+        roundId: currentRound.id,
+        firstPickId,
+        finalPickId,
+      }
       setCompletedPicks((current) => [...current, finishedPick])
       setRoundIndex((index) => index + 1)
       setFirstPickId(undefined)
@@ -104,9 +133,9 @@ export const useLieDetector = (
       return
     }
 
-    if (submittedRef.current) return
-    submittedRef.current = true
-    onSubmit(buildLieDetectorAnswer(parsed, [...completedPicks, finishedPick]))
+    if (advancedRef.current) return
+    advancedRef.current = true
+    onAdvance()
   }
 
   const claims: readonly ClaimView[] =

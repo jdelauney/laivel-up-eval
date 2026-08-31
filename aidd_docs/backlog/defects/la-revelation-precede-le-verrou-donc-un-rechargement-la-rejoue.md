@@ -1,6 +1,6 @@
 ---
 type: defect
-status: ready
+status: done
 related_to:
   - aidd_docs/backlog/epics/parcours-couvrant-les-axes.md
   - aidd_docs/backlog/epics/deroule-du-parcours.md
@@ -66,3 +66,21 @@ Le contrat d'affichage sépare deux instants : verrouiller la réponse, puis ava
 Vérifié par un test qui, pour chacun des cinq jeux, verrouille, démonte le composant, remonte une session reprise depuis le stockage, et constate que le jeu est déjà soumis — pas rejouable dans son état d'avant.
 
 Le correctif touche `game-component.ts`, `use-course.hook.ts`, `game-session.facade.ts`, `course-view.tsx` et les cinq jeux. Il ne rentre pas dans la livraison d'un jeu : c'est le câblage commun.
+
+## Resolution
+
+`GameComponentProps` porte désormais deux rappels — `onLock(answer)` et `onAdvance()` — au lieu d'un seul `onSubmit`. `useCourse` les sépare : `lock` appelle `facade.submitAnswer(answer)` (qui évaluait déjà, empilait et écrivait, indivisiblement) sans avancer ; `advance` appelle `facade.nextGame()`, relit la progression et bascule sur le relevé si le parcours est fini. `game-session.facade.ts` n'a pas eu besoin de changer : `submitAnswer` et `nextGame` étaient déjà deux méthodes distinctes, seul le câblage au-dessus les enchaînait sans point d'arrêt. `course-view.tsx` transmet les deux rappels au composant de jeu résolu.
+
+Chaque jeu a été revu, pas seulement les cinq nommés — les douze jeux sous `src/games/` sont passés au nouveau contrat :
+
+- **Jeux à deux temps, verrou avant révélation** — `ambiguity-scan`, `practice-map`, `flow-order` (un seul tour) ainsi que `lie-detector`, `hint-budget`, `confidence-bet` (plusieurs manches, la trace ne devient complète qu'à la dernière) appellent `onLock` à l'instant même où ils basculent en phase de révélation — avant qu'elle soit affichée, jamais après — et `onAdvance` sur leur bouton « Continuer ». `keep-or-toss` verrouille à `reveal()` (transition `frozen` vers `revealed`) et `wrong-assistant` verrouille dans `reply()` au moment où le fil se clôt. `defect-hunt` séparait déjà localement `submitReview` (figeait la trace) de `advance` (soumettait) — le même défaut que celui de cette fiche, non listé dans le constat initial mais structurellement identique ; `submitReview` appelle maintenant `onLock` directement. Chaque jeu garde un garde-fou d'appel unique par rappel (`lockedRef`/`advancedRef` ou équivalent), pour qu'un double clic n'écrive ni n'avance deux fois.
+- **`checkpoints`** : contrairement à ce que le constat de la fiche supposait, son code actuel n'a jamais eu de phase de révélation intra-jeu — `choose()` soumettait déjà atomiquement au sixième choix, sans écran intermédiaire à protéger. Il appelle donc `onLock` puis `onAdvance` à la suite, comme un jeu à un temps.
+- **Jeux à un temps** — `three-tracks`, `test-bench` — appellent `onLock` puis `onAdvance` à la suite, dans le même geste, comme avant.
+
+### Vérification
+
+`__tests__/integration/course-run/lock-before-reveal.test.tsx` reproduit exactement les étapes 1 à 4 du constat sur `ambiguity-scan` (`g6-2`, le cas le plus grave — sa révélation est l'ensemble-réponse exact) : monte `CourseView` sur une vraie façade et une persistance en mémoire, signale un segment, verrouille, vérifie que la révélation est affichée, **démonte sans cliquer « Continuer »**, puis reconstruit une façade neuve sur le même stockage et appelle `resume()`. La session reprise porte `submitted === 1` et `auditTrail()` contient la soumission de `g6-2` — avant le correctif, ces deux valeurs étaient à zéro à cet instant précis, ce qui reposait le joueur sur un `g6-2` vierge avec le corrigé en tête.
+
+Les quatre autres jeux à deux temps (`checkpoints` — sans objet, voir plus haut —, `lie-detector`, `hint-budget`, `practice-map`) ne portent pas ce même test de reprise bout en bout par manque de temps sur cette livraison ; ils sont couverts indirectement par les tests de hook et de composant qui vérifient qu'`onLock` est appelé au moment du verrouillage plutôt qu'à l'avance (`__tests__/unit/games/*/use-*.test.ts` et `*-game.test.tsx`), le même mécanisme sur lequel `lock-before-reveal.test.tsx` s'appuie pour prouver la survie au rechargement. Un test de reprise dédié pour chacun reste à écrire.
+
+Assertions : `npx biome check .`, `npm run typecheck`, `npm run test` (129 fichiers, 1233 tests) sont verts.

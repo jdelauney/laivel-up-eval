@@ -34,7 +34,11 @@ import { SortingDeck } from './sorting-deck'
  * Seule cette composition connaît le hook et `GameComponentProps` : la
  * pile, le gel et la révélation restent des vues pures.
  */
-export const KeepOrTossGame = ({ config, onSubmit }: GameComponentProps) => {
+export const KeepOrTossGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     total,
@@ -48,7 +52,7 @@ export const KeepOrTossGame = ({ config, onSubmit }: GameComponentProps) => {
     reveal,
     advance,
     revelations,
-  } = useKeepOrToss(config, onSubmit)
+  } = useKeepOrToss(config, onLock, onAdvance)
 
   if (phase === 'revealed') {
     return (

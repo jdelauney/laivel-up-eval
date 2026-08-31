@@ -22,7 +22,11 @@ import { RevealedTimeline } from './revealed-timeline'
  * détachée : la matière propre de ce jeu est cette frise, à la lecture comme
  * à la révélation. Fiche de surface : `.impeccable/surfaces/`.
  */
-export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
+export const FlowOrderGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     steps,
@@ -35,7 +39,7 @@ export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
     submit,
     advance,
     revelations,
-  } = useFlowOrder(config, onSubmit)
+  } = useFlowOrder(config, onLock, onAdvance)
 
   if (phase === 'revealed') {
     return (

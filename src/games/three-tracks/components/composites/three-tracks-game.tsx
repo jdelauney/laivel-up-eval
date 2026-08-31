@@ -13,7 +13,11 @@ import { TrackRegister } from './track-register'
  * prix de la négligence qui force l'arbitrage entre chantiers, jamais une
  * validation qui l'imposerait.
  */
-export const ThreeTracksGame = ({ config, onSubmit }: GameComponentProps) => {
+export const ThreeTracksGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     tracks,
@@ -24,7 +28,7 @@ export const ThreeTracksGame = ({ config, onSubmit }: GameComponentProps) => {
     isComplete,
     setAttention,
     closeTurn,
-  } = useThreeTracks(config, onSubmit)
+  } = useThreeTracks(config, onLock, onAdvance)
 
   if (isComplete) return null
 

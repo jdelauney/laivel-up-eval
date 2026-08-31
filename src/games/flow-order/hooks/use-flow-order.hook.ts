@@ -63,7 +63,8 @@ export type StepRevelation = {
  */
 export const useFlowOrder = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -81,7 +82,8 @@ export const useFlowOrder = (
   const [heldId, setHeldId] = useState<string | undefined>(undefined)
   const [phase, setPhase] = useState<FlowOrderPhase>('ordering')
   const [announcement, setAnnouncement] = useState('')
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   /** Annonce la position courante d'une étape dans la frise donnée, en mots comptés — jamais un nombre seul, pour rester lisible au lecteur d'écran comme au clavier. */
   const announcePosition = (
@@ -176,19 +178,27 @@ export const useFlowOrder = (
     })
   }
 
-  /** Verrouille la lecture : la frise est toujours une permutation complète, rien à attendre de plus. */
+  /**
+   * Verrouille la lecture : la frise est toujours une permutation complète,
+   * rien à attendre de plus. Écrit la trace immédiatement, avant de basculer
+   * sur la révélation.
+   */
   const submit = (): void => {
     if (phase !== 'ordering') return
+    if (lockedRef.current) return
+    lockedRef.current = true
+
+    onLock(buildFlowOrderAnswer(parsed, order))
     setPhase('revealed')
   }
 
-  /** Transmet la trace à la façade, une seule fois. */
+  /** Passe au jeu suivant, une seule fois. */
   const advance = (): void => {
     if (phase !== 'revealed') return
-    if (submittedRef.current) return
-    submittedRef.current = true
+    if (advancedRef.current) return
+    advancedRef.current = true
 
-    onSubmit(buildFlowOrderAnswer(parsed, order))
+    onAdvance()
   }
 
   const steps: readonly StepView[] = order.map((id, index) => {

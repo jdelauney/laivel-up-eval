@@ -27,11 +27,14 @@ export type FlawRevelation = { nodeId: string; message: string; flaw: string }
  * Le verrou d'un pas tient par l'**absence de chemin**, jamais par une garde
  * décorative : `reply` avance le fil d'un nœud vers le suivant que désigne
  * `nextId` de la réponse choisie ; quand cette réponse n'en porte aucun, le
- * scénario se clôt sur la révélation. La trace ne part qu'au geste explicite
- * `advance()`, jamais dès l'arrivée sur l'écran révélé — le joueur doit
- * pouvoir lire ce qui clochait avant que la partie ne soit tenue pour
- * soumise, sur le modèle de `useAmbiguityScan` et `useLieDetector`. Un
- * `useRef` d'appel unique protège `advance()` contre un double appel.
+ * scénario se clôt sur la révélation. La trace part au même geste — `reply`
+ * appelle `onLock` avant de basculer sur `'revealed'`, jamais après : un
+ * rechargement pendant la lecture de la révélation retrouve le jeu déjà
+ * soumis, jamais rejouable dans son état d'avant.
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance()` ne fait plus que passer au jeu suivant, une fois la révélation
+ * lue. Deux `useRef` d'appel unique protègent chacun des deux gestes contre
+ * un double appel.
  *
  * Le hook n'expose **jamais** `flawed`, `flaw`, `consequence` ni `stance`
  * avant l'heure : `currentTurn` ne porte que le texte du tour et de ses
@@ -41,7 +44,8 @@ export type FlawRevelation = { nodeId: string; message: string; flaw: string }
  */
 export const useWrongAssistant = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -57,7 +61,8 @@ export const useWrongAssistant = (
   const [currentNodeId, setCurrentNodeId] = useState(parsed.rootId)
   const [steps, setSteps] = useState<readonly Step[]>([])
   const [phase, setPhase] = useState<WrongAssistantPhase>('talking')
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   const currentNode =
     phase === 'talking' ? nodesById.get(currentNodeId) : undefined
@@ -75,9 +80,14 @@ export const useWrongAssistant = (
     if (chosen === undefined) return
 
     const finishedStep: Step = { nodeId: currentNode.id, replyId: chosen.id }
-    setSteps((current) => [...current, finishedStep])
+    const nextSteps = [...steps, finishedStep]
+    setSteps(nextSteps)
 
     if (chosen.nextId === undefined) {
+      if (!lockedRef.current) {
+        lockedRef.current = true
+        onLock(buildWrongAssistantAnswer(parsed, nextSteps))
+      }
       setPhase('revealed')
       return
     }
@@ -85,13 +95,13 @@ export const useWrongAssistant = (
     setCurrentNodeId(chosen.nextId)
   }
 
-  /** Transmet la trace à la façade, une seule fois — le geste qui suit la lecture de la révélation. */
+  /** Passe au jeu suivant, une seule fois — le geste qui suit la lecture de la révélation. */
   const advance = (): void => {
     if (phase !== 'revealed') return
-    if (submittedRef.current) return
-    submittedRef.current = true
+    if (advancedRef.current) return
+    advancedRef.current = true
 
-    onSubmit(buildWrongAssistantAnswer(parsed, steps))
+    onAdvance()
   }
 
   // Le fil déjà joué, dans l'ordre où il s'est déroulé — jamais le prochain

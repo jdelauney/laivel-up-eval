@@ -40,7 +40,8 @@ export type DefectRevelation = {
  */
 export const useDefectHunt = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -54,7 +55,7 @@ export const useDefectHunt = (
     DefectHuntAnswer | undefined
   >(undefined)
   const submitted = frozenAnswer !== undefined
-  const onSubmitCalled = useRef(false)
+  const advancedRef = useRef(false)
 
   // Le chronomètre tourne tant que la revue n'est pas rendue, et s'arrête
   // net au rendu : `submitted` bascule `running` à `false` le même rendu où
@@ -75,22 +76,28 @@ export const useDefectHunt = (
 
   /**
    * Fige la durée à l'instant de l'appel, construit la trace, la garde en
-   * mémoire, et bascule sur la révélation. N'appelle pas encore `onSubmit` :
-   * c'est `advance` qui soumet, sur le modèle de `useConfidenceBet`.
+   * mémoire pour l'affichage de la révélation, et l'**écrit** aussitôt via
+   * `onLock` — avant que la révélation ne soit lue, jamais après : un
+   * rechargement pendant la révélation retrouve le jeu déjà soumis.
+   * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
    */
   const submitReview = (): void => {
     if (submitted) return
 
-    setFrozenAnswer(
-      buildDefectHuntAnswer(parsed, [...markedLines], readElapsedSeconds()),
+    const answer = buildDefectHuntAnswer(
+      parsed,
+      [...markedLines],
+      readElapsedSeconds(),
     )
+    setFrozenAnswer(answer)
+    onLock(answer)
   }
 
-  /** Soumet la trace déjà figée, une seule fois. */
+  /** Passe au jeu suivant, une seule fois. */
   const advance = (): void => {
-    if (frozenAnswer === undefined || onSubmitCalled.current) return
-    onSubmitCalled.current = true
-    onSubmit(frozenAnswer)
+    if (frozenAnswer === undefined || advancedRef.current) return
+    advancedRef.current = true
+    onAdvance()
   }
 
   const reading: Reading | undefined = useMemo(

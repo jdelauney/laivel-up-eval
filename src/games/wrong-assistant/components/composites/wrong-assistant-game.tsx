@@ -22,7 +22,8 @@ import { ExchangeThread } from './exchange-thread'
  */
 export const WrongAssistantGame = ({
   config,
-  onSubmit,
+  onLock,
+  onAdvance,
 }: GameComponentProps) => {
   const {
     statement,
@@ -33,7 +34,7 @@ export const WrongAssistantGame = ({
     reply,
     advance,
     revelations,
-  } = useWrongAssistant(config, onSubmit)
+  } = useWrongAssistant(config, onLock, onAdvance)
 
   return (
     <div className="flex flex-col gap-3 sm:gap-6">

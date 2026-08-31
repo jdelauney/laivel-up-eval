@@ -40,6 +40,8 @@ const config = {
     ),
     node('b', false, [
       reply('b-1', 'accept', 'c', 'Notez ça, et voyons la suite.'),
+      reply('b-2', 'challenge', 'c', 'Ça arrive souvent ?'),
+      reply('b-3', 'verify', 'c', 'Montrez-moi le détail.'),
     ]),
     node(
       'c',
@@ -59,25 +61,40 @@ const config = {
     node(
       'consA',
       false,
-      [reply('consA-1', 'accept', undefined, "J'ouvre un correctif.")],
-      {
-        consequence: 'Dommage A.',
-      },
+      [
+        reply('consA-2', 'verify', undefined, 'Montrez-moi le rapport.'),
+        reply('consA-1', 'accept', undefined, "J'ouvre un correctif."),
+        reply('consA-3', 'challenge', undefined, 'Comment est-ce arrivé ?'),
+      ],
+      { consequence: 'Dommage A.' },
     ),
     node(
       'consB',
       false,
-      [reply('consB-1', 'accept', undefined, 'Je corrige tout de suite.')],
-      {
-        consequence: 'Dommage B.',
-      },
+      [
+        reply('consB-2', 'challenge', undefined, 'On l’a su comment ?'),
+        reply(
+          'consB-3',
+          'reformulate',
+          undefined,
+          'Figez la version tout de suite.',
+        ),
+        reply('consB-1', 'accept', undefined, 'Je corrige tout de suite.'),
+      ],
+      { consequence: 'Dommage B.' },
     ),
   ],
 }
 
 describe('wrong assistant game, rendered', () => {
   it('shows the statement and the root turn with its replies', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
     expect(screen.getByText('Message a.')).toBeInTheDocument()
@@ -87,7 +104,13 @@ describe('wrong assistant game, rendered', () => {
   })
 
   it('advances the thread on a reply, keeping the earlier turn visible', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Vous êtes sûr de vous ?' }),
@@ -99,14 +122,26 @@ describe('wrong assistant game, rendered', () => {
   })
 
   it('treats every turn the same, flawed or not: no distinguishing mark in the DOM', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     const visible = document.body.textContent ?? ''
     expect(visible).not.toMatch(/flawed|flaw|défectueux|sain/i)
   })
 
   it('reaches the revelation on a reply with no nextId, listing what was wrong on the flawed turns met', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Vous êtes sûr de vous ?' }),
@@ -123,7 +158,13 @@ describe('wrong assistant game, rendered', () => {
   })
 
   it('never shows a verdict on the player at the revelation, no score, no tally of what was caught', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Vous êtes sûr de vous ?' }),
@@ -139,9 +180,15 @@ describe('wrong assistant game, rendered', () => {
     expect(visible).not.toMatch(/correctement|manqué|réussi|raté|score|repéré/i)
   })
 
-  it('submits the trace only once continue is pressed at the revelation, even if pressed twice', () => {
-    const onSubmit = vi.fn()
-    render(<WrongAssistantGame config={config} onSubmit={onSubmit} />)
+  it('locks the trace as soon as the closing reply is played, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={onLock}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Vous êtes sûr de vous ?' }),
@@ -152,13 +199,9 @@ describe('wrong assistant game, rendered', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Vous en êtes certain ?' }),
     )
-    expect(onSubmit).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
-
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
       steps: { nodeId: string; replyId: string }[]
     }
     expect(answer.steps).toEqual([
@@ -168,8 +211,41 @@ describe('wrong assistant game, rendered', () => {
     ])
   })
 
+  it('advances only once continue is pressed at the revelation, even if pressed twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Vous êtes sûr de vous ?' }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Notez ça, et voyons la suite.' }),
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Vous en êtes certain ?' }),
+    )
+    expect(onAdvance).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
+
+    expect(onAdvance).toHaveBeenCalledTimes(1)
+  })
+
   it('reaches out for consequence: an accepted flaw plays through to its consequence turn', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'Parfait, on avance.' }))
 
@@ -186,7 +262,13 @@ describe('wrong assistant game, rendered', () => {
    * atteignable par tabulation, jamais un `<div>` ou `<li>` rendu cliquable.
    */
   it('exposes every reply as a native, focusable button — the same control for pointer and keyboard', () => {
-    render(<WrongAssistantGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <WrongAssistantGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     config.nodes[0].replies.forEach((entry) => {
       const button = screen.getByRole('button', { name: entry.text })

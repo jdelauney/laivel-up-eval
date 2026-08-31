@@ -55,7 +55,9 @@ const sortAll = (keep: boolean[]) => {
 
 describe('keep or toss game, rendered', () => {
   it('opens on the first card, no feedback, no counted-justes, no keep or reason visible', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
     expect(screen.getByText(config.items[0].label)).toBeInTheDocument()
@@ -67,7 +69,9 @@ describe('keep or toss game, rendered', () => {
   })
 
   it('advances to the next card and increments the sorted count on Garder', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /garder/i }))
 
@@ -76,7 +80,9 @@ describe('keep or toss game, rendered', () => {
   })
 
   it('advances to the next card on Jeter too, the same way as Garder', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /jeter/i }))
 
@@ -86,13 +92,15 @@ describe('keep or toss game, rendered', () => {
 
   it('reaches the exact same state through ArrowLeft as through a click on Garder', () => {
     const { unmount } = render(
-      <KeepOrTossGame config={config} onSubmit={vi.fn()} />,
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
     fireEvent.click(screen.getByRole('button', { name: /garder/i }))
     const afterClick = screen.getByText(config.items[1].label).textContent
     unmount()
 
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     fireEvent.keyDown(screen.getByRole('button', { name: /garder/i }), {
       key: 'ArrowLeft',
     })
@@ -103,13 +111,15 @@ describe('keep or toss game, rendered', () => {
 
   it('reaches the exact same state through ArrowRight as through a click on Jeter', () => {
     const { unmount } = render(
-      <KeepOrTossGame config={config} onSubmit={vi.fn()} />,
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
     fireEvent.click(screen.getByRole('button', { name: /jeter/i }))
     const afterClick = screen.getByText(/1 sur 8/).textContent
     unmount()
 
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     fireEvent.keyDown(screen.getByRole('button', { name: /jeter/i }), {
       key: 'ArrowRight',
     })
@@ -135,7 +145,9 @@ describe('keep or toss game, rendered', () => {
    * focus), ce test échouerait.
    */
   it('restores focus to Garder when the card itself is clicked, so the arrow keys keep working', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const keepButton = screen.getByRole('button', { name: /garder/i })
     keepButton.blur()
@@ -148,13 +160,15 @@ describe('keep or toss game, rendered', () => {
 
   it('reaches the exact same state through ArrowLeft as through a click on Garder, even after a stray click on the card', () => {
     const { unmount } = render(
-      <KeepOrTossGame config={config} onSubmit={vi.fn()} />,
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
     fireEvent.click(screen.getByRole('button', { name: /garder/i }))
     const afterClick = screen.getByText(config.items[1].label).textContent
     unmount()
 
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     // Le geste naturel qui tuait le clavier avant le correctif : cliquer la
     // carte, pas le bouton.
     fireEvent.click(screen.getByText(config.items[0].label))
@@ -165,7 +179,9 @@ describe('keep or toss game, rendered', () => {
   })
 
   it('announces the current card label in an aria-live region, so a screen reader hears the next card without leaving the button', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const card = screen.getByText(config.items[0].label)
     expect(card.closest('[aria-live]')).toHaveAttribute('aria-live', 'polite')
@@ -180,7 +196,9 @@ describe('keep or toss game, rendered', () => {
   })
 
   it('freezes after the last card, showing neither the verdict nor a running score, then reveals on request', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     sortAll([true, false, true, false, true, false, true, false])
 
@@ -201,7 +219,9 @@ describe('keep or toss game, rendered', () => {
   })
 
   it('never reveals what the player answered, only the expected verdict and reason', () => {
-    render(<KeepOrTossGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     // Trie tout à l'envers de la réponse attendue.
     sortAll([false, true, false, true, false, true, false, true])
@@ -211,17 +231,31 @@ describe('keep or toss game, rendered', () => {
     expect(visible).not.toMatch(/manqué|raté|faux|score/i)
   })
 
-  it('submits the frozen trace only once, even if continue fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<KeepOrTossGame config={config} onSubmit={onSubmit} />)
+  it('locks the frozen trace on reveal, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <KeepOrTossGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
+
+    sortAll([true, false, true, false, true, false, true, false])
+    fireEvent.click(screen.getByRole('button', { name: /voir la révélation/i }))
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { verdicts: unknown[] }
+    expect(answer.verdicts).toHaveLength(8)
+  })
+
+  it('advances only once, even if continue fires twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <KeepOrTossGame config={config} onLock={vi.fn()} onAdvance={onAdvance} />,
+    )
 
     sortAll([true, false, true, false, true, false, true, false])
     fireEvent.click(screen.getByRole('button', { name: /voir la révélation/i }))
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { verdicts: unknown[] }
-    expect(answer.verdicts).toHaveLength(8)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 })

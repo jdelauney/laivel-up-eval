@@ -18,7 +18,11 @@ import { PracticeTray } from './practice-tray'
  * Seule cette composition connaît le hook et `GameComponentProps` : les
  * éléments et les autres composites restent des vues pures.
  */
-export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
+export const PracticeMapGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     poles,
@@ -37,7 +41,7 @@ export const PracticeMapGame = ({ config, onSubmit }: GameComponentProps) => {
     submit,
     advance,
     positionLabel,
-  } = usePracticeMap(config, onSubmit)
+  } = usePracticeMap(config, onLock, onAdvance)
 
   if (phase === 'revealed') {
     return (

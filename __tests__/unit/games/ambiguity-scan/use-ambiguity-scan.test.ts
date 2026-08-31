@@ -22,9 +22,14 @@ const baseConfig = () => ({
   ],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useAmbiguityScan(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useAmbiguityScan(config, onLock, onAdvance)),
 })
 
 describe('use ambiguity scan', () => {
@@ -124,8 +129,8 @@ describe('use ambiguity scan', () => {
     ])
   })
 
-  it('submits the trace only once, even if advance fires twice', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace on submit, before the revelation is read, even if submit fires twice', () => {
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.toggle('s3')
@@ -137,15 +142,33 @@ describe('use ambiguity scan', () => {
       result.current.submit()
     })
     act(() => {
+      result.current.submit()
+    })
+
+    expect(result.current.phase).toBe('revealed')
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { flaggedIds: string[] }
+    expect(answer.flaggedIds).toEqual(['s3', 's4'])
+  })
+
+  it('advances only once, even if advance fires twice, without locking again', () => {
+    const { result, onLock, onAdvance } = renderGame()
+
+    act(() => {
+      result.current.toggle('s3')
+    })
+    act(() => {
+      result.current.submit()
+    })
+    act(() => {
       result.current.advance()
     })
     act(() => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { flaggedIds: string[] }
-    expect(answer.flaggedIds).toEqual(['s3', 's4'])
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('locks toggle and submit once revealed', () => {

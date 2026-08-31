@@ -38,7 +38,11 @@ const baseConfig = () => ({
       ],
       { flaw: 'Ce qui cloche en a.' },
     ),
-    node('b', false, [reply('b-1', 'accept', 'c')]),
+    node('b', false, [
+      reply('b-1', 'accept', 'c'),
+      reply('b-2', 'challenge', 'c'),
+      reply('b-3', 'verify', 'c'),
+    ]),
     node(
       'c',
       true,
@@ -49,18 +53,37 @@ const baseConfig = () => ({
       ],
       { flaw: 'Ce qui cloche en c.' },
     ),
-    node('consA', false, [reply('consA-1', 'accept')], {
-      consequence: 'Dommage A.',
-    }),
-    node('consB', false, [reply('consB-1', 'accept')], {
-      consequence: 'Dommage B.',
-    }),
+    node(
+      'consA',
+      false,
+      [
+        reply('consA-2', 'verify'),
+        reply('consA-1', 'accept'),
+        reply('consA-3', 'challenge'),
+      ],
+      { consequence: 'Dommage A.' },
+    ),
+    node(
+      'consB',
+      false,
+      [
+        reply('consB-2', 'challenge'),
+        reply('consB-3', 'reformulate'),
+        reply('consB-1', 'accept'),
+      ],
+      { consequence: 'Dommage B.' },
+    ),
   ],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useWrongAssistant(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useWrongAssistant(config, onLock, onAdvance)),
 })
 
 describe('use wrong assistant', () => {
@@ -177,8 +200,8 @@ describe('use wrong assistant', () => {
     ])
   })
 
-  it('does not submit before advance is called, even once revealed', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace as soon as the scenario closes, before advance is even called', () => {
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.reply('a-challenge')
@@ -187,33 +210,13 @@ describe('use wrong assistant', () => {
       result.current.reply('b-1')
     })
     act(() => {
+      // Ce dernier échange clôt le scénario : la trace s'écrit ici, avant
+      // que le joueur n'ait lu la révélation ou cliqué « Continuer ».
       result.current.reply('c-challenge')
     })
 
-    expect(onSubmit).not.toHaveBeenCalled()
-  })
-
-  it('submits the played trace only once, even if advance fires twice', () => {
-    const { result, onSubmit } = renderGame()
-
-    act(() => {
-      result.current.reply('a-challenge')
-    })
-    act(() => {
-      result.current.reply('b-1')
-    })
-    act(() => {
-      result.current.reply('c-challenge')
-    })
-    act(() => {
-      result.current.advance()
-    })
-    act(() => {
-      result.current.advance()
-    })
-
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
       steps: { nodeId: string; replyId: string }[]
     }
     expect(answer.steps).toEqual([
@@ -223,14 +226,57 @@ describe('use wrong assistant', () => {
     ])
   })
 
+  it('locks the trace only once, even if the closing reply fires twice', () => {
+    const { result, onLock } = renderGame()
+
+    act(() => {
+      result.current.reply('a-challenge')
+    })
+    act(() => {
+      result.current.reply('b-1')
+    })
+    act(() => {
+      result.current.reply('c-challenge')
+    })
+    act(() => {
+      result.current.reply('c-reformulate')
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('advances only once, even if advance fires twice', () => {
+    const { result, onAdvance } = renderGame()
+
+    act(() => {
+      result.current.reply('a-challenge')
+    })
+    act(() => {
+      result.current.reply('b-1')
+    })
+    act(() => {
+      result.current.reply('c-challenge')
+    })
+    expect(onAdvance).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current.advance()
+    })
+    act(() => {
+      result.current.advance()
+    })
+
+    expect(onAdvance).toHaveBeenCalledTimes(1)
+  })
+
   it('does nothing on advance while still talking', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onAdvance } = renderGame()
 
     act(() => {
       result.current.advance()
     })
 
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onAdvance).not.toHaveBeenCalled()
     expect(result.current.phase).toBe('talking')
   })
 })

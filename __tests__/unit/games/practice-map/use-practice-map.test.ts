@@ -49,9 +49,14 @@ const baseConfig = () => ({
   ],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => usePracticeMap(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => usePracticeMap(config, onLock, onAdvance)),
 })
 
 describe('use practice map', () => {
@@ -231,8 +236,38 @@ describe('use practice map', () => {
     expect(result.current.markers).toHaveLength(4)
   })
 
-  it('submits the trace only once, even if advance fires twice', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the trace on submit, before the reveal — and only once', () => {
+    const { result, onLock } = renderGame()
+
+    ;['p1', 'p2', 'p3', 'p4'].forEach((id) => {
+      act(() => {
+        result.current.hold(id)
+      })
+      act(() => {
+        result.current.place(0.5, 0.5)
+      })
+    })
+    act(() => {
+      result.current.submit()
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      placements: { practiceId: string }[]
+    }
+    expect(answer.placements.map((entry) => entry.practiceId)).toEqual([
+      'p1',
+      'p2',
+      'p3',
+      'p4',
+    ])
+  })
+
+  it('advances only once, even if advance fires twice', () => {
+    const { result, onAdvance } = renderGame()
 
     ;['p1', 'p2', 'p3', 'p4'].forEach((id) => {
       act(() => {
@@ -252,16 +287,7 @@ describe('use practice map', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      placements: { practiceId: string }[]
-    }
-    expect(answer.placements.map((entry) => entry.practiceId)).toEqual([
-      'p1',
-      'p2',
-      'p3',
-      'p4',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('renders the position in words, never in numbers, and reflects the two poles of the configuration', () => {

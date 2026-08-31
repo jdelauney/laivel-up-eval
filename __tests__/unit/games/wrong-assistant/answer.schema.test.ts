@@ -48,7 +48,11 @@ const config: WrongAssistantConfig = wrongAssistantConfigSchema.parse({
       ],
       { flaw: 'Ce qui cloche en a.' },
     ),
-    node('b', false, [reply('b-1', 'accept', 'c')]),
+    node('b', false, [
+      reply('b-1', 'accept', 'c'),
+      reply('b-2', 'challenge', 'c'),
+      reply('b-3', 'verify', 'c'),
+    ]),
     node(
       'c',
       true,
@@ -59,12 +63,26 @@ const config: WrongAssistantConfig = wrongAssistantConfigSchema.parse({
       ],
       { flaw: 'Ce qui cloche en c.' },
     ),
-    node('consA', false, [reply('consA-1', 'accept')], {
-      consequence: 'Dommage A.',
-    }),
-    node('consB', false, [reply('consB-1', 'accept')], {
-      consequence: 'Dommage B.',
-    }),
+    node(
+      'consA',
+      false,
+      [
+        reply('consA-2', 'verify'),
+        reply('consA-1', 'accept'),
+        reply('consA-3', 'challenge'),
+      ],
+      { consequence: 'Dommage A.' },
+    ),
+    node(
+      'consB',
+      false,
+      [
+        reply('consB-2', 'challenge'),
+        reply('consB-3', 'reformulate'),
+        reply('consB-1', 'accept'),
+      ],
+      { consequence: 'Dommage B.' },
+    ),
   ],
 })
 

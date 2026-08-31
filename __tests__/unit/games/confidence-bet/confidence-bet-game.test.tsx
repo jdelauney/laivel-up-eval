@@ -48,7 +48,13 @@ const engageStake = (stakeLabel: RegExp): void => {
 
 describe('confidence bet game, rendered', () => {
   it('opens on the first snippet, with the statement and the stake scale', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
     expect(screen.getByText(/extrait 1 sur 3/i)).toBeInTheDocument()
@@ -57,7 +63,13 @@ describe('confidence bet game, rendered', () => {
   })
 
   it('keeps the engagement disabled until a stake is chosen', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     expect(
       screen.getByRole('button', { name: /engager la mise/i }),
@@ -71,7 +83,13 @@ describe('confidence bet game, rendered', () => {
   })
 
   it('shows no nature, verdict or capital movement before the engagement', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     expect(screen.queryByText(/code fiable/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/code défectueux/i)).not.toBeInTheDocument()
@@ -79,7 +97,13 @@ describe('confidence bet game, rendered', () => {
   })
 
   it('removes the stake scale once the bet is engaged, and reveals the nature', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('radio', { name: /mise 90/i }))
     fireEvent.click(screen.getByRole('button', { name: /engager la mise/i }))
@@ -92,7 +116,13 @@ describe('confidence bet game, rendered', () => {
   })
 
   it('advances to the next snippet on passage, opening its own scale', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('radio', { name: /mise 90/i }))
     fireEvent.click(screen.getByRole('button', { name: /engager la mise/i }))
@@ -103,28 +133,58 @@ describe('confidence bet game, rendered', () => {
     expect(screen.getByRole('radiogroup')).toBeInTheDocument()
   })
 
-  it('submits once, on the last snippet, and disappears once complete', () => {
-    const onSubmit = vi.fn()
-    render(<ConfidenceBetGame config={config} onSubmit={onSubmit} />)
+  it('locks the trace on the last snippet engaged, before the passage action is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <ConfidenceBetGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     engageStake(/mise 90/i)
     fireEvent.click(screen.getByRole('button', { name: /extrait suivant/i }))
 
     engageStake(/mise 10/i)
     fireEvent.click(screen.getByRole('button', { name: /extrait suivant/i }))
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onLock).not.toHaveBeenCalled()
+
+    engageStake(/mise 50/i)
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { bets: unknown[] }
+    expect(answer.bets).toHaveLength(3)
+  })
+
+  it('advances once, on the last snippet, and disappears once complete', () => {
+    const onAdvance = vi.fn()
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    )
+
+    engageStake(/mise 90/i)
+    fireEvent.click(screen.getByRole('button', { name: /extrait suivant/i }))
+
+    engageStake(/mise 10/i)
+    fireEvent.click(screen.getByRole('button', { name: /extrait suivant/i }))
+    expect(onAdvance).not.toHaveBeenCalled()
 
     engageStake(/mise 50/i)
     fireEvent.click(screen.getByRole('button', { name: /extrait suivant/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { bets: unknown[] }
-    expect(answer.bets).toHaveLength(3)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
     expect(screen.queryByText(config.statement)).not.toBeInTheDocument()
   })
 
-  it('adds a played snippet to the ledger, mise and movement included', () => {
-    render(<ConfidenceBetGame config={config} onSubmit={vi.fn()} />)
+  it('adds a played snippet to the ledger, mise and movement included, once engaged', () => {
+    render(
+      <ConfidenceBetGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('radio', { name: /mise 90/i }))
     fireEvent.click(screen.getByRole('button', { name: /engager la mise/i }))

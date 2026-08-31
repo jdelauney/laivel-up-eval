@@ -22,9 +22,14 @@ const baseConfig = () => ({
   initialOrder: ['s3', 's1', 's6', 's2', 's5', 's4'],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useFlowOrder(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useFlowOrder(config, onLock, onAdvance)),
 })
 
 describe('use flow order', () => {
@@ -258,12 +263,27 @@ describe('use flow order', () => {
     ])
   })
 
-  it('submits the played order, not the expected one, and only once', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the played order, not the expected one, before the reveal — and only once', () => {
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.move('s3', 1)
     })
+    act(() => {
+      result.current.submit()
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { orderedIds: string[] }
+    expect(answer.orderedIds).toEqual(['s1', 's3', 's6', 's2', 's5', 's4'])
+  })
+
+  it('advances only once, even if advance fires twice', () => {
+    const { result, onAdvance } = renderGame()
+
     act(() => {
       result.current.submit()
     })
@@ -274,9 +294,7 @@ describe('use flow order', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { orderedIds: string[] }
-    expect(answer.orderedIds).toEqual(['s1', 's3', 's6', 's2', 's5', 's4'])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('locks activate and move once revealed', () => {

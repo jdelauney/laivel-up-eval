@@ -1101,8 +1101,8 @@
                 "flawed": true,
                 "flaw": "Seuls les tests unitaires ont tourné. Les deux tests d'intégration qui couvrent ce module n'ont jamais été exécutés sur cette branche, et l'un des deux échoue.",
                 "replies": [
-                  { "id": "n1-accept", "text": "Va pour la fusion, je ne relis pas.", "stance": "accept", "nextId": "c1" },
                   { "id": "n1-challenge", "text": "Un vendredi soir, ça me semble aller vite.", "stance": "challenge", "nextId": "n2" },
+                  { "id": "n1-accept", "text": "Va pour la fusion, je ne relis pas.", "stance": "accept", "nextId": "c1" },
                   { "id": "n1-verify", "text": "Montrez-moi le rapport complet de la suite.", "stance": "verify", "nextId": "n2" }
                 ]
               },
@@ -1112,7 +1112,9 @@
                 "message": "Vous avez raison, seuls les tests unitaires sont passés. Sinon, les dépendances du module sont toutes épinglées à une version précise et à jour.",
                 "flawed": false,
                 "replies": [
-                  { "id": "n2-1", "text": "Notez ça, et voyons la suite.", "stance": "accept", "nextId": "n3" }
+                  { "id": "n2-accept", "text": "Notez ça, et voyons la suite.", "stance": "accept", "nextId": "n3" },
+                  { "id": "n2-verify", "text": "Montrez-moi la liste exacte des dépendances épinglées.", "stance": "verify", "nextId": "n3" },
+                  { "id": "n2-challenge", "text": "Ça arrive souvent, ces trous dans la suite ?", "stance": "challenge", "nextId": "n3" }
                 ]
               },
               {
@@ -1122,9 +1124,9 @@
                 "flawed": true,
                 "flaw": "Le paquet de parsing utilisé est fixé sur `latest`, pas sur une version précise, et sa version courante porte une faille corrigée depuis trois semaines en amont.",
                 "replies": [
-                  { "id": "n3-accept", "text": "Parfait, ça peut rester tel quel.", "stance": "accept", "nextId": "c2" },
+                  { "id": "n3-reformulate", "text": "Fixez chaque dépendance à une version précise avant qu'on continue.", "stance": "reformulate", "nextId": "n4" },
                   { "id": "n3-challenge", "text": "« Toutes », vraiment, sans exception ?", "stance": "challenge", "nextId": "n4" },
-                  { "id": "n3-reformulate", "text": "Fixez chaque dépendance à une version précise avant qu'on continue.", "stance": "reformulate", "nextId": "n4" }
+                  { "id": "n3-accept", "text": "Parfait, ça peut rester tel quel.", "stance": "accept", "nextId": "c2" }
                 ]
               },
               {
@@ -1133,7 +1135,9 @@
                 "message": "D'accord, je fige chaque dépendance à une version précise avant la prochaine remise.",
                 "flawed": false,
                 "replies": [
-                  { "id": "n4-1", "text": "Notez ça aussi, et voyons la suite.", "stance": "accept", "nextId": "n5" }
+                  { "id": "n4-challenge", "text": "Avant la prochaine remise, pas tout de suite ?", "stance": "challenge", "nextId": "n5" },
+                  { "id": "n4-reformulate", "text": "Faites-le tout de suite, pas seulement avant la prochaine remise.", "stance": "reformulate", "nextId": "n5" },
+                  { "id": "n4-accept", "text": "Notez ça aussi, et voyons la suite.", "stance": "accept", "nextId": "n5" }
                 ]
               },
               {
@@ -1143,7 +1147,7 @@
                 "flawed": true,
                 "flaw": "Le cas du champ vide n'est pas traité : la fonction lève une exception non interceptée dès qu'elle reçoit une chaîne vide, jamais testée avant cette remise.",
                 "replies": [
-                  { "id": "n5-accept", "text": "C'est réglé, on peut passer en production.", "stance": "accept", "nextId": "c1" },
+                  { "id": "n5-accept", "text": "C'est réglé, on peut considérer que la remise est bonne pour la production.", "stance": "accept", "nextId": "c1" },
                   { "id": "n5-challenge", "text": "Ce cas précis, vous l'avez vu passer où, au juste ?", "stance": "challenge" },
                   { "id": "n5-reformulate", "text": "Ajoutez un test sur le champ vide avant qu'on referme ce point.", "stance": "reformulate" }
                 ]
@@ -1155,7 +1159,9 @@
                 "flawed": false,
                 "consequence": "Une fusion acceptée sans vérification a laissé partir un test d'intégration en échec jusqu'en production.",
                 "replies": [
-                  { "id": "c1-1", "text": "Compris, j'ouvre un correctif tout de suite.", "stance": "accept" }
+                  { "id": "c1-verify", "text": "Montrez-moi le rapport d'échec complet.", "stance": "verify" },
+                  { "id": "c1-accept", "text": "Compris, j'ouvre un correctif tout de suite.", "stance": "accept" },
+                  { "id": "c1-challenge", "text": "Comment ce test a-t-il pu ne jamais tourner ?", "stance": "challenge" }
                 ]
               },
               {
@@ -1165,7 +1171,9 @@
                 "flawed": false,
                 "consequence": "Une dépendance laissée sur `latest` a fait entrer une faille connue dans la branche, sans qu'aucune version n'ait jamais été figée.",
                 "replies": [
-                  { "id": "c2-1", "text": "Je fige les versions et je relance l'analyse.", "stance": "accept" }
+                  { "id": "c2-challenge", "text": "Le registre a mis à jour l'artefact sans qu'on le sache ?", "stance": "challenge" },
+                  { "id": "c2-reformulate", "text": "Épinglez chaque dépendance à une version précise, immédiatement.", "stance": "reformulate" },
+                  { "id": "c2-accept", "text": "Je fige les versions et je relance l'analyse.", "stance": "accept" }
                 ]
               }
             ]
@@ -1173,7 +1181,7 @@
           "criteria": [
             {
               "id": "g3-1-c1",
-              "question": "Chaque erreur rencontrée a-t-elle été repérée avant d'être acceptée ?",
+              "question": "Aucun tour défectueux rencontré n'a-t-il été accepté tel quel ?",
               "rule": {
                 "type": "flaws-caught-before-accepting"
               },

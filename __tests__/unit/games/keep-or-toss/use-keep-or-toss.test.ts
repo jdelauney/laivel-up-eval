@@ -24,9 +24,14 @@ const baseConfig = () => ({
   ],
 })
 
-const renderGame = (config: unknown = baseConfig(), onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useKeepOrToss(config, onSubmit)),
+const renderGame = (
+  config: unknown = baseConfig(),
+  onLock = vi.fn(),
+  onAdvance = vi.fn(),
+) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useKeepOrToss(config, onLock, onAdvance)),
 })
 
 /**
@@ -112,7 +117,7 @@ describe('use keep or toss', () => {
   })
 
   it('ignores further sorts once frozen: the last card sorted does not overflow into a ninth verdict', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     sortAll(result, true)
     act(() => {
@@ -121,11 +126,8 @@ describe('use keep or toss', () => {
     act(() => {
       result.current.reveal()
     })
-    act(() => {
-      result.current.advance()
-    })
 
-    const answer = onSubmit.mock.calls[0][0] as { verdicts: unknown[] }
+    const answer = onLock.mock.calls[0][0] as { verdicts: unknown[] }
     expect(answer.verdicts).toHaveLength(8)
   })
 
@@ -208,7 +210,7 @@ describe('use keep or toss', () => {
 
   it('captures a duration below the budget for a lot frozen by expiry, not the last displayed tick', () => {
     vi.useFakeTimers()
-    const { result, onSubmit } = renderGame({
+    const { result, onLock } = renderGame({
       ...baseConfig(),
       durationSeconds: 2,
     })
@@ -219,16 +221,27 @@ describe('use keep or toss', () => {
     act(() => {
       result.current.reveal()
     })
-    act(() => {
-      result.current.advance()
-    })
 
-    const answer = onSubmit.mock.calls[0][0] as { elapsedSeconds: number }
+    const answer = onLock.mock.calls[0][0] as { elapsedSeconds: number }
     expect(answer.elapsedSeconds).toBeGreaterThanOrEqual(2)
   })
 
-  it('submits the frozen trace only once, even if advance fires twice', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks the frozen trace only once, even if reveal fires twice', () => {
+    const { result, onLock } = renderGame()
+
+    sortAll(result, true)
+    act(() => {
+      result.current.reveal()
+    })
+    act(() => {
+      result.current.reveal()
+    })
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('advances only once, even if advance fires twice', () => {
+    const { result, onAdvance } = renderGame()
 
     sortAll(result, true)
     act(() => {
@@ -241,7 +254,7 @@ describe('use keep or toss', () => {
       result.current.advance()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('reveals in the declared order of the configuration, with the expected verdict and reason', () => {

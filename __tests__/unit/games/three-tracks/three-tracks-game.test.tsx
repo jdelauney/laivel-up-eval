@@ -26,20 +26,26 @@ const config = {
 
 describe('three tracks game, rendered', () => {
   it('opens on the first turn, with the full attention of the turn to place', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(/tour 1 sur 2/i)).toBeInTheDocument()
     expect(screen.getByText(/2 unités à placer/i)).toBeInTheDocument()
   })
 
   it('shows the statement above the register, from the first turn', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
   })
 
   it('renders the register as a real table, a chantier per row header', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const table = screen.getByRole('table')
     expect(
@@ -51,7 +57,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('keeps the brief reachable in its own cell, out of the row header name', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     const table = screen.getByRole('table')
 
     const alphaHeader = within(table).getByRole('rowheader', {
@@ -68,7 +76,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('offers a zero pastille, never disabled, before anything is placed', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const zero = screen.getByRole('radio', {
       name: /zéro unité sur Chantier Alpha, tour 1/i,
@@ -77,7 +87,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('shows the digit of every pastille on screen, zero included', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const zero = screen.getByRole('radio', {
       name: /zéro unité sur Chantier Alpha, tour 1/i,
@@ -90,7 +102,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('never disables the close-turn action, even at zero units placed', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(
       screen.getByRole('button', { name: /clore le tour/i }),
@@ -98,7 +112,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('updates the remaining attention when a pastille is selected', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -110,7 +126,9 @@ describe('three tracks game, rendered', () => {
   })
 
   it('advances to the next turn on close, and loses attention left unplaced', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -123,17 +141,21 @@ describe('three tracks game, rendered', () => {
     expect(screen.getByText(/2 unités à placer/i)).toBeInTheDocument()
   })
 
-  it('submits once, on the last turn, and disappears once complete', () => {
-    const onSubmit = vi.fn()
-    render(<ThreeTracksGame config={config} onSubmit={onSubmit} />)
+  it('locks and advances once, on the last turn, and disappears once complete', () => {
+    const onLock = vi.fn()
+    const onAdvance = vi.fn()
+    render(
+      <ThreeTracksGame config={config} onLock={onLock} onAdvance={onAdvance} />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onLock).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as { turns: unknown[] }
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as { turns: unknown[] }
     expect(answer.turns).toHaveLength(2)
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
@@ -141,7 +163,9 @@ describe('three tracks game, rendered', () => {
 
 describe('three tracks game, the open column names the choice', () => {
   it('shows the turn fraction on the open column header', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     const table = screen.getByRole('table')
 
     const open = within(table).getByRole('columnheader', {
@@ -159,7 +183,9 @@ describe('three tracks game, the open column names the choice', () => {
    * d'équivalent avant ce libellé visible sur l'en-tête de la colonne.
    */
   it('names the open column as the attention one, visibly, not only for a screen reader', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     const table = screen.getByRole('table')
 
     const open = within(table).getByRole('columnheader', {
@@ -169,7 +195,9 @@ describe('three tracks game, the open column names the choice', () => {
   })
 
   it('keeps as many cells per body row as column headers', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
     const table = screen.getByRole('table')
 
     const headerCount = within(table).getAllByRole('columnheader').length
@@ -198,7 +226,13 @@ describe('three tracks game, state legibility without color', () => {
   }
 
   it('marks a neglected row DÉRIVE, visible without relying on color', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -218,7 +252,13 @@ describe('three tracks game, state legibility without color', () => {
   })
 
   it('marks a merged row MERGÉ and offers no selector on its row', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -240,7 +280,13 @@ describe('three tracks game, state legibility without color', () => {
   })
 
   it('marks a track lost in --missed after it starves past the death threshold', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
@@ -256,7 +302,13 @@ describe('three tracks game, state legibility without color', () => {
   })
 
   it('says no unit can be placed once every track is merged or lost', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
@@ -268,7 +320,13 @@ describe('three tracks game, state legibility without color', () => {
   })
 
   it('never repeats a screen-reader phrase across the barred cells of a lost row', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
@@ -281,7 +339,13 @@ describe('three tracks game, state legibility without color', () => {
   })
 
   it('keeps a border on a lost row instead of leaving it bare', () => {
-    render(<ThreeTracksGame config={stateConfig} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame
+        config={stateConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
     fireEvent.click(screen.getByRole('button', { name: /clore le tour/i }))
