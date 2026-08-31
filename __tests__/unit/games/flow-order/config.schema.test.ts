@@ -109,17 +109,21 @@ describe('flow-order config schema', () => {
 
     const issue = firstIssue(config)
     expect(issue.path).toEqual(['initialOrder'])
-    expect(issue.message).toContain('aucun des deux critères')
+    expect(issue.message).toContain('marge de robustesse')
   })
 
-  it('rejects an initialOrder that displaces only one step by more than one position', () => {
+  it('rejects an initialOrder that displaces only one step by more than one position, without claiming that one displaced step would be enough to pass', () => {
     const config = validConfig()
     // s1 seul avance de deux crans (position 1 → 3), le reste glisse d'un
     // cran ou reste en place : une seule étape dépasse l'écart d'un cran.
+    // Cette seule étape suffirait déjà à faire échouer
+    // `order-within-displacement` — le refus tient à la marge de robustesse
+    // du schéma, pas à une condition nécessaire du critère.
     config.initialOrder = ['s2', 's3', 's1', 's4', 's5', 's6']
 
     const issue = firstIssue(config)
     expect(issue.path).toEqual(['initialOrder'])
-    expect(issue.message).toContain('aucun des deux critères')
+    expect(issue.message).toContain('marge de robustesse')
+    expect(issue.message).not.toContain('aucun des deux critères')
   })
 })

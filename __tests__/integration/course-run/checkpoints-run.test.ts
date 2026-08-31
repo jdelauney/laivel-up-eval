@@ -148,6 +148,13 @@ const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
     const config = flowOrderConfigSchema.parse(game.config)
     return { orderedIds: config.initialOrder }
   }
+  /**
+   * `g4-2` porte keep-or-toss depuis la phase 4 de son propre plan : ce
+   * test ne mesure pas `verification`, donc n'importe quelle trace
+   * conforme suffit — ici, aucune carte triée, une trace vide reste
+   * recevable puisqu'un tri inachevé est le sujet même du jeu.
+   */
+  if (game.type === 'keep-or-toss') return { verdicts: [], elapsedSeconds: 0 }
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),

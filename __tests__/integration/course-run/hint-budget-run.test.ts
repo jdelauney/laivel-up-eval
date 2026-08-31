@@ -742,6 +742,13 @@ describe('hint-budget in the course', () => {
         const config = flowOrderConfigSchema.parse(game.config)
         return { orderedIds: config.initialOrder }
       }
+      /**
+       * `g4-2` porte keep-or-toss depuis la phase 4 de son propre plan : ce
+       * test ne mesure pas `verification`, donc n'importe quelle trace
+       * conforme suffit — ici, aucune carte triée.
+       */
+      if (game.type === 'keep-or-toss')
+        return { verdicts: [], elapsedSeconds: 0 }
       return { selected: [] }
     }
 

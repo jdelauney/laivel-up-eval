@@ -45,14 +45,18 @@ export type StepRevelation = {
  * que la phase n'est pas `'revealed'`.
  *
  * Deux chemins d'entrée, à égalité stricte de précision (`DESIGN.md`
- * §93-94) :
- * - pointeur : `activate` saisit une carte au premier appel, la dépose
- *   juste avant la carte visée au second — sur le modèle du hold/place de
- *   `usePracticeMap` ;
+ * §93-94) — **tous deux atteignent la dernière position de la frise**,
+ * vérifié par un test qui compare l'ensemble des positions atteignables par
+ * l'un et par l'autre :
+ * - pointeur : `activate` saisit une carte au premier appel ; au second, elle
+ *   se dépose au contact de la carte visée, avant si elle remonte, après si
+ *   elle descend — sur le modèle du hold/place de `usePracticeMap`, ajusté
+ *   pour que la queue de la frise reste atteignable (voir `activate`) ;
  * - clavier : `move` déplace une étape d'un cran, sans étape de saisie
  *   préalable — la carte est directement un `button` que `ArrowUp` /
  *   `ArrowDown` déplacent, `DESIGN.md` §93-94 en faisant une exigence du
- *   jeu et non d'une primitive partagée.
+ *   jeu et non d'une primitive partagée. `Escape` relâche une carte saisie
+ *   au pointeur sans la déplacer, le pendant clavier de `release`.
  *
  * `announcement` porte le pendant clavier du retour visuel : la nouvelle
  * position de la dernière étape déplacée, par l'un ou l'autre chemin.
@@ -92,7 +96,17 @@ export const useFlowOrder = (
    * Saisit ou dépose une carte, selon ce qui est déjà saisi :
    * - rien n'est saisi → cette carte est saisie ;
    * - cette carte est déjà saisie → elle est relâchée sans bouger ;
-   * - une autre carte est saisie → elle est déposée juste avant celle-ci.
+   * - une autre carte est saisie → elle est déposée au contact de celle-ci,
+   *   **avant** si la carte saisie remonte, **après** si elle descend.
+   *
+   * Déposer systématiquement « juste avant » la cible rendait la dernière
+   * position inatteignable au pointeur : aucune carte ne se trouve jamais
+   * après la dernière. Choisir le côté du dépôt selon le sens du geste — le
+   * même geste qu'un glisser-déposer usuel, où l'on dépose « de l'autre
+   * côté » de la cible quand on vient d'en dessous — rend au pointeur
+   * exactement les états que le clavier atteint à coups de flèches : retirer
+   * la carte saisie et la réinsérer à l'index visé, sans jamais toucher
+   * l'ordre relatif des autres cartes.
    */
   const activate = (stepId: string): void => {
     if (phase !== 'ordering') return
@@ -109,12 +123,20 @@ export const useFlowOrder = (
 
     const grabbedId = heldId
     setOrder((current) => {
+      const grabbedIndex = current.indexOf(grabbedId)
+      const targetIndex = current.indexOf(stepId)
+      const movingDown = grabbedIndex < targetIndex
+
       const withoutGrabbed = current.filter((id) => id !== grabbedId)
-      const targetIndex = withoutGrabbed.indexOf(stepId)
+      const targetIndexWithoutGrabbed = withoutGrabbed.indexOf(stepId)
+      const insertAt = movingDown
+        ? targetIndexWithoutGrabbed + 1
+        : targetIndexWithoutGrabbed
+
       const next = [
-        ...withoutGrabbed.slice(0, targetIndex),
+        ...withoutGrabbed.slice(0, insertAt),
         grabbedId,
-        ...withoutGrabbed.slice(targetIndex),
+        ...withoutGrabbed.slice(insertAt),
       ]
       announcePosition(grabbedId, next)
       return next
@@ -128,9 +150,18 @@ export const useFlowOrder = (
     setHeldId(undefined)
   }
 
-  /** Déplace une étape d'un cran, sans saisie préalable — le chemin clavier. */
+  /**
+   * Déplace une étape d'un cran, sans saisie préalable — le chemin clavier.
+   *
+   * Relâche aussi toute carte saisie au pointeur : sans ce relâchement, une
+   * carte saisie puis déplacée aux flèches restait « saisie » en apparence,
+   * et le clic suivant sur une autre carte — pensé comme une désélection —
+   * était lu comme un dépôt et téléportait la carte saisie. Le clavier prend
+   * la main, le geste pointeur en cours s'annule.
+   */
   const move = (stepId: string, direction: 1 | -1): void => {
     if (phase !== 'ordering') return
+    setHeldId(undefined)
     setOrder((current) => {
       const index = current.indexOf(stepId)
       const target = index + direction

@@ -1355,45 +1355,95 @@
         },
         {
           "id": "g4-2",
-          "type": "test-bench",
+          "type": "keep-or-toss",
           "label": "Garder ou jeter ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Ces pratiques ont été relevées sur un dépôt réel. Gardez celles qui tiennent, jetez celles qui exposent.",
+            "durationSeconds": 20,
+            "items": [
               {
                 "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "label": "Chiffrer les secrets au repos avec un gestionnaire dédié",
+                "keep": true,
+                "reason": "Un secret en clair dans une base ou un fichier devient lisible dès qu'un accès de lecture fuite ; un gestionnaire dédié le protège même si la base fuite."
               },
               {
                 "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "label": "Valider et échapper les entrées utilisateur côté serveur",
+                "keep": true,
+                "reason": "Une entrée non validée côté serveur reste exploitable même si le client la filtre déjà — le client se contourne, le serveur reste la seule limite fiable."
               },
               {
                 "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "label": "Stocker le mot de passe administrateur dans le dépôt, à côté du code",
+                "keep": false,
+                "reason": "Un mot de passe commité reste dans l'historique même après suppression du fichier, lisible par quiconque clone le dépôt."
               },
               {
                 "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "label": "Faire tourner les clés d'API à intervalle régulier",
+                "keep": true,
+                "reason": "Une clé qui tourne réduit la fenêtre d'exploitation d'une fuite passée, y compris une fuite jamais détectée."
+              },
+              {
+                "id": "p5",
+                "label": "Désactiver la vérification du certificat TLS pour accélérer les tests",
+                "keep": false,
+                "reason": "Désactiver la vérification TLS en test laisse fréquemment ce réglage traîner jusqu'en production, où il expose à l'interception."
+              },
+              {
+                "id": "p6",
+                "label": "Partager un jeton d'accès unique entre tous les membres de l'équipe",
+                "keep": false,
+                "reason": "Un jeton partagé ne distingue plus qui a agi ; le retirer à une personne oblige à le changer pour toute l'équipe."
+              },
+              {
+                "id": "p7",
+                "label": "Limiter les droits d'un compte de service au strict périmètre requis",
+                "keep": true,
+                "reason": "Un compte de service élargi au-delà de son besoin devient une cible plus rentable qu'un compte limité au strict périmètre."
+              },
+              {
+                "id": "p8",
+                "label": "Construire les requêtes SQL par concaténation de chaînes",
+                "keep": false,
+                "reason": "Une requête construite par concaténation laisse passer une valeur qui change la requête elle-même — l'injection SQL classique."
+              },
+              {
+                "id": "p9",
+                "label": "Journaliser les tentatives d'authentification échouées",
+                "keep": true,
+                "reason": "Sans journal des échecs d'authentification, une tentative de force brute passe inaperçue jusqu'à ce qu'elle réussisse."
+              },
+              {
+                "id": "p10",
+                "label": "Laisser le port de débogage ouvert sur l'environnement de production",
+                "keep": false,
+                "reason": "Un port de débogage ouvert en production expose des commandes internes à quiconque l'atteint sur le réseau."
+              },
+              {
+                "id": "p11",
+                "label": "Appliquer les correctifs de sécurité du moteur dans les jours qui suivent leur publication",
+                "keep": true,
+                "reason": "Un correctif de sécurité non appliqué laisse une faille déjà publique, donc déjà recherchée, ouverte plus longtemps que nécessaire."
+              },
+              {
+                "id": "p12",
+                "label": "Accorder les droits administrateur par défaut à tout nouveau compte",
+                "keep": false,
+                "reason": "Des droits administrateur par défaut donnent à chaque nouveau compte plus que ce dont il a besoin, et à chaque compromission plus qu'elle ne devrait obtenir."
               }
             ]
           },
           "criteria": [
             {
               "id": "g4-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Le taux de bon classement dépasse-t-il le seuil ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "correct-share-at-least",
+                "threshold": 0.75
               },
               "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 2
-                },
                 {
                   "dimension": "verification",
                   "weight": 2
@@ -1402,15 +1452,11 @@
             },
             {
               "id": "g4-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Le tri a-t-il été bouclé dans le temps imparti ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "sorting-completed-in-time"
               },
               "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 1
-                },
                 {
                   "dimension": "verification",
                   "weight": 1
@@ -1489,49 +1535,49 @@
           "type": "flow-order",
           "label": "Dans quel ordre travaille-t-on ?",
           "config": {
-            "statement": "Remettez ces sept gestes du flux dans l'ordre où ils se jouent réellement sur ce projet.",
+            "statement": "Remettez ces sept gestes dans l'ordre où ce dépôt les enchaîne réellement pour livrer une Story — pas l'ordre que vous pratiquez par ailleurs.",
             "steps": [
               {
                 "id": "cadrage",
                 "label": "Le besoin se traduit en objectif mesurable et en périmètre déclaré.",
                 "rank": 1,
-                "note": "Sans cadrage écrit, chaque étape suivante interprète un besoin différent — le désaccord se découvre à la revue, au prix fort."
+                "note": "Sans un périmètre écrit, il n'y a rien à découper en phases : ce que le geste suivant borne a besoin de ce cadrage pour poser ses limites."
               },
               {
                 "id": "plan",
                 "label": "Le travail se découpe en phases, chacune bornée par un critère d'arrêt.",
                 "rank": 2,
-                "note": "Un plan phasé rend l'avancement vérifiable à chaque étape, plutôt qu'un unique bloc jugé à la toute fin."
+                "note": "Chaque phase du plan fixe un critère d'arrêt que le code qui suit doit satisfaire avant d'avancer — sans ce découpage, rien ne dit au geste suivant où s'arrêter."
               },
               {
                 "id": "implementation",
                 "label": "Le code s'écrit phase par phase, jusqu'à ce que ses critères tiennent.",
                 "rank": 3,
-                "note": "Le code qui ne satisfait pas les critères de sa phase ne passe pas à la suivante — c'est la boucle qui sépare une implémentation pilotée d'un jet."
+                "note": "Le code s'écrit avant que les vérifications ne le confirment : il n'y a rien à faire tourner tant qu'une phase n'a pas produit un comportement à vérifier."
               },
               {
                 "id": "assertions",
                 "label": "Les vérifications automatiques du projet confirment le comportement obtenu.",
                 "rank": 4,
-                "note": "Une assertion automatique attrape une régression que la seule relecture laisse filer."
+                "note": "Les vérifications automatiques tournent avant le regard indépendant, jamais après : une revue qui découvre encore une régression qu'un test aurait attrapée n'a pas de plan à confronter, seulement un bug à signaler."
               },
               {
                 "id": "revue",
                 "label": "Un regard indépendant confronte le résultat produit au plan qui l'a guidé.",
                 "rank": 5,
-                "note": "La revue confronte le résultat au plan, pas au code seul — c'est ce qui la distingue d'une relecture stylistique."
+                "note": "Ce dépôt fait confronter le diff au plan avant d'ouvrir la demande de fusion, à l'inverse d'un flux où la revue se loge dans une PR déjà ouverte : le geste suivant documente un résultat déjà confronté, pas un brouillon encore débattu."
               },
               {
                 "id": "pr",
                 "label": "La demande de fusion rassemble le diff, son résumé et son plan de test.",
                 "rank": 6,
-                "note": "La pull request documente ce qui a changé et comment le vérifier, pour qui n'a pas suivi le fil."
+                "note": "La demande de fusion se forme une fois la revue tenue, pour porter un résumé et un plan de test déjà vérifiés — pas une promesse qu'il faudrait encore vérifier après coup, une fois le code déjà intégré."
               },
               {
                 "id": "merge",
                 "label": "Le code rejoint la branche principale.",
                 "rank": 7,
-                "note": "Le merge acte une revue tenue — jamais l'inverse."
+                "note": "Le merge acte une revue tenue et une demande de fusion formée — jamais l'inverse : rien ne rejoint la branche principale sans être passé par les deux gestes qui le précèdent."
               }
             ],
             "initialOrder": [

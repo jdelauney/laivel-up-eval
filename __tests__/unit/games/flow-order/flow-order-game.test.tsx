@@ -64,7 +64,7 @@ describe('flow order game, rendered', () => {
     render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
 
     const firstCard = screen.getByRole('button', {
-      name: config.steps[2].label,
+      name: `Position 1 : ${config.steps[2].label}`,
     })
     fireEvent.keyDown(firstCard, { key: 'ArrowDown' })
 
@@ -77,17 +77,80 @@ describe('flow order game, rendered', () => {
   it('grabs a card on the first click, drops it before the target on the second', () => {
     render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
 
-    const grabbed = screen.getByRole('button', { name: config.steps[3].label })
+    const grabbed = screen.getByRole('button', {
+      name: `Position 6 : ${config.steps[3].label}`,
+    })
     fireEvent.click(grabbed)
     expect(grabbed).toHaveAttribute('aria-pressed', 'true')
 
-    const target = screen.getByRole('button', { name: config.steps[0].label })
+    const target = screen.getByRole('button', {
+      name: `Position 2 : ${config.steps[0].label}`,
+    })
     fireEvent.click(target)
 
     const buttons = screen.getAllByRole('button')
     expect(buttons[0].textContent).toBe(`1${config.steps[2].label}`)
     expect(buttons[1].textContent).toBe(`2${config.steps[3].label}`)
     expect(buttons[2].textContent).toBe(`3${config.steps[0].label}`)
+  })
+
+  it('grabs a card and drops it after the last card when moving down, reaching the last position', () => {
+    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+
+    // 'cadrage' joue en position 2 ; on la saisit et on la dépose au contact
+    // de la dernière carte, 'tests' en position 6 — un dépôt vers le bas
+    // doit l'y placer après, en position 7, la dernière de la frise.
+    const grabbed = screen.getByRole('button', {
+      name: `Position 2 : ${config.steps[0].label}`,
+    })
+    fireEvent.click(grabbed)
+
+    const last = screen.getByRole('button', {
+      name: `Position 6 : ${config.steps[3].label}`,
+    })
+    fireEvent.click(last)
+
+    const buttons = screen.getAllByRole('button')
+    expect(buttons[5].textContent).toBe(`6${config.steps[0].label}`)
+  })
+
+  it('releases a grabbed card on Escape, without moving it', () => {
+    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+
+    const grabbed = screen.getByRole('button', {
+      name: `Position 6 : ${config.steps[3].label}`,
+    })
+    fireEvent.click(grabbed)
+    expect(grabbed).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.keyDown(grabbed, { key: 'Escape' })
+
+    expect(grabbed).toHaveAttribute('aria-pressed', 'false')
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      `1${config.steps[2].label}`,
+      `2${config.steps[0].label}`,
+      `3${config.steps[5].label}`,
+      `4${config.steps[1].label}`,
+      `5${config.steps[4].label}`,
+      `6${config.steps[3].label}`,
+      'Verrouiller la frise',
+    ])
+  })
+
+  it('exposes the played position in the accessible name, and the frieze as an ordered list', () => {
+    render(<FlowOrderGame config={config} onSubmit={vi.fn()} />)
+
+    expect(
+      screen.getByRole('button', {
+        name: `Position 1 : ${config.steps[2].label}`,
+      }),
+    ).toBeInTheDocument()
+
+    const list = screen.getByRole('list')
+    const items = screen.getAllByRole('listitem')
+    expect(items).toHaveLength(config.steps.length)
+    expect(list).toContainElement(items[0])
   })
 
   it('reveals every step in expected order with its note, never a verdict on the player', () => {

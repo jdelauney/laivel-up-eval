@@ -199,6 +199,45 @@ describe('use flow order', () => {
     ])
   })
 
+  it('a step moved by keyboard releases its pointer grab, so a later click holds the target instead of teleporting the stale grab', () => {
+    const { result } = renderGame()
+
+    act(() => {
+      result.current.activate('s1')
+    })
+    expect(result.current.heldId).toBe('s1')
+
+    act(() => {
+      result.current.move('s1', 1)
+    })
+    // Le clavier prend la main : la saisie au pointeur n'a plus cours,
+    // sans quoi le clic suivant serait lu comme un dépôt.
+    expect(result.current.heldId).toBeUndefined()
+    expect(result.current.steps.map((entry) => entry.id)).toEqual([
+      's3',
+      's6',
+      's1',
+      's2',
+      's5',
+      's4',
+    ])
+
+    act(() => {
+      result.current.activate('s2')
+    })
+
+    // s2 est saisie à son tour ; s1 n'a pas été téléportée à son contact.
+    expect(result.current.heldId).toBe('s2')
+    expect(result.current.steps.map((entry) => entry.id)).toEqual([
+      's3',
+      's6',
+      's1',
+      's2',
+      's5',
+      's4',
+    ])
+  })
+
   it('reveals the steps in expected order only once submitted', () => {
     const { result } = renderGame()
 
@@ -261,5 +300,86 @@ describe('use flow order', () => {
       's5',
       's4',
     ])
+  })
+})
+
+/**
+ * Le pointeur déposait « juste avant » la carte visée, donc jamais après la
+ * dernière : la queue de la frise était structurellement hors d'atteinte au
+ * pointeur, pour toute carte. Ce test ne relit pas le code, il fait rejouer
+ * les deux chemins d'entrée par la même API publique du hook et compare
+ * l'état obtenu, position par position, y compris la dernière — la
+ * régression que ce constat corrige.
+ */
+describe('pointer and keyboard reach the same positions', () => {
+  it('lets every step reach every position — the last included — through either input path, with an identical resulting order', () => {
+    const order = baseConfig().initialOrder
+    const stepCount = order.length
+
+    for (const movingId of order) {
+      for (
+        let targetPosition = 1;
+        targetPosition <= stepCount;
+        targetPosition++
+      ) {
+        // Chemin clavier : `move` pas à pas jusqu'à la position visée.
+        const keyboard = renderGame()
+        const positionOf = (stepId: string) =>
+          keyboard.result.current.steps.find((entry) => entry.id === stepId)
+            ?.position
+
+        let guard = 0
+        while (positionOf(movingId) !== targetPosition) {
+          guard += 1
+          if (guard > stepCount) {
+            throw new Error('le chemin clavier ne converge pas')
+          }
+          const current = positionOf(movingId)
+          if (current === undefined) {
+            throw new Error(`l'étape « ${movingId} » est introuvable`)
+          }
+          const direction = current < targetPosition ? 1 : -1
+          act(() => {
+            keyboard.result.current.move(movingId, direction)
+          })
+        }
+        const keyboardOrder = keyboard.result.current.steps.map(
+          (entry) => entry.id,
+        )
+
+        // Chemin pointeur : saisir la carte, puis déposer au contact de la
+        // carte qui occupe déjà la position visée avant tout geste — le
+        // hook choisit lui-même le côté du dépôt selon le sens du geste.
+        const pointer = renderGame()
+        const startPosition = pointer.result.current.steps.find(
+          (entry) => entry.id === movingId,
+        )?.position
+        if (startPosition === targetPosition) {
+          // Rien à jouer : les deux chemins partent déjà de cet état.
+          expect(pointer.result.current.steps.map((entry) => entry.id)).toEqual(
+            keyboardOrder,
+          )
+          continue
+        }
+
+        const targetStepId = pointer.result.current.steps.find(
+          (entry) => entry.position === targetPosition,
+        )?.id
+        if (targetStepId === undefined) {
+          throw new Error(`aucune carte à la position ${targetPosition}`)
+        }
+
+        act(() => {
+          pointer.result.current.activate(movingId)
+        })
+        act(() => {
+          pointer.result.current.activate(targetStepId)
+        })
+
+        expect(pointer.result.current.steps.map((entry) => entry.id)).toEqual(
+          keyboardOrder,
+        )
+      }
+    }
   })
 })

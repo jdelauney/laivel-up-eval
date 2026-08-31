@@ -2,6 +2,7 @@ import { Button } from '../../../../components/ui/button'
 import type { GameComponentProps } from '../../../types/game-component'
 import { useFlowOrder } from '../../hooks/use-flow-order.hook'
 import { FlowTimeline } from './flow-timeline'
+import { RevealedTimeline } from './revealed-timeline'
 
 /**
  * Le dixième jeu du parcours, et le second du cinquième groupe : sept
@@ -15,6 +16,11 @@ import { FlowTimeline } from './flow-timeline'
  *
  * Seule cette composition connaît le hook et `GameComponentProps` : la
  * frise et la carte d'étape restent des vues pures.
+ *
+ * La révélation (`RevealedTimeline`) reprend le grammaire visuelle de la
+ * frise jouée — même rang à gauche, même cadre — plutôt qu'une liste
+ * détachée : la matière propre de ce jeu est cette frise, à la lecture comme
+ * à la révélation. Fiche de surface : `.impeccable/surfaces/`.
  */
 export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
   const {
@@ -24,6 +30,7 @@ export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
     phase,
     announcement,
     activate,
+    release,
     move,
     submit,
     advance,
@@ -36,32 +43,7 @@ export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
         <p className="max-w-[54ch] text-lg text-plane-foreground leading-relaxed">
           {statement}
         </p>
-        <section className="border border-plane-rule bg-plane">
-          <header className="border-plane-rule border-b px-3 py-2 font-medium text-[10px] text-plane-foreground/55 uppercase tracking-[0.14em]">
-            Ce que chaque étape apporte au flux
-          </header>
-          <div>
-            {revelations.map((entry, index) => (
-              <div
-                key={entry.id}
-                className="border-plane-rule border-b px-3 py-2 last:border-b-0"
-              >
-                <p className="text-plane-foreground text-sm">
-                  <span
-                    aria-hidden
-                    className="tabular-nums text-plane-foreground/55"
-                  >
-                    {index + 1}.{' '}
-                  </span>
-                  {entry.label}
-                </p>
-                <p className="mt-1 text-plane-foreground/60 text-xs leading-relaxed">
-                  {entry.note}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <RevealedTimeline revelations={revelations} />
         <div>
           <Button type="button" size="lg" onClick={advance}>
             Continuer
@@ -98,6 +80,7 @@ export const FlowOrderGame = ({ config, onSubmit }: GameComponentProps) => {
         onActivate={activate}
         onMoveUp={(stepId) => move(stepId, -1)}
         onMoveDown={(stepId) => move(stepId, 1)}
+        onRelease={release}
       />
 
       <div>

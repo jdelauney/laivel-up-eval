@@ -56,7 +56,22 @@ La règle existe précisément pour ça : une liste qui s'allonge finit par cach
 
 Un traitement dans un seul des deux jeux. La structure est identique chez les deux, et `aidd_docs/tasks/2026_08/2026_08_30_jeu-lie-detector/qa/README.md` établit qu'il s'agit du même motif, pas de deux défauts qui se ressemblent. Une barre d'action collante posée pour un seul jeu introduirait un motif d'interface que le produit n'a nulle part ailleurs.
 
+## Un troisième jeu, relevé le 31/08 : `ambiguity-scan`
+
+`ambiguity-scan` (`g6-2`), `src/games/ambiguity-scan/components/composites/ambiguity-scan-game.tsx`, état de révélation. Mesuré au navigateur piloté pendant la passe de surface de la réparation, session posée sur `g6-2`, à `scrollY = 0` vérifié :
+
+| Gabarit | Avant resserrage | Après resserrage |
+| --- | --- | --- |
+| 1440 × 900 | 136 px | **0 px** — tient |
+| 390 × 844 | 517 px | **364 px** — dépasse toujours |
+
+Le resserrage — `leading-snug` et paddings réduits sur le texte non interactif de la révélation, où la cible tactile de `leading-loose` n'a plus lieu d'être — a suffi sur desktop et pas sur mobile. Ce qui reste est hors de portée d'un correctif local : la coquille partagée du parcours — rampe des groupes repliée à l'horizontale, en-tête « Situation *n* sur *N* », titre du jeu, `LockedAnswerNotice` — pèse à elle seule environ 340 px des 844 px du gabarit mobile, avant le premier caractère du jeu.
+
+Ce jeu **confirme le diagnostic** : trois révélations sur trois jeux différents, trois structures de contenu différentes, le même dépassement mobile. Ce n'est pas la longueur d'une liste qui déborde, c'est la hauteur disponible qui n'existe pas. Une correction jeu par jeu ne peut donc pas y arriver, et la piste à instruire est la compression de la coquille sur petit écran, pas le contenu des jeux.
+
 ## Evidence
 
 - `aidd_docs/tasks/2026_08/2026_08_30_jeu-lie-detector/qa/README.md` — les mesures et leurs captures, aux deux gabarits.
+- `aidd_docs/tasks/2026_08/2026_08_31_jeu-ambiguity-scan/review.md` — la passe de surface qui a produit les mesures du 31/08.
+- `.impeccable/surfaces/ity-scan-components-composites-ambiguity-scan-game-tsx.md` — le dépassement mobile résiduel, assumé par écrit plutôt que masqué.
 - `DESIGN.md`, « La surface d'un jeu » — la règle enfreinte, énoncée pour les vingt jeux.

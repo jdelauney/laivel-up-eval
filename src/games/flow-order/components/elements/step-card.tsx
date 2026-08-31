@@ -7,9 +7,10 @@
  * (`DESIGN.md` §93-94) : `onClick` porte le geste pointeur (saisir ou
  * déposer, décidé par le hook), `onKeyDown` porte le geste clavier
  * (`ArrowUp` / `ArrowDown` déplacent l'étape d'un cran, sans saisie
- * préalable). Les deux chemins produisent le même résultat final — une
- * frise réordonnée — par des gestes distincts, jamais l'un simulant
- * l'autre.
+ * préalable ; `Escape` relâche une carte saisie au pointeur sans la
+ * déplacer, sur le modèle de `practice-plane.tsx`). Les deux chemins
+ * produisent le même résultat final — une frise réordonnée — par des
+ * gestes distincts, jamais l'un simulant l'autre.
  *
  * Un seul état visuel distingue saisi de non saisi, et c'est le seul :
  * `DESIGN.md`, « Un jeu ne dit jamais ce qu'il note » — aucune couleur, coche
@@ -22,6 +23,7 @@ export const StepCard = ({
   onActivate,
   onMoveUp,
   onMoveDown,
+  onRelease,
 }: {
   position: number
   label: string
@@ -29,40 +31,48 @@ export const StepCard = ({
   onActivate: () => void
   onMoveUp: () => void
   onMoveDown: () => void
+  onRelease: () => void
 }) => (
-  <button
-    type="button"
-    aria-pressed={held}
-    // Le nom accessible reste le seul libellé de l'étape : la position,
-    // marquée `aria-hidden`, ne doit jamais s'y concaténer — sur le modèle
-    // de `practice-token.tsx`, explicite plutôt que de compter sur le seul
-    // retrait par `aria-hidden`.
-    aria-label={label}
-    onClick={onActivate}
-    onKeyDown={(event) => {
-      if (event.key === 'ArrowUp') {
-        event.preventDefault()
-        onMoveUp()
-      }
-      if (event.key === 'ArrowDown') {
-        event.preventDefault()
-        onMoveDown()
-      }
-    }}
-    className={`flex w-full items-center gap-3 border px-3 py-2 text-left text-plane-foreground text-sm outline-plane-foreground -outline-offset-2 focus-visible:outline-2 ${
-      held
-        ? 'border-plane-foreground font-medium'
-        : 'border-plane-rule hover:border-plane-foreground'
-    }`}
-  >
-    {/* La position se lit à gauche, sur le modèle du numéro de badge de
-     * `practice-token.tsx` : un repère de lecture, jamais un verdict. */}
-    <span
-      aria-hidden
-      className="w-5 shrink-0 text-left text-plane-foreground/55 text-xs tabular-nums"
+  <li>
+    <button
+      type="button"
+      aria-pressed={held}
+      // Le nom accessible porte ce que l'œil voit : la position jouée et le
+      // libellé, jamais le libellé seul. C'est le seul état que le jeu mesure
+      // et la seule façon pour l'assistance technique de le relire sans
+      // déplacer la carte — voir `flow-timeline.tsx` pour la liste ordonnée
+      // qui porte le reste de la sémantique de position.
+      aria-label={`Position ${position} : ${label}`}
+      onClick={onActivate}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          onMoveUp()
+        }
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          onMoveDown()
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          onRelease()
+        }
+      }}
+      className={`flex w-full items-center gap-3 border px-3 py-2 text-left text-plane-foreground text-sm outline-plane-foreground -outline-offset-2 focus-visible:outline-2 ${
+        held
+          ? 'border-plane-foreground font-medium'
+          : 'border-plane-rule hover:border-plane-foreground'
+      }`}
     >
-      {position}
-    </span>
-    <span className="min-w-0">{label}</span>
-  </button>
+      {/* Repère visuel redondant avec le nom accessible ci-dessus : voyant et
+       * assistance technique lisent désormais tous deux la position. */}
+      <span
+        aria-hidden
+        className="w-5 shrink-0 text-left text-plane-foreground/55 text-xs tabular-nums"
+      >
+        {position}
+      </span>
+      <span className="min-w-0">{label}</span>
+    </button>
+  </li>
 )

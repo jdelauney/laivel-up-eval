@@ -16,6 +16,9 @@ import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { HintBudgetEvaluator } from '@/games/hint-budget/hint-budget.evaluator'
 import { hintBudgetAnswerSchema } from '@/games/hint-budget/schema/answer.schema'
 import { hintBudgetConfigSchema } from '@/games/hint-budget/schema/config.schema'
+import { KeepOrTossEvaluator } from '@/games/keep-or-toss/keep-or-toss.evaluator'
+import { keepOrTossAnswerSchema } from '@/games/keep-or-toss/schema/answer.schema'
+import { keepOrTossConfigSchema } from '@/games/keep-or-toss/schema/config.schema'
 import { LieDetectorEvaluator } from '@/games/lie-detector/lie-detector.evaluator'
 import { lieDetectorAnswerSchema } from '@/games/lie-detector/schema/answer.schema'
 import { lieDetectorConfigSchema } from '@/games/lie-detector/schema/config.schema'
@@ -96,6 +99,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new FlowOrderEvaluator(),
     configSchema: flowOrderConfigSchema,
     answerSchema: flowOrderAnswerSchema,
+  })
+
+  registry.register('keep-or-toss', {
+    evaluator: new KeepOrTossEvaluator(),
+    configSchema: keepOrTossConfigSchema,
+    answerSchema: keepOrTossAnswerSchema,
   })
 
   return registry

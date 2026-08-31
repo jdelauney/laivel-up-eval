@@ -35,19 +35,33 @@ const MIN_STEPS = 6
 
 /**
  * L'écart, en positions, au-delà duquel une étape de l'ordre de présentation
- * est dite « déplacée ». Aligné sur le `maxDisplacement` que le parcours
- * attache à `order-within-displacement` : ce schéma sait qu'il garde ce jeu
- * d'un seul geste — soumettre sans rien toucher — et ce geste ne se mesure
- * qu'à cette tolérance-là.
+ * est dite « déplacée » pour ce garde-fou de chargement.
+ *
+ * **Ce nombre n'est pas, et ne peut pas être, le `maxDisplacement` que le
+ * parcours attache à la règle `order-within-displacement`.** La `config`
+ * d'un jeu et la `rule` d'un critère restent opaques l'une à l'autre par
+ * construction (`core/contracts/course.schema.ts` : « le moteur ne les
+ * interprète jamais ») — ce schéma ne lit jamais `course.json`. Les deux
+ * valeurs coïncident aujourd'hui (`1`), par écriture, pas par lecture : rien
+ * ici ne les compare, et rien ne les rend impossibles à diverger. Le
+ * couplage se ferme ailleurs, à l'endroit où les deux valeurs se
+ * rencontrent effectivement — au chargement du jeu réel, pas à la
+ * validation du schéma — par un test d'intégration qui rejoue l'évaluateur
+ * contre le seuil **déclaré par le parcours** :
+ * `__tests__/integration/config-loading/flow-order-threshold.test.ts`. Ce
+ * schéma reste un plancher de robustesse locale ; ce test est le seul
+ * endroit qui garantit que « ne rien toucher » perd vraiment.
  */
 const DISPLACEMENT_THRESHOLD = 1
 
 /**
  * Nombre minimal d'étapes déplacées de plus d'un cran dans l'ordre de
- * présentation. Une seule étape déplacée suffirait déjà à faire échouer
- * `order-within-displacement`, mais exiger deux évite qu'un corpus futur ne
+ * présentation. Une seule étape déplacée de plus d'une position suffit déjà
+ * à faire échouer `order-within-displacement` — `maxDisplacement` est un
+ * maximum, pas un compte — mais exiger deux ici évite qu'un corpus futur ne
  * s'appuie sur une seule inversion fragile, à la merci d'un renommage
- * d'étape qui la corrigerait par accident.
+ * d'étape qui la corrigerait par accident. C'est une marge de robustesse,
+ * pas la condition nécessaire du refus.
  */
 const MIN_INITIAL_DISPLACED_STEPS = 2
 
@@ -134,7 +148,7 @@ export const flowOrderConfigSchema = baseConfigSchema.superRefine(
       context.addIssue({
         code: 'custom',
         path: ['initialOrder'],
-        message: `« initialOrder » ne déplace que ${displacedCount} étape(s) de plus d'une position, au moins ${MIN_INITIAL_DISPLACED_STEPS} sont requises pour qu'il ne tienne aucun des deux critères`,
+        message: `« initialOrder » ne déplace que ${displacedCount} étape(s) de plus d'une position, au moins ${MIN_INITIAL_DISPLACED_STEPS} sont requises par cette marge de robustesse (une seule étape déplacée suffit déjà à faire échouer « order-within-displacement », mais ce schéma refuse de s'appuyer sur une inversion aussi fragile)`,
       })
     }
   },
