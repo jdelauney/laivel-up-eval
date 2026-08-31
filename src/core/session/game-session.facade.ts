@@ -145,33 +145,6 @@ export class GameSessionFacade {
     return parsed.success ? parsed.data : undefined
   }
 
-  /**
-   * Regarde s'il existe une partie enregistrée, sans l'ouvrir. L'accueil montre
-   * ce qu'elle contient et laisse le joueur choisir : reprendre est une
-   * décision, pas un effet de bord du chargement.
-   */
-  storedRun():
-    | {
-        playerName: string
-        repository: RepositorySlug | undefined
-        submitted: number
-        total: number
-      }
-    | undefined {
-    const snapshot = this.storedSnapshot()
-    if (snapshot === undefined) return undefined
-
-    return {
-      playerName: snapshot.playerName,
-      repository: snapshot.repository,
-      submitted: snapshot.submissions.length,
-      total: this.course.groups.reduce(
-        (sum, group) => sum + group.games.length,
-        0,
-      ),
-    }
-  }
-
   /** Rend `true` quand une session enregistrée a pu être reprise. */
   resume(): boolean {
     const snapshot = this.storedSnapshot()

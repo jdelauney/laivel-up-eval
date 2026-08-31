@@ -6,7 +6,6 @@ import {
   type OnboardingFormInput,
   onboardingFormSchema,
 } from '../../schema/onboarding-form.schema'
-import { ResumeRun } from '../composites/resume-run'
 import { MissingRepositoryNotice } from '../elements/missing-repository-notice'
 import { TextField } from '../elements/text-field'
 
@@ -23,15 +22,7 @@ import { TextField } from '../elements/text-field'
 const emptyForm: OnboardingFormInput = { playerName: '', repository: '' }
 
 export const OnboardingView = () => {
-  const {
-    start,
-    resume,
-    discard,
-    storedRun,
-    rail,
-    totalSituations,
-    estimatedMinutes,
-  } = useOnboarding()
+  const { start, rail, totalSituations, estimatedMinutes } = useOnboarding()
 
   const form = useForm({
     defaultValues: emptyForm,
@@ -53,7 +44,7 @@ export const OnboardingView = () => {
         <p className="mb-3 font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
           Le parcours
         </p>
-        <GroupRail groups={rail} />
+        <GroupRail groups={rail} accessibleName="Forme du parcours" />
       </div>
 
       <div className="flex flex-col gap-8">
@@ -115,25 +106,15 @@ export const OnboardingView = () => {
 
           {/*
            * La durée annoncée sans cette ligne fait passer le parcours pour
-           * un bloc insécable. La reprise existe et elle est testée, mais la
-           * carte de reprise ne s'affiche qu'à qui a déjà joué : le primo-
-           * arrivant, seul lecteur de ce cadre, ne la verrait jamais.
+           * un bloc insécable. La reprise est désormais automatique, au
+           * rechargement — l'accueil ne la montre jamais, seul le primo-
+           * arrivant lit cette page, et c'est le seul endroit qui la lui
+           * annonce.
            */}
           <p className="text-plane-foreground/60 text-sm">
             Une partie interrompue se reprend dans ce navigateur.
           </p>
         </div>
-
-        {storedRun ? (
-          <ResumeRun
-            playerName={storedRun.playerName}
-            repository={storedRun.repository}
-            submitted={storedRun.submitted}
-            total={storedRun.total}
-            onResume={resume}
-            onDiscard={discard}
-          />
-        ) : null}
 
         <form
           className="flex flex-col gap-5"
@@ -146,9 +127,7 @@ export const OnboardingView = () => {
             {(field) => (
               <TextField
                 name={field.name}
-                label={
-                  storedRun ? 'Ou démarrer sous un autre nom' : 'Votre nom'
-                }
+                label="Votre nom"
                 value={field.state.value}
                 invalid={
                   !field.state.meta.isValid && field.state.meta.isTouched

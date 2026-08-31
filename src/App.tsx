@@ -2,6 +2,8 @@ import { AppLayout } from './components/layout/app-layout/app-layout'
 import { CourseView } from './features/group-navigation/components/sections/course-view'
 import { OnboardingView } from './features/onboarding/components/sections/onboarding-view'
 import { SummaryView } from './features/scoring-summary/components/sections/summary-view'
+import { AbandonRun } from './features/session-restore/components/sections/abandon-run'
+import { useRestoreRun } from './features/session-restore/hooks/use-restore-run.hook'
 import { useComposition } from './providers/session-context'
 import { useSessionStore } from './store/session.store'
 
@@ -40,17 +42,17 @@ const InvalidConfig = ({
   </AppLayout>
 )
 
-function App() {
-  const composition = useComposition()
+/**
+ * Ne se rend qu'une fois la configuration acceptée : la reprise au montage
+ * appelle la façade, qui n'existe pas tant que la configuration est refusée.
+ * La séparer d'`App` évite d'appeler ce hook sous condition.
+ */
+const ReadyApp = () => {
+  useRestoreRun()
+
   const screen = useSessionStore((state) => state.screen)
   const progress = useSessionStore((state) => state.progress)
   const identity = useSessionStore((state) => state.identity)
-
-  if (composition.status === 'invalid-config') {
-    return (
-      <InvalidConfig field={composition.field} message={composition.message} />
-    )
-  }
 
   if (screen === 'onboarding') {
     return (
@@ -62,7 +64,17 @@ function App() {
 
   if (screen === 'summary') {
     return (
-      <AppLayout status="parcours terminé" identity={identity}>
+      <AppLayout
+        status="parcours terminé"
+        identity={identity}
+        action={
+          <AbandonRun
+            triggerLabel="Effacer ce verdict"
+            dialogTitle="Effacer ce verdict ?"
+            consequence="Le verdict est acquis ; l'effacer ne laisse aucune trace."
+          />
+        }
+      >
         <SummaryView />
       </AppLayout>
     )
@@ -76,10 +88,29 @@ function App() {
           : undefined
       }
       identity={identity}
+      action={
+        <AbandonRun
+          triggerLabel="Abandonner cette partie"
+          dialogTitle="Abandonner cette partie ?"
+          consequence="Rien ne permet de revenir."
+        />
+      }
     >
       <CourseView />
     </AppLayout>
   )
+}
+
+function App() {
+  const composition = useComposition()
+
+  if (composition.status === 'invalid-config') {
+    return (
+      <InvalidConfig field={composition.field} message={composition.message} />
+    )
+  }
+
+  return <ReadyApp />
 }
 
 export default App

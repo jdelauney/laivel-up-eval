@@ -1,6 +1,6 @@
 ---
 type: story
-status: proposed
+status: done
 parent: aidd_docs/backlog/epics/deroule-du-parcours.md
 source: aidd_docs/tasks/2026_08/2026_08_29_parcours-sept-groupes/brainstorm.md
 order: 3
@@ -16,4 +16,4 @@ order: 3
 
 - Le comportement retenu est le même partout dans le parcours, sans exception par jeu.
 - Si le retour est refusé, il est refusé visiblement, pas par un bouton absent.
-- Cette story attend la décision ouverte de son épic avant d'être construite.
+- Décision retenue le 31/08 : une réponse soumise est définitive, partout, sans exception par jeu. Le refus se rend une fois, au niveau du parcours, comme un affordance désactivé qui porte sa raison à côté de lui.

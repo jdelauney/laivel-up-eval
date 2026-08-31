@@ -40,5 +40,5 @@ Une personne va de l'onboarding au dernier jeu sans jamais se demander où elle 
 | L'invariant de progression du domaine | décision | Déjà implémenté dans l'entité de session |
 | La position vient de l'état, jamais de l'URL | décision | Conséquence de la base relative du déploiement |
 | Sept groupes tiennent sur la rampe, y compris sur mobile | unknown | La rampe passe à l'horizontale au-dessus du contenu ; à éprouver avec sept mondes |
-| Le joueur peut vouloir revenir sur un jeu déjà soumis | unknown | Se tranche avant de construire le déroulé |
+| Le joueur peut vouloir revenir sur un jeu déjà soumis | décision | Tranché le 31/08 : une réponse soumise est définitive, partout, sans exception par jeu. Le refus se rend une seule fois, au niveau du parcours (`CourseView`), comme un affordance désactivé qui porte sa raison — jamais un bouton absent. Aucun jeu ne connaît ni ne peut déroger au verrou |
 | Un parcours long reste supportable sans jalon intermédiaire | assumption | Acceptée ; se vérifie en jouant |

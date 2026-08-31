@@ -1,6 +1,7 @@
 import { GroupRail } from '../../../../components/group-rail/composites/group-rail'
 import { resolveGameComponent } from '../../../../games/register-components'
 import { useCourse } from '../../hooks/use-course.hook'
+import { LockedAnswerNotice } from '../elements/locked-answer-notice'
 
 /**
  * Le parcours ne connaît aucun jeu : il résout le type déclaré dans les
@@ -18,7 +19,10 @@ export const CourseView = () => {
         <p className="mb-3 font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
           {progress?.group?.label ?? 'Le parcours'}
         </p>
-        <GroupRail groups={rail} />
+        <GroupRail
+          groups={rail}
+          accessibleName="Progression dans le parcours"
+        />
       </div>
 
       <div className="flex flex-col gap-8">
@@ -34,6 +38,8 @@ export const CourseView = () => {
                 {game.label}
               </h2>
             </header>
+
+            <LockedAnswerNotice />
 
             <GameSurface
               gameType={game.type}
