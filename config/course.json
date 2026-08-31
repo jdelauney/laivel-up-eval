@@ -1486,56 +1486,88 @@
         },
         {
           "id": "g5-2",
-          "type": "test-bench",
+          "type": "flow-order",
           "label": "Dans quel ordre travaille-t-on ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Remettez ces sept gestes du flux dans l'ordre où ils se jouent réellement sur ce projet.",
+            "steps": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "cadrage",
+                "label": "Le besoin se traduit en objectif mesurable et en périmètre déclaré.",
+                "rank": 1,
+                "note": "Sans cadrage écrit, chaque étape suivante interprète un besoin différent — le désaccord se découvre à la revue, au prix fort."
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "plan",
+                "label": "Le travail se découpe en phases, chacune bornée par un critère d'arrêt.",
+                "rank": 2,
+                "note": "Un plan phasé rend l'avancement vérifiable à chaque étape, plutôt qu'un unique bloc jugé à la toute fin."
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "implementation",
+                "label": "Le code s'écrit phase par phase, jusqu'à ce que ses critères tiennent.",
+                "rank": 3,
+                "note": "Le code qui ne satisfait pas les critères de sa phase ne passe pas à la suivante — c'est la boucle qui sépare une implémentation pilotée d'un jet."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "assertions",
+                "label": "Les vérifications automatiques du projet confirment le comportement obtenu.",
+                "rank": 4,
+                "note": "Une assertion automatique attrape une régression que la seule relecture laisse filer."
+              },
+              {
+                "id": "revue",
+                "label": "Un regard indépendant confronte le résultat produit au plan qui l'a guidé.",
+                "rank": 5,
+                "note": "La revue confronte le résultat au plan, pas au code seul — c'est ce qui la distingue d'une relecture stylistique."
+              },
+              {
+                "id": "pr",
+                "label": "La demande de fusion rassemble le diff, son résumé et son plan de test.",
+                "rank": 6,
+                "note": "La pull request documente ce qui a changé et comment le vérifier, pour qui n'a pas suivi le fil."
+              },
+              {
+                "id": "merge",
+                "label": "Le code rejoint la branche principale.",
+                "rank": 7,
+                "note": "Le merge acte une revue tenue — jamais l'inverse."
               }
+            ],
+            "initialOrder": [
+              "plan",
+              "cadrage",
+              "revue",
+              "implementation",
+              "merge",
+              "assertions",
+              "pr"
             ]
           },
           "criteria": [
             {
               "id": "g5-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La frise est-elle dans l'ordre exact ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "order-exact"
               },
               "mapping": [
                 {
-                  "dimension": "taille",
+                  "dimension": "pilotage-contexte",
                   "weight": 2
                 }
               ]
             },
             {
               "id": "g5-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Chaque étape est-elle à sa place, à une position près ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "order-within-displacement",
+                "maxDisplacement": 1
               },
               "mapping": [
                 {
-                  "dimension": "taille",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
                 }
               ]

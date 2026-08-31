@@ -9,6 +9,7 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { buildPracticeMapAnswer } from '@/games/practice-map/actions/build-practice-map-answer.action'
 import { readPlacements } from '@/games/practice-map/helpers/read-placements.helper'
 import { parsePracticeMapTrace } from '@/games/practice-map/schema/answer.schema'
@@ -313,6 +314,15 @@ describe('practice-map in the course', () => {
      * conforme suffit — ici, aucun segment signalé.
      */
     if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
+    /**
+     * `g5-2` porte flow-order depuis la phase 4 de son propre plan : ce
+     * test ne mesure pas `pilotage-contexte`, donc n'importe quelle trace
+     * conforme suffit — ici, l'ordre de présentation du corpus.
+     */
+    if (game.type === 'flow-order') {
+      const config = flowOrderConfigSchema.parse(game.config)
+      return { orderedIds: config.initialOrder }
+    }
     return { selected: [] }
   }
 

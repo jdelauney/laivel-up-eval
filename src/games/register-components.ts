@@ -2,6 +2,7 @@ import { AmbiguityScanGame } from './ambiguity-scan/components/composites/ambigu
 import { CheckpointsGame } from './checkpoints/components/composites/checkpoints-game'
 import { ConfidenceBetGame } from './confidence-bet/components/composites/confidence-bet-game'
 import { DefectHuntGame } from './defect-hunt/components/composites/defect-hunt-game'
+import { FlowOrderGame } from './flow-order/components/composites/flow-order-game'
 import { HintBudgetGame } from './hint-budget/components/composites/hint-budget-game'
 import { LieDetectorGame } from './lie-detector/components/composites/lie-detector-game'
 import { PracticeMapGame } from './practice-map/components/composites/practice-map-game'
@@ -28,6 +29,7 @@ const components: Record<string, GameComponent> = {
   'hint-budget': HintBudgetGame,
   'practice-map': PracticeMapGame,
   'ambiguity-scan': AmbiguityScanGame,
+  'flow-order': FlowOrderGame,
 }
 
 export const resolveGameComponent = (

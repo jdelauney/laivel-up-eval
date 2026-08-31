@@ -10,6 +10,9 @@ import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.
 import { DefectHuntEvaluator } from '@/games/defect-hunt/defect-hunt.evaluator'
 import { defectHuntAnswerSchema } from '@/games/defect-hunt/schema/answer.schema'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { FlowOrderEvaluator } from '@/games/flow-order/flow-order.evaluator'
+import { flowOrderAnswerSchema } from '@/games/flow-order/schema/answer.schema'
+import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { HintBudgetEvaluator } from '@/games/hint-budget/hint-budget.evaluator'
 import { hintBudgetAnswerSchema } from '@/games/hint-budget/schema/answer.schema'
 import { hintBudgetConfigSchema } from '@/games/hint-budget/schema/config.schema'
@@ -87,6 +90,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new AmbiguityScanEvaluator(),
     configSchema: ambiguityScanConfigSchema,
     answerSchema: ambiguityScanAnswerSchema,
+  })
+
+  registry.register('flow-order', {
+    evaluator: new FlowOrderEvaluator(),
+    configSchema: flowOrderConfigSchema,
+    answerSchema: flowOrderAnswerSchema,
   })
 
   return registry

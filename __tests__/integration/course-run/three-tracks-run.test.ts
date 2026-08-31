@@ -12,6 +12,7 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
 import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
@@ -136,6 +137,15 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
    * soumettre telle quelle.
    */
   if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
+  /**
+   * `g5-2` porte flow-order depuis la phase 4 de son propre plan : ce test
+   * mesure `parallele`, jamais `pilotage-contexte`, donc n'importe quelle
+   * trace conforme suffit — ici, l'ordre de présentation du corpus.
+   */
+  if (game.type === 'flow-order') {
+    const config = flowOrderConfigSchema.parse(game.config)
+    return { orderedIds: config.initialOrder }
+  }
   return { selected: [] }
 }
 
