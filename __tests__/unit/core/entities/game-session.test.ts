@@ -23,7 +23,9 @@ const course: Course = {
               id: 'c1',
               question: 'Critère ?',
               rule: { type: 'test-rule' },
-              mapping: [{ dimension: 'verification', weight: 1 }],
+              mapping: [
+                { dimension: 'verification', weight: 1, evidence: 'measured' },
+              ],
             },
           ],
         },
@@ -37,7 +39,9 @@ const course: Course = {
               id: 'c1',
               question: 'Critère ?',
               rule: { type: 'test-rule' },
-              mapping: [{ dimension: 'verification', weight: 1 }],
+              mapping: [
+                { dimension: 'verification', weight: 1, evidence: 'measured' },
+              ],
             },
           ],
         },
@@ -58,7 +62,9 @@ const course: Course = {
               id: 'c1',
               question: 'Critère ?',
               rule: { type: 'test-rule' },
-              mapping: [{ dimension: 'verification', weight: 1 }],
+              mapping: [
+                { dimension: 'verification', weight: 1, evidence: 'measured' },
+              ],
             },
           ],
         },

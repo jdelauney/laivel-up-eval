@@ -78,21 +78,27 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Assez de pratiques sont-elles situées là où elles se tiennent ?',
     rule: { type: 'placements-in-zone-at-least', threshold: 4 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 2, evidence: 'measured' },
+    ],
   },
   {
     id: 'c2',
     question:
       'Une pratique de haute rigueur a-t-elle été située dans son quadrant ?',
     rule: { type: 'high-rigor-zone-hit' },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
   {
     id: 'c3',
     question:
       'Les pratiques sont-elles situées les unes par rapport aux autres comme elles se tiennent ?',
     rule: { type: 'orderings-held-at-least', threshold: 6 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 
@@ -223,5 +229,80 @@ describe('practice-map evaluator', () => {
     const placements = perfectPlacements()
 
     expect(verdictOf(placements)).toEqual(verdictOf(placements))
+  })
+
+  const attributionsOf = (
+    placements: { practiceId: string; intensity: number; rigor: number }[],
+    rules: readonly Criterion[] = criteria,
+  ) =>
+    evaluator
+      .evaluate({ placements }, config, rules)
+      .map((result) => result.attributions)
+
+  it('names each practice out of its zone by its config label, never by its id', () => {
+    const shifted = config.practices.map((entry) => {
+      const { intensity, rigor } = center(entry.expected)
+      return {
+        practiceId: entry.id,
+        intensity,
+        rigor: Math.max(0, rigor - 0.3),
+      }
+    })
+
+    const [c1Attributions] = attributionsOf(shifted, [criteria[0]])
+
+    expect(c1Attributions).toHaveLength(7)
+    expect(c1Attributions?.every((entry) => !/^p\d$/.test(entry.label))).toBe(
+      true,
+    )
+    // p1 et p7 restent dans leur zone même décalés (bornés à zéro) ; les cinq
+    // autres — dont p2 et p3 — la quittent : c'est ce que `c1` manque.
+    expect(
+      c1Attributions
+        ?.filter((entry) => !entry.held)
+        .map((entry) => entry.label),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Pratique p2'),
+        expect.stringContaining('Pratique p3'),
+      ]),
+    )
+    expect(
+      c1Attributions?.filter((entry) => entry.held).map((entry) => entry.label),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Pratique p1'),
+        expect.stringContaining('Pratique p7'),
+      ]),
+    )
+  })
+
+  it('holds every attribution when all seven practices sit in their own zone', () => {
+    const [c1Attributions] = attributionsOf(perfectPlacements(), [criteria[0]])
+
+    expect(c1Attributions).toHaveLength(7)
+    expect(c1Attributions?.every((entry) => entry.held)).toBe(true)
+  })
+
+  it('lists only the high-rigor-zone practices for the high-rigor criterion', () => {
+    const [c2Attributions] = attributionsOf(perfectPlacements(), [criteria[1]])
+
+    // p5 et p6 sont les deux seules zones en haute rigueur du corpus de test.
+    expect(c2Attributions).toHaveLength(2)
+    expect(c2Attributions?.every((entry) => entry.held)).toBe(true)
+  })
+
+  it('names an unheld ordering by the two practices it compares', () => {
+    const shifted = config.practices.map((entry) => {
+      if (entry.id !== 'p5')
+        return { practiceId: entry.id, ...center(entry.expected) }
+      return { practiceId: 'p5', intensity: 0.05, rigor: 0.05 }
+    })
+
+    const [c3Attributions] = attributionsOf(shifted, [criteria[2]])
+
+    const unheld = c3Attributions?.filter((entry) => !entry.held) ?? []
+    expect(unheld.length).toBeGreaterThan(0)
+    expect(unheld.every((entry) => !/^p\d/.test(entry.label))).toBe(true)
   })
 })

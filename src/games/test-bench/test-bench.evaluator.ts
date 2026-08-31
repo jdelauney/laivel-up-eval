@@ -1,5 +1,6 @@
 import type { Criterion } from '../../core/contracts/course.schema'
 import type {
+  CriterionAttribution,
   CriterionResult,
   GameEvaluator,
 } from '../../core/ports/game-evaluator.interface'
@@ -14,6 +15,25 @@ import { testBenchConfigSchema } from './schema/config.schema'
  * modifier un critère se fait dans le JSON, pas ici. Aucun accès au store,
  * aucun effet de bord, aucune connaissance des autres jeux.
  */
+
+/**
+ * Un geste par proposition, nommée par son texte — jamais son `id` — tenu
+ * selon `holds`. Partagée par les deux règles : l'une porte sur les
+ * propositions attendues, l'autre sur celles qui ne le sont pas.
+ */
+const buildPropositionAttributions = (
+  propositions: readonly { id: string; text: string }[],
+  selected: ReadonlySet<string>,
+  holds: (
+    proposition: { id: string },
+    selected: ReadonlySet<string>,
+  ) => boolean,
+): readonly CriterionAttribution[] =>
+  propositions.map((proposition) => ({
+    label: proposition.text,
+    held: holds(proposition, selected),
+  }))
+
 export class TestBenchEvaluator implements GameEvaluator {
   evaluate(
     answer: unknown,
@@ -31,33 +51,56 @@ export class TestBenchEvaluator implements GameEvaluator {
       (proposition) => !proposition.expected,
     )
 
-    return criteria.map((criterion) => ({
-      criterionId: criterion.id,
-      satisfied: this.applyRule(criterion.rule.type, {
+    return criteria.map((criterion) => {
+      const verdict = this.applyRule(criterion.rule.type, {
         selected,
         expected,
         unexpected,
-      }),
-    }))
+      })
+      return {
+        criterionId: criterion.id,
+        satisfied: verdict.satisfied,
+        attributions: verdict.attributions,
+      }
+    })
   }
 
   private applyRule(
     ruleType: string,
     context: {
       selected: ReadonlySet<string>
-      expected: readonly { id: string }[]
-      unexpected: readonly { id: string }[]
+      expected: readonly { id: string; text: string }[]
+      unexpected: readonly { id: string; text: string }[]
     },
-  ): boolean {
+  ): { satisfied: boolean; attributions: readonly CriterionAttribution[] } {
     switch (ruleType) {
       case 'all-expected-selected':
-        return context.expected.every((proposition) =>
-          context.selected.has(proposition.id),
-        )
+        return {
+          satisfied: context.expected.every((proposition) =>
+            context.selected.has(proposition.id),
+          ),
+          // Chaque proposition vérifiable est tenue quand elle a été
+          // retenue : c'est ce que ce critère juge, une à une.
+          attributions: buildPropositionAttributions(
+            context.expected,
+            context.selected,
+            (proposition, selected) => selected.has(proposition.id),
+          ),
+        }
       case 'no-unexpected-selected':
-        return context.unexpected.every(
-          (proposition) => !context.selected.has(proposition.id),
-        )
+        return {
+          satisfied: context.unexpected.every(
+            (proposition) => !context.selected.has(proposition.id),
+          ),
+          // Le critère mesure une absence — n'avoir retenu aucune
+          // proposition non vérifiable — donc l'entrée tenue est celle
+          // qu'on a bien écartée.
+          attributions: buildPropositionAttributions(
+            context.unexpected,
+            context.selected,
+            (proposition, selected) => !selected.has(proposition.id),
+          ),
+        }
       default:
         throw new Error(
           `la règle « ${ruleType} » n'est pas connue du jeu test-bench`,

@@ -3,6 +3,7 @@ import type { CriterionOutcome } from '../entities/evaluation-result.entity'
 import type {
   DimensionContribution,
   DimensionScore,
+  MeasurementStatus,
   ScoringStrategy,
 } from '../ports/scoring-strategy.interface'
 import { bandFor } from './helpers/dimension-band.helper'
@@ -14,6 +15,21 @@ import { bandFor } from './helpers/dimension-band.helper'
  * Aucune horloge, aucun aléa, aucun accès réseau : deux exécutions sur les
  * mêmes entrées rendent le même résultat, c'est la condition du mode rejeu.
  */
+
+/**
+ * Le statut ne dépend jamais de `satisfied` : il dit comment la valeur a été
+ * obtenue, pas ce qu'elle vaut. Une seule contribution mesurée suffit à
+ * qualifier l'axe de mesuré, même noyée parmi des contributions inférées.
+ */
+const resolveMeasurement = (
+  contributions: readonly DimensionContribution[],
+): MeasurementStatus => {
+  if (contributions.length === 0) return 'unmeasured'
+  const hasDirectMeasurement = contributions.some(
+    (contribution) => contribution.evidence === 'measured',
+  )
+  return hasDirectMeasurement ? 'measured' : 'inferred'
+}
 
 export class WeightedMappingStrategy implements ScoringStrategy {
   score(
@@ -31,6 +47,7 @@ export class WeightedMappingStrategy implements ScoringStrategy {
             gameId: criterion.gameId,
             weight: mapping.weight,
             satisfied: criterion.satisfied,
+            evidence: mapping.evidence,
           })
         }
       }
@@ -50,7 +67,7 @@ export class WeightedMappingStrategy implements ScoringStrategy {
         label: dimension.label,
         score,
         band: possible === 0 ? undefined : bandFor(dimension, score),
-        measured: possible > 0,
+        measurement: resolveMeasurement(contributions),
         earned,
         possible,
         contributions,

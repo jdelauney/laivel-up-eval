@@ -8,10 +8,30 @@
       "weight": 1,
       "scale": [
         { "from": 0, "label": "aucune feature livrée avec l'IA" },
-        { "from": 0.25, "label": "S — peu de complexité" },
-        { "from": 0.5, "label": "M — complexité moyenne" },
-        { "from": 0.75, "label": "L — multi-étapes" },
-        { "from": 1, "label": "XL — multi-modules" }
+        {
+          "from": 0.25,
+          "label": "S — peu de complexité",
+          "action": "Confier une première feature de taille S à l'IA et la mener jusqu'au bout, du besoin au merge.",
+          "proof": "Une PR mergée, entièrement rédigée par l'IA, sur une feature à une seule étape."
+        },
+        {
+          "from": 0.5,
+          "label": "M — complexité moyenne",
+          "action": "Confier une feature de complexité moyenne, touchant plusieurs fichiers, et la mener jusqu'au merge.",
+          "proof": "Une PR mergée qui touche plusieurs fichiers d'une même couche, sans reprise manuelle du plan."
+        },
+        {
+          "from": 0.75,
+          "label": "L — multi-étapes",
+          "action": "Livrer une feature qui traverse plusieurs étapes en une seule passe confiée à l'IA.",
+          "proof": "Une PR qui touche au moins trois fichiers de couches différentes, mergée sans commit correctif."
+        },
+        {
+          "from": 1,
+          "label": "XL — multi-modules",
+          "action": "Confier une feature qui traverse plusieurs modules du projet, du cadrage au merge.",
+          "proof": "Une PR mergée qui touche au moins deux modules distincts, sans reprise manuelle entre eux."
+        }
       ]
     },
     {
@@ -20,10 +40,30 @@
       "weight": 1,
       "scale": [
         { "from": 0, "label": "rien" },
-        { "from": 0.25, "label": "prompts" },
-        { "from": 0.5, "label": "context engineering" },
-        { "from": 0.75, "label": "context engineering, behavior" },
-        { "from": 1, "label": "context engineering, behavior, boucles" }
+        {
+          "from": 0.25,
+          "label": "prompts",
+          "action": "Écrire un prompt réutilisable pour la tâche du jour, au lieu de la décrire à chaque fois.",
+          "proof": "Un prompt versionné dans le dépôt, réutilisé sur au moins deux tâches."
+        },
+        {
+          "from": 0.5,
+          "label": "context engineering",
+          "action": "Poser la mémoire du projet — architecture, conventions, contexte — et la tenir à jour.",
+          "proof": "Un ou plusieurs fichiers de contexte versionnés, modifiés à chaque changement de convention."
+        },
+        {
+          "from": 0.75,
+          "label": "context engineering, behavior",
+          "action": "Versionner des règles et des agents dans le dépôt pour cadrer le comportement de l'IA.",
+          "proof": "Des fichiers de règles ou d'agents versionnés, appliqués à une tâche réelle du projet."
+        },
+        {
+          "from": 1,
+          "label": "context engineering, behavior, boucles",
+          "action": "Poser une boucle de relance qui rejoue l'IA tant qu'une commande du projet échoue.",
+          "proof": "Un script versionné dans le dépôt, et une exécution où il relance au moins deux fois avant le vert."
+        }
       ]
     },
     {
@@ -32,10 +72,30 @@
       "weight": 1,
       "scale": [
         { "from": 0, "label": "aucun travail de l'IA à reprendre" },
-        { "from": 0.25, "label": "après coup, sur la majorité" },
-        { "from": 0.5, "label": "après coup, sur une partie" },
-        { "from": 0.75, "label": "aux étapes clés" },
-        { "from": 1, "label": "jamais" }
+        {
+          "from": 0.25,
+          "label": "après coup, sur la majorité",
+          "action": "Relire chaque livraison de l'IA après coup, même sur la majorité des changements.",
+          "proof": "Un historique de relectures post-livraison, sur plus de la moitié des PR du mois."
+        },
+        {
+          "from": 0.5,
+          "label": "après coup, sur une partie",
+          "action": "Réduire la relecture après coup à une partie ciblée des changements, pas à l'ensemble.",
+          "proof": "Des PR où seule une partie des fichiers modifiés porte une relecture manuelle après coup."
+        },
+        {
+          "from": 0.75,
+          "label": "aux étapes clés",
+          "action": "Ne reprendre le travail de l'IA qu'aux étapes clés — revue de plan, revue avant merge — jamais en continu.",
+          "proof": "Des PR mergées où la seule intervention humaine tracée est une revue de plan ou une revue avant merge."
+        },
+        {
+          "from": 1,
+          "label": "jamais",
+          "action": "Laisser une PR entière passer du besoin au merge sans reprendre une seule ligne écrite par l'IA.",
+          "proof": "Une PR mergée dont l'historique de commits ne porte aucun commit correctif humain."
+        }
       ]
     },
     {
@@ -44,9 +104,24 @@
       "weight": 1,
       "scale": [
         { "from": 0, "label": "aucun" },
-        { "from": 0.33, "label": "1 chantier" },
-        { "from": 0.66, "label": "2 chantiers" },
-        { "from": 1, "label": "3 chantiers et plus" }
+        {
+          "from": 0.33,
+          "label": "1 chantier",
+          "action": "Mener un chantier confié à l'IA jusqu'au merge, sans en ouvrir un second en même temps.",
+          "proof": "Une branche ouverte et mergée, seule en cours sur la période."
+        },
+        {
+          "from": 0.66,
+          "label": "2 chantiers",
+          "action": "Mener deux chantiers de front le même jour, chacun jusqu'au merge.",
+          "proof": "Deux PR mergées la même journée, sur deux branches ouvertes en même temps."
+        },
+        {
+          "from": 1,
+          "label": "3 chantiers et plus",
+          "action": "Mener trois chantiers de front le même jour, chacun jusqu'au merge.",
+          "proof": "Trois PR mergées dans la même journée, sur trois branches ouvertes en même temps."
+        }
       ]
     },
     {
@@ -55,8 +130,18 @@
       "weight": 1,
       "scale": [
         { "from": 0, "label": "chaque tâche est lancée par un humain" },
-        { "from": 0.5, "label": "les agents mènent jusqu'au bout une tâche qu'on leur confie" },
-        { "from": 1, "label": "les agents prennent les tâches et enchaînent les PR" }
+        {
+          "from": 0.5,
+          "label": "les agents mènent jusqu'au bout une tâche qu'on leur confie",
+          "action": "Confier une tâche à un agent et le laisser la mener jusqu'au bout sans reprise manuelle.",
+          "proof": "Une tâche assignée à un agent, dont la PR est mergée sans intervention humaine dans le code."
+        },
+        {
+          "from": 1,
+          "label": "les agents prennent les tâches et enchaînent les PR",
+          "action": "Laisser un agent ouvrir lui-même une PR sur une tâche qu'un humain n'a pas lancée.",
+          "proof": "Une PR dont l'auteur est l'agent, sur une tâche prise dans la file sans intervention."
+        }
       ]
     }
   ],

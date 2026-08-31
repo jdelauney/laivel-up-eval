@@ -4,13 +4,17 @@ import type {
   CriterionRule,
 } from '../../core/contracts/course.schema'
 import type {
+  CriterionAttribution,
   CriterionResult,
   GameEvaluator,
 } from '../../core/ports/game-evaluator.interface'
 import { median } from './helpers/median.helper'
-import { replayTrace } from './helpers/run-simulation.helper'
+import { replayTrace, type TrackState } from './helpers/run-simulation.helper'
 import { parseThreeTracksTrace } from './schema/answer.schema'
-import { threeTracksConfigSchema } from './schema/config.schema'
+import {
+  type ThreeTracksConfig,
+  threeTracksConfigSchema,
+} from './schema/config.schema'
 
 /**
  * Le point de contact public avec le port `GameEvaluator`, d'où sa place à la
@@ -37,29 +41,107 @@ class UnknownRuleError extends Error {
   }
 }
 
+/** Le verdict d'une règle, et le détail attribuable qui l'explique. */
+type RuleVerdict = {
+  satisfied: boolean
+  attributions?: readonly CriterionAttribution[]
+}
+
+/**
+ * Le libellé destiné au joueur de chaque chantier, résolu une seule fois
+ * depuis la config — jamais un `trackId` brut ne doit atteindre une
+ * attribution.
+ */
+const trackLabels = (config: ThreeTracksConfig): ReadonlyMap<string, string> =>
+  new Map(config.tracks.map((track) => [track.id, track.label]))
+
+const resolveTrackLabel = (
+  labels: ReadonlyMap<string, string>,
+  trackId: string,
+): string => {
+  const label = labels.get(trackId)
+  if (label === undefined) {
+    throw new Error(`le chantier « ${trackId} » n'a pas de libellé déclaré`)
+  }
+  return label
+}
+
+/**
+ * Un geste par chantier, nommé par son libellé et son sort : tenu selon
+ * `holds`. Partagée par les deux règles portées par le statut final d'un
+ * chantier — mergé ou non abandonné — jamais par la médiane, qui porte sur
+ * les tours, pas sur les chantiers.
+ */
+const buildTrackAttributions = (
+  tracks: readonly TrackState[],
+  labels: ReadonlyMap<string, string>,
+  holds: (track: TrackState) => boolean,
+): readonly CriterionAttribution[] =>
+  tracks.map((track) => ({
+    label: resolveTrackLabel(labels, track.id),
+    held: holds(track),
+  }))
+
 /**
  * Deux paliers de poids deux, plutôt qu'un seul critère à trois graduations :
  * un critère est un booléen, il ne peut pas porter le cran « zéro, un, ou trois
  * chantiers » de la source à lui seul.
+ *
+ * Chaque chantier est nommé, tenu quand il a été mené jusqu'au merge.
  */
-const mergedAtLeast = (mergedCount: number, rule: CriterionRule): boolean => {
+const mergedAtLeast = (
+  tracks: readonly TrackState[],
+  labels: ReadonlyMap<string, string>,
+  rule: CriterionRule,
+): RuleVerdict => {
   const { threshold } = mergedAtLeastRuleSchema.parse(rule)
-  return mergedCount >= threshold
+  const mergedCount = tracks.filter((track) => track.status === 'merged').length
+  return {
+    satisfied: mergedCount >= threshold,
+    attributions: buildTrackAttributions(
+      tracks,
+      labels,
+      (track) => track.status === 'merged',
+    ),
+  }
 }
 
 /**
  * Le garde-fou : celui qui ouvre quatre chantiers et en laisse mourir trois ne
  * doit satisfaire aucun critère de continuité, quel que soit le nombre de
  * mergés qu'il affiche par ailleurs.
+ *
+ * Le critère mesure une absence — n'avoir laissé mourir aucun chantier —
+ * donc l'entrée tenue est celle qui n'a pas été abandonnée.
  */
-const noAbandonedTrack = (lostCount: number): boolean => lostCount === 0
+const noAbandonedTrack = (
+  tracks: readonly TrackState[],
+  labels: ReadonlyMap<string, string>,
+): RuleVerdict => {
+  const lostCount = tracks.filter((track) => track.status === 'lost').length
+  return {
+    satisfied: lostCount === 0,
+    attributions: buildTrackAttributions(
+      tracks,
+      labels,
+      (track) => track.status !== 'lost',
+    ),
+  }
+}
 
+/**
+ * Sans détail : le verdict tient sur une statistique agrégée — la médiane du
+ * relevé de vivants par tour — qu'aucun chantier pris seul n'explique. Un
+ * chantier a un sort nommé (mergé, perdu) qui s'attribue directement ; un
+ * tour n'a pas d'équivalent aussi direct, sa contribution à une médiane ne
+ * se lit qu'en bloc avec tous les autres.
+ */
 const medianLiveTracksAtLeast = (
   liveTracksPerTurn: readonly number[],
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = medianLiveTracksAtLeastRuleSchema.parse(rule)
-  return median(liveTracksPerTurn) >= threshold
+  return { satisfied: median(liveTracksPerTurn) >= threshold }
 }
 
 export class ThreeTracksEvaluator implements GameEvaluator {
@@ -80,33 +162,34 @@ export class ThreeTracksEvaluator implements GameEvaluator {
       parsedConfig,
       trace.turns.map((turn) => ({ allocations: turn.allocations })),
     )
-    const mergedCount = tracks.filter(
-      (track) => track.status === 'merged',
-    ).length
-    const lostCount = tracks.filter((track) => track.status === 'lost').length
+    const labels = trackLabels(parsedConfig)
 
-    return criteria.map((criterion) => ({
-      criterionId: criterion.id,
-      satisfied: this.applyRule(
+    return criteria.map((criterion) => {
+      const verdict = this.applyRule(
         criterion.rule,
-        mergedCount,
-        lostCount,
+        tracks,
+        labels,
         liveTracksPerTurn,
-      ),
-    }))
+      )
+      return {
+        criterionId: criterion.id,
+        satisfied: verdict.satisfied,
+        attributions: verdict.attributions,
+      }
+    })
   }
 
   private applyRule(
     rule: CriterionRule,
-    mergedCount: number,
-    lostCount: number,
+    tracks: readonly TrackState[],
+    labels: ReadonlyMap<string, string>,
     liveTracksPerTurn: readonly number[],
-  ): boolean {
+  ): RuleVerdict {
     switch (rule.type) {
       case 'merged-at-least':
-        return mergedAtLeast(mergedCount, rule)
+        return mergedAtLeast(tracks, labels, rule)
       case 'no-abandoned-track':
-        return noAbandonedTrack(lostCount)
+        return noAbandonedTrack(tracks, labels)
       case 'median-live-tracks-at-least':
         return medianLiveTracksAtLeast(liveTracksPerTurn, rule)
       default:

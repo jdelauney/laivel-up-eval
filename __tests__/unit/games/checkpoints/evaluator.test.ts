@@ -13,7 +13,9 @@ type TestDefect = { id: string; burstsAt: string; factor: number }
 
 const stage = (id: string, corriger: number, defect?: TestDefect) => ({
   id,
-  label: id,
+  // Distinct de l'id : les attributions doivent résoudre ce libellé, jamais
+  // l'id brut, et un fixture où les deux coïncident ne le prouverait pas.
+  label: `Étape ${id}`,
   output: { prose: `sortie de l'IA pour ${id}` },
   costs: { 'laisser-passer': 0, corriger, 're-cadrer': corriger + 1 },
   defect,
@@ -46,19 +48,19 @@ const criteria: Criterion[] = [
     question:
       'La reprise la plus lourde a-t-elle eu lieu avant la génération ?',
     rule: { type: 'heaviest-recovery-before', stage: 'generation' },
-    mapping: [{ dimension: 'intervention', weight: 3 }],
+    mapping: [{ dimension: 'intervention', weight: 3, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: "Aucune reprise n'a-t-elle eu lieu après la revue ?",
     rule: { type: 'no-recovery-after', stage: 'revue' },
-    mapping: [{ dimension: 'intervention', weight: 3 }],
+    mapping: [{ dimension: 'intervention', weight: 3, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: "L'IA a-t-elle produit l'essentiel du livrable ?",
     rule: { type: 'ai-produced-most-of-deliverable', threshold: 0.5 },
-    mapping: [{ dimension: 'intervention', weight: 1 }],
+    mapping: [{ dimension: 'intervention', weight: 1, evidence: 'measured' }],
   },
 ]
 
@@ -218,5 +220,76 @@ describe('checkpoints evaluator', () => {
     expect(() =>
       evaluator.evaluate(traceOf(EARLY_FRAMING), config, misaimed),
     ).toThrow('recette')
+  })
+
+  it('names each recovery by its stage label, never by its id, held when it lands before the limit', () => {
+    const [c1] = evaluator.evaluate(traceOf(EARLY_FRAMING), config, [
+      criteria[0],
+    ])
+
+    expect(c1.attributions).toEqual([
+      { label: 'Étape cadrage', held: true },
+      { label: 'Étape plan', held: true },
+    ])
+  })
+
+  it('marks a late heaviest recovery as unheld while an earlier lighter one stays held', () => {
+    const [c1] = evaluator.evaluate(
+      traceOf(withChoices({ 0: 'corriger', 5: 'corriger' })),
+      config,
+      [criteria[0]],
+    )
+
+    expect(c1.attributions).toEqual([
+      { label: 'Étape cadrage', held: true },
+      { label: 'Étape merge', held: false },
+    ])
+  })
+
+  it('holds the no-recovery attribution on the untouched stages that follow the review, on the absence pattern', () => {
+    const [c2] = evaluator.evaluate(traceOf(EARLY_FRAMING), config, [
+      criteria[1],
+    ])
+
+    expect(c2.attributions).toEqual([
+      { label: 'Étape tests', held: true },
+      { label: 'Étape merge', held: true },
+    ])
+  })
+
+  it('misses the no-recovery attribution on a stage reopened after the review', () => {
+    const [c2] = evaluator.evaluate(
+      traceOf(withChoices({ 4: 'corriger' })),
+      config,
+      [criteria[1]],
+    )
+
+    expect(c2.attributions).toEqual([
+      { label: 'Étape tests', held: false },
+      { label: 'Étape merge', held: true },
+    ])
+  })
+
+  it('names every stage for the deliverable criterion, held when the AI kept it untouched', () => {
+    const [c3] = evaluator.evaluate(traceOf(EARLY_FRAMING), config, [
+      criteria[2],
+    ])
+
+    expect(c3.attributions).toHaveLength(6)
+    expect(c3.attributions?.filter((entry) => entry.held)).toHaveLength(4)
+    expect(
+      c3.attributions?.every((entry) => entry.label.startsWith('Étape ')),
+    ).toBe(true)
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const [first] = evaluator.evaluate(traceOf(EARLY_FRAMING), config, [
+      criteria[0],
+    ])
+    const [second] = evaluator.evaluate(traceOf(EARLY_FRAMING), config, [
+      criteria[0],
+    ])
+
+    expect(first.attributions).toEqual(second.attributions)
   })
 })

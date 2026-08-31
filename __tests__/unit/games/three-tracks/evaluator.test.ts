@@ -13,7 +13,9 @@ import { ThreeTracksEvaluator } from '@/games/three-tracks/three-tracks.evaluato
 
 const track = (id: string, work: number) => ({
   id,
-  label: id,
+  // Distinct de l'id : les attributions doivent résoudre ce libellé, jamais
+  // l'id brut, et un fixture où les deux coïncident ne le prouverait pas.
+  label: `Chantier ${id}`,
   brief: `chantier ${id}`,
   work,
 })
@@ -45,25 +47,25 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Au moins un chantier a-t-il été mergé ?',
     rule: { type: 'merged-at-least', threshold: 1 },
-    mapping: [{ dimension: 'parallele', weight: 2 }],
+    mapping: [{ dimension: 'parallele', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: 'Au moins trois chantiers ont-ils été mergés ?',
     rule: { type: 'merged-at-least', threshold: 3 },
-    mapping: [{ dimension: 'parallele', weight: 2 }],
+    mapping: [{ dimension: 'parallele', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: "Aucun chantier n'a-t-il été abandonné ?",
     rule: { type: 'no-abandoned-track' },
-    mapping: [{ dimension: 'parallele', weight: 1 }],
+    mapping: [{ dimension: 'parallele', weight: 1, evidence: 'measured' }],
   },
   {
     id: 'c4',
     question: 'La médiane des chantiers vivants atteint-elle deux ?',
     rule: { type: 'median-live-tracks-at-least', threshold: 2 },
-    mapping: [{ dimension: 'parallele', weight: 1 }],
+    mapping: [{ dimension: 'parallele', weight: 1, evidence: 'measured' }],
   },
 ]
 
@@ -217,5 +219,48 @@ describe('three-tracks evaluator', () => {
     expect(() =>
       evaluator.evaluate(traceOf(THREE_MERGED_NO_LOSS), config, unknown),
     ).toThrow('three-tracks')
+  })
+
+  const attributionsOf = (
+    turns: readonly Allocation[][],
+    rules: readonly Criterion[] = criteria,
+  ) =>
+    evaluator
+      .evaluate(traceOf(turns), config, rules)
+      .map((result) => result.attributions)
+
+  it('names each track by its config label, never by its id, held when merged', () => {
+    const [merged] = attributionsOf(THREE_MERGED_ONE_LOST, [criteria[0]])
+
+    expect(merged).toEqual([
+      { label: 'Chantier a', held: true },
+      { label: 'Chantier b', held: true },
+      { label: 'Chantier c', held: true },
+      { label: 'Chantier d', held: false },
+    ])
+  })
+
+  it('holds the no-abandoned-track entry on a track that never died, on the absence pattern', () => {
+    const [, , guardRail] = attributionsOf(ONE_MERGED_THREE_ABANDONED)
+
+    expect(guardRail).toEqual([
+      { label: 'Chantier a', held: true },
+      { label: 'Chantier b', held: false },
+      { label: 'Chantier c', held: false },
+      { label: 'Chantier d', held: false },
+    ])
+  })
+
+  it('forces no detail on the median criterion: an aggregate over turns, not an attributable track', () => {
+    const [, , , median] = attributionsOf(THREE_MERGED_NO_LOSS)
+
+    expect(median).toBeUndefined()
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const [first] = attributionsOf(THREE_MERGED_ONE_LOST, [criteria[0]])
+    const [second] = attributionsOf(THREE_MERGED_ONE_LOST, [criteria[0]])
+
+    expect(first).toEqual(second)
   })
 })
