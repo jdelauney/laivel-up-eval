@@ -304,4 +304,88 @@ describe('hint-budget evaluator', () => {
 
     expect(verdictOf(attempts)).toEqual(verdictOf(attempts))
   })
+
+  const attributionsOf = (
+    attempts: ReturnType<typeof attempt>[],
+    rules: readonly Criterion[] = criteria,
+  ) =>
+    evaluator
+      .evaluate({ attempts }, config, rules)
+      .map((result) => result.attributions)
+
+  it('names each situation by its symptom and the hints bought on it, never by an id, held when frugal', () => {
+    const [frugal] = attributionsOf(
+      [
+        // Résolue en achetant un indice sur cinq : frugale.
+        attempt('s1', { boughtHintIds: ['s1-h1'] }),
+        // Résolue, mais en achetant trois indices sur cinq : pas frugale.
+        attempt('s2', { boughtHintIds: ['s2-h1', 's2-h2', 's2-h3'] }),
+        // Jamais résolue : pas frugale, quel que soit le nombre d'indices.
+        attempt('s3', { boughtHintIds: [], cutCauseId: 's3-c1' }),
+      ],
+      [criteria[0]],
+    )
+
+    expect(frugal).toEqual([
+      {
+        label: 'Symptôme s1. — indice(s) acheté(s) : Indice s1-h1.',
+        held: true,
+      },
+      {
+        label:
+          'Symptôme s2. — indice(s) acheté(s) : Indice s2-h1., Indice s2-h2., Indice s2-h3.',
+        held: false,
+      },
+      { label: 'Symptôme s3. — aucun indice acheté', held: false },
+    ])
+  })
+
+  it('names each situation by its symptom alone for the order criterion, ignoring the hints bought', () => {
+    const [, order] = attributionsOf(
+      [
+        attempt('s1', { framing: groundedFramingOf('s1', 0) }),
+        attempt('s2'),
+        attempt('s3'),
+      ],
+      criteria,
+    )
+
+    expect(order).toEqual([
+      { label: 'Symptôme s1.', held: true },
+      { label: 'Symptôme s2.', held: false },
+      { label: 'Symptôme s3.', held: false },
+    ])
+  })
+
+  it('names each situation by its symptom alone for the grounding criterion', () => {
+    const [, , grounding] = attributionsOf(
+      [
+        attempt('s1', {
+          boughtHintIds: ['s1-h1'],
+          framing: groundedFramingOf('s1', 1),
+        }),
+        attempt('s2'),
+        attempt('s3'),
+      ],
+      criteria,
+    )
+
+    expect(grounding).toEqual([
+      { label: 'Symptôme s1.', held: true },
+      { label: 'Symptôme s2.', held: false },
+      { label: 'Symptôme s3.', held: false },
+    ])
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const attempts = [
+      attempt('s1', { boughtHintIds: ['s1-h1'] }),
+      attempt('s2'),
+      attempt('s3'),
+    ]
+
+    expect(attributionsOf(attempts, [criteria[0]])).toEqual(
+      attributionsOf(attempts, [criteria[0]]),
+    )
+  })
 })

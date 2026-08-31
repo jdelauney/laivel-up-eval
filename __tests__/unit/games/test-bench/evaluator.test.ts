@@ -38,10 +38,7 @@ describe('test bench evaluator', () => {
       criteria,
     )
 
-    expect(results).toEqual([
-      { criterionId: 'c1', satisfied: true },
-      { criterionId: 'c2', satisfied: true },
-    ])
+    expect(results.map((result) => result.satisfied)).toEqual([true, true])
   })
 
   it('fails the completeness criterion when an expected proposition is missing', () => {
@@ -90,5 +87,44 @@ describe('test bench evaluator', () => {
     expect(() =>
       evaluator.evaluate({ selected: [] }, config, unknownRule),
     ).toThrow('invented-rule')
+  })
+
+  it('names each expected proposition by its config text, never by its id, held when selected', () => {
+    const [c1] = evaluator.evaluate({ selected: ['p1'] }, config, criteria)
+
+    expect(c1.attributions).toEqual([
+      { label: 'Vérifiable', held: true },
+      { label: 'Vérifiable aussi', held: false },
+    ])
+  })
+
+  it('holds the unexpected proposition entry when it was correctly left out, on the absence pattern', () => {
+    const [, c2] = evaluator.evaluate(
+      { selected: ['p1', 'p3'] },
+      config,
+      criteria,
+    )
+
+    expect(c2.attributions).toEqual([{ label: 'Faux', held: true }])
+  })
+
+  it('misses the unexpected proposition entry when it was wrongly selected', () => {
+    const [, c2] = evaluator.evaluate(
+      { selected: ['p1', 'p2', 'p3'] },
+      config,
+      criteria,
+    )
+
+    expect(c2.attributions).toEqual([{ label: 'Faux', held: false }])
+  })
+
+  it('renders the same attributions on two evaluations of the same answer', () => {
+    const answer = { selected: ['p1'] }
+
+    expect(
+      evaluator.evaluate(answer, config, criteria).map((r) => r.attributions),
+    ).toEqual(
+      evaluator.evaluate(answer, config, criteria).map((r) => r.attributions),
+    )
   })
 })

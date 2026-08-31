@@ -4,6 +4,7 @@ import type {
   CriterionRule,
 } from '../../core/contracts/course.schema'
 import type {
+  CriterionAttribution,
   CriterionResult,
   GameEvaluator,
 } from '../../core/ports/game-evaluator.interface'
@@ -11,8 +12,12 @@ import {
   readSituations,
   type SituationReading,
 } from './helpers/read-situations.helper'
+import type { Attempt, HintBudgetAnswer } from './schema/answer.schema'
 import { parseHintBudgetTrace } from './schema/answer.schema'
-import { hintBudgetConfigSchema } from './schema/config.schema'
+import {
+  type HintBudgetConfig,
+  hintBudgetConfigSchema,
+} from './schema/config.schema'
 
 /**
  * Le point de contact public avec le port `GameEvaluator`, d'où sa place à
@@ -39,6 +44,81 @@ class UnknownRuleError extends Error {
   }
 }
 
+/** Le verdict d'une règle, et le détail attribuable qui l'explique. */
+type RuleVerdict = {
+  satisfied: boolean
+  attributions?: readonly CriterionAttribution[]
+}
+
+/**
+ * Le libellé destiné au joueur de chaque situation, résolu une seule fois
+ * depuis la config — jamais un `situationId` brut ne doit atteindre une
+ * attribution.
+ */
+const situationSymptoms = (
+  config: HintBudgetConfig,
+): ReadonlyMap<string, string> =>
+  new Map(
+    config.situations.map((situation) => [situation.id, situation.symptom]),
+  )
+
+const resolveSituationSymptom = (
+  symptoms: ReadonlyMap<string, string>,
+  situationId: string,
+): string => {
+  const symptom = symptoms.get(situationId)
+  if (symptom === undefined) {
+    throw new Error(
+      `la situation « ${situationId} » n'a pas de symptôme déclaré`,
+    )
+  }
+  return symptom
+}
+
+/**
+ * Les libellés des indices achetés sur une situation, dans l'ordre d'achat —
+ * ce sur quoi chaque indice porte, jamais son contenu, exactement ce que la
+ * config rend visible avant l'achat.
+ */
+const boughtHintLabels = (
+  config: HintBudgetConfig,
+  attemptBySituationId: ReadonlyMap<string, Attempt>,
+  situationId: string,
+): readonly string[] => {
+  const situation = config.situations.find((entry) => entry.id === situationId)
+  const attempt = attemptBySituationId.get(situationId)
+  if (situation === undefined || attempt === undefined) {
+    throw new Error(`la situation « ${situationId} » n'a pas d'indices à lire`)
+  }
+
+  const hintLabelById = new Map(
+    situation.hints.map((hint) => [hint.id, hint.label]),
+  )
+  return attempt.boughtHintIds.map((hintId) => {
+    const label = hintLabelById.get(hintId)
+    if (label === undefined) {
+      throw new Error(`l'indice « ${hintId} » n'a pas de libellé déclaré`)
+    }
+    return label
+  })
+}
+
+/**
+ * Un geste par situation, nommée par son symptôme : tenu selon `holds`.
+ * Partagée par les deux règles qui ne portent que sur une seule dimension —
+ * l'ordre pour l'une, le fondement pour l'autre — sans mélanger les indices
+ * achetés, qui ne les concernent pas.
+ */
+const buildSituationAttributions = (
+  situations: readonly SituationReading[],
+  symptoms: ReadonlyMap<string, string>,
+  holds: (situation: SituationReading) => boolean,
+): readonly CriterionAttribution[] =>
+  situations.map((situation) => ({
+    label: resolveSituationSymptom(symptoms, situation.situationId),
+    held: holds(situation),
+  }))
+
 /**
  * Le nombre de situations résolues en achetant strictement moins que
  * `share` de leurs indices atteint au moins `threshold`.
@@ -48,16 +128,57 @@ class UnknownRuleError extends Error {
  * exigés : sans le premier, un joueur qui n'achète rien et se trompe
  * partout serait le plus frugal du parcours.
  */
-const frugalSolvesAtLeast = (
+const isFrugalSolve = (situation: SituationReading, share: number): boolean =>
+  situation.solved && situation.hintsBought < situation.hintsTotal * share
+
+/**
+ * Nomme chaque situation ET les indices qu'elle y a achetés — ce que la
+ * frugalité mesure conjointement, contrairement à l'ordre ou au fondement du
+ * cadrage, qui ne portent que sur une seule dimension chacun.
+ */
+const buildFrugalAttributions = (
+  config: HintBudgetConfig,
+  attemptBySituationId: ReadonlyMap<string, Attempt>,
   situations: readonly SituationReading[],
+  symptoms: ReadonlyMap<string, string>,
+  share: number,
+): readonly CriterionAttribution[] =>
+  situations.map((situation) => {
+    const symptom = resolveSituationSymptom(symptoms, situation.situationId)
+    const hintLabels = boughtHintLabels(
+      config,
+      attemptBySituationId,
+      situation.situationId,
+    )
+    const label =
+      hintLabels.length === 0
+        ? `${symptom} — aucun indice acheté`
+        : `${symptom} — indice(s) acheté(s) : ${hintLabels.join(', ')}`
+
+    return { label, held: isFrugalSolve(situation, share) }
+  })
+
+const frugalSolvesAtLeast = (
+  config: HintBudgetConfig,
+  attemptBySituationId: ReadonlyMap<string, Attempt>,
+  situations: readonly SituationReading[],
+  symptoms: ReadonlyMap<string, string>,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { share, threshold } = frugalRuleSchema.parse(rule)
-  const frugalSolves = situations.filter(
-    (situation) =>
-      situation.solved && situation.hintsBought < situation.hintsTotal * share,
+  const frugalSolves = situations.filter((situation) =>
+    isFrugalSolve(situation, share),
   ).length
-  return frugalSolves >= threshold
+  return {
+    satisfied: frugalSolves >= threshold,
+    attributions: buildFrugalAttributions(
+      config,
+      attemptBySituationId,
+      situations,
+      symptoms,
+      share,
+    ),
+  }
 }
 
 /**
@@ -73,11 +194,20 @@ const frugalSolvesAtLeast = (
  * règles, chacune sur une seule dimension.
  */
 const framedFirstAtLeast = (
+  situations: readonly SituationReading[],
+  symptoms: ReadonlyMap<string, string>,
   framedFirstCount: number,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = framedFirstRuleSchema.parse(rule)
-  return framedFirstCount >= threshold
+  return {
+    satisfied: framedFirstCount >= threshold,
+    attributions: buildSituationAttributions(
+      situations,
+      symptoms,
+      (situation) => situation.framedFirst,
+    ),
+  }
 }
 
 /**
@@ -87,11 +217,20 @@ const framedFirstAtLeast = (
  * `SituationReading.framingGrounded`. `g2-1-c3`.
  */
 const groundedFramingsAtLeast = (
+  situations: readonly SituationReading[],
+  symptoms: ReadonlyMap<string, string>,
   groundedFramingCount: number,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = groundedRuleSchema.parse(rule)
-  return groundedFramingCount >= threshold
+  return {
+    satisfied: groundedFramingCount >= threshold,
+    attributions: buildSituationAttributions(
+      situations,
+      symptoms,
+      (situation) => situation.framingGrounded,
+    ),
+  }
 }
 
 export class HintBudgetEvaluator implements GameEvaluator {
@@ -106,36 +245,69 @@ export class HintBudgetEvaluator implements GameEvaluator {
     // Les situations sont lues une seule fois : les trois règles lisent la
     // même lecture, jamais un recalcul propre à chacune.
     const reading = readSituations(parsedConfig, trace)
+    const symptoms = situationSymptoms(parsedConfig)
+    const attemptBySituationId = attemptsBySituationId(trace)
 
     const verdictInputs: VerdictInputs = {
+      config: parsedConfig,
+      attemptBySituationId,
       situations: reading.situations,
+      symptoms,
       framedFirstCount: reading.framedFirstCount,
       groundedFramingCount: reading.groundedFramingCount,
     }
 
-    return criteria.map((criterion) => ({
-      criterionId: criterion.id,
-      satisfied: this.applyRule(criterion.rule, verdictInputs),
-    }))
+    return criteria.map((criterion) => {
+      const verdict = this.applyRule(criterion.rule, verdictInputs)
+      return {
+        criterionId: criterion.id,
+        satisfied: verdict.satisfied,
+        attributions: verdict.attributions,
+      }
+    })
   }
 
-  private applyRule(rule: CriterionRule, inputs: VerdictInputs): boolean {
+  private applyRule(rule: CriterionRule, inputs: VerdictInputs): RuleVerdict {
     switch (rule.type) {
       case 'frugal-solves-at-least':
-        return frugalSolvesAtLeast(inputs.situations, rule)
+        return frugalSolvesAtLeast(
+          inputs.config,
+          inputs.attemptBySituationId,
+          inputs.situations,
+          inputs.symptoms,
+          rule,
+        )
       case 'framed-first-at-least':
-        return framedFirstAtLeast(inputs.framedFirstCount, rule)
+        return framedFirstAtLeast(
+          inputs.situations,
+          inputs.symptoms,
+          inputs.framedFirstCount,
+          rule,
+        )
       case 'grounded-framings-at-least':
-        return groundedFramingsAtLeast(inputs.groundedFramingCount, rule)
+        return groundedFramingsAtLeast(
+          inputs.situations,
+          inputs.symptoms,
+          inputs.groundedFramingCount,
+          rule,
+        )
       default:
         throw new UnknownRuleError(rule.type)
     }
   }
 }
 
+const attemptsBySituationId = (
+  trace: HintBudgetAnswer,
+): ReadonlyMap<string, Attempt> =>
+  new Map(trace.attempts.map((attempt) => [attempt.situationId, attempt]))
+
 /** Tout ce qu'une règle peut lire, et rien de plus. */
 type VerdictInputs = {
+  config: HintBudgetConfig
+  attemptBySituationId: ReadonlyMap<string, Attempt>
   situations: readonly SituationReading[]
+  symptoms: ReadonlyMap<string, string>
   framedFirstCount: number
   groundedFramingCount: number
 }

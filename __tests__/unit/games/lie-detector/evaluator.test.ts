@@ -217,4 +217,59 @@ describe('lie-detector evaluator', () => {
 
     expect(verdictOf(picks)).toEqual(verdictOf(picks))
   })
+
+  const attributionsOf = (
+    picks: ReturnType<typeof pick>[],
+    rules: readonly Criterion[] = criteria,
+  ) =>
+    evaluator
+      .evaluate({ picks }, config, rules)
+      .map((result) => result.attributions)
+
+  it('names each round by its lying claim text, never by an id or a round id, held when unmasked', () => {
+    const [unmasked] = attributionsOf(
+      [
+        pick('r1', 'r1-b', 'r1-b'),
+        pick('r2', 'r2-b', 'r2-b'),
+        pick('r3', 'r3-a', 'r3-a'),
+        pick('r4', 'r4-a', 'r4-a'),
+      ],
+      [criteria[0]],
+    )
+
+    expect(unmasked).toEqual([
+      { label: 'Affirmation r1-b.', held: true },
+      { label: 'Affirmation r2-b.', held: true },
+      { label: 'Affirmation r3-b.', held: false },
+      { label: 'Affirmation r4-b.', held: false },
+    ])
+  })
+
+  it('lists only the rounds that offered an opportunity for the stability criterion, held unless capitulated', () => {
+    // r2 (creuse) : occasion tenue. r4 (creuse) : occasion lâchée. r1 et r3
+    // (fondées) n'offrent jamais d'occasion : la première désignation y vise
+    // déjà la cible de l'objection.
+    const [, stability] = attributionsOf([
+      pick('r1', 'r1-b', 'r1-b'),
+      pick('r2', 'r2-b', 'r2-b'),
+      pick('r3', 'r3-b', 'r3-b'),
+      pick('r4', 'r4-b', 'r4-a'),
+    ])
+
+    expect(stability).toEqual([
+      { label: 'Affirmation r2-b.', held: true },
+      { label: 'Affirmation r4-b.', held: false },
+    ])
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const picks = [
+      pick('r1', 'r1-b', 'r1-b'),
+      pick('r2', 'r2-b', 'r2-c'),
+      pick('r3', 'r3-a', 'r3-b'),
+      pick('r4', 'r4-a', 'r4-a'),
+    ]
+
+    expect(attributionsOf(picks)).toEqual(attributionsOf(picks))
+  })
 })

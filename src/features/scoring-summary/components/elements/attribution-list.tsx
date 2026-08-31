@@ -1,17 +1,22 @@
 import type { CriterionAttribution } from '@/core/ports/game-evaluator.interface'
 
 /**
- * Les gestes qui ont produit un verdict de critère, un par ligne. Tenu et
- * manqué se distinguent par un mot et une forme — jamais par la seule
+ * Les gestes qui ont produit un verdict de critère, un par ligne. Les deux
+ * états se distinguent par un mot et une forme — jamais par la seule
  * couleur, même règle que `MeasurementMark` : un point plein contre un point
- * creux, et le mot répété à côté, jamais laissé à la seule couleur du point.
+ * creux, et le mot à côté.
+ *
+ * Le mot n'est pas celui du critère. « tenu » et « manqué » disent le verdict
+ * d'un critère ; un geste, lui, est acquis ou ne l'est pas. Employer le même
+ * couple aux deux niveaux les rendait indiscernables à la lecture, alors
+ * qu'ils sont imbriqués l'un dans l'autre.
  */
 type AttributionListProps = Readonly<{
   attributions: readonly CriterionAttribution[]
 }>
 
 export const AttributionList = ({ attributions }: AttributionListProps) => (
-  <ul className="flex flex-col gap-1.5 pl-5">
+  <ul aria-label="Les gestes en cause" className="flex flex-col gap-1.5 pl-5">
     {attributions.map((attribution) => (
       <li key={attribution.label} className="flex items-baseline gap-2 text-sm">
         <span
@@ -28,7 +33,7 @@ export const AttributionList = ({ attributions }: AttributionListProps) => (
             attribution.held ? 'text-nominal' : 'text-missed'
           }`}
         >
-          {attribution.held ? 'tenu' : 'manqué'}
+          {attribution.held ? 'acquis' : 'pas acquis'}
         </span>
       </li>
     ))}

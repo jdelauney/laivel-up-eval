@@ -193,4 +193,57 @@ describe('defect-hunt evaluator', () => {
 
     expect(results[0].satisfied).toBe(false)
   })
+
+  const attributionsOf = (
+    markedLines: number[],
+    elapsedSeconds: number,
+    rules: readonly Criterion[] = criteria,
+  ) =>
+    evaluator
+      .evaluate(trace(markedLines, elapsedSeconds), config, rules)
+      .map((result) => result.attributions)
+
+  it('names each declared defect by its line, never by its id, and each false positive line too', () => {
+    const [netScore] = attributionsOf([2, 4, 6, 8, 10, 1], 100, [criteria[0]])
+
+    expect(netScore).toEqual([
+      { label: 'Ligne 2', held: true },
+      { label: 'Ligne 4', held: true },
+      { label: 'Ligne 6', held: true },
+      { label: 'Ligne 8', held: true },
+      { label: 'Ligne 10', held: true },
+      { label: 'Ligne 1', held: false },
+    ])
+  })
+
+  it('holds a found-ratio entry on a marked defect and misses it on a missed one', () => {
+    const [, ratio] = attributionsOf([2, 4, 8, 10], 100)
+
+    expect(ratio).toEqual([
+      { label: 'Ligne 2', held: true },
+      { label: 'Ligne 4', held: true },
+      { label: 'Ligne 6', held: false },
+      { label: 'Ligne 8', held: true },
+      { label: 'Ligne 10', held: true },
+    ])
+  })
+
+  it('lists only the defects of the targeted nature for the kinds criterion', () => {
+    const [, , kinds] = attributionsOf([2, 4, 8, 10], 100)
+
+    expect(kinds).toEqual([{ label: 'Ligne 6', held: false }])
+  })
+
+  it('forces no detail on the time budget criterion: it is a single measurement, not an attributable set', () => {
+    const [, , , time] = attributionsOf([2, 4, 6, 8, 10], 100)
+
+    expect(time).toBeUndefined()
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const [first] = attributionsOf([2, 4, 6, 8, 10, 1], 100, [criteria[0]])
+    const [second] = attributionsOf([2, 4, 6, 8, 10, 1], 100, [criteria[0]])
+
+    expect(first).toEqual(second)
+  })
 })

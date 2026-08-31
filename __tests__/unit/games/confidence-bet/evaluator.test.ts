@@ -13,7 +13,9 @@ import {
 
 const snippet = (id: string, nature: 'sound' | 'flawed' | 'undecidable') => ({
   id,
-  label: id,
+  // Distinct de l'id : les attributions doivent résoudre ce libellé, jamais
+  // l'id brut, et un fixture où les deux coïncident ne le prouverait pas.
+  label: `Extrait ${id}`,
   language: 'ts',
   code: `const ${id} = 1`,
   nature,
@@ -233,5 +235,55 @@ describe('confidence-bet evaluator', () => {
       true,
       false,
     ])
+  })
+
+  const attributionsOf = (bets: readonly Bet[]) =>
+    evaluator
+      .evaluate(traceOf(bets), config, criteria)
+      .map((result) => result.attributions)
+
+  it('names each flawed bet by its snippet label, never by its id, held below the neutral stake', () => {
+    const [c1] = attributionsOf(ALL_HIGH)
+
+    expect(c1).toEqual([
+      { label: 'Extrait f1', held: false },
+      { label: 'Extrait f2', held: false },
+    ])
+  })
+
+  it('names each sound bet by its snippet label, held above the neutral stake', () => {
+    const [, c2] = attributionsOf(CALIBRATED)
+
+    expect(c2).toEqual([
+      { label: 'Extrait s1', held: true },
+      { label: 'Extrait s2', held: true },
+    ])
+  })
+
+  it('lists only the decidable bets for the calibration criterion, held on a positive capital move', () => {
+    const [, , c3] = attributionsOf(ALL_HIGH)
+
+    expect(c3).toEqual([
+      { label: 'Extrait s1', held: true },
+      { label: 'Extrait s2', held: true },
+      { label: 'Extrait f1', held: false },
+      { label: 'Extrait f2', held: false },
+    ])
+  })
+
+  it('lists only the undecidable bets for the guard rail, held inside the band', () => {
+    const [, , , c4] = attributionsOf(SHARP_BUT_OVERCONFIDENT_ON_UNDECIDABLE)
+
+    expect(c4).toEqual([
+      { label: 'Extrait u1', held: false },
+      { label: 'Extrait u2', held: false },
+    ])
+  })
+
+  it('renders the same attributions on two evaluations of the same trace', () => {
+    const [first] = attributionsOf(CALIBRATED)
+    const [second] = attributionsOf(CALIBRATED)
+
+    expect(first).toEqual(second)
   })
 })

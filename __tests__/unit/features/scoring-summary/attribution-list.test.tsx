@@ -18,18 +18,18 @@ describe('attribution list', () => {
     ).toBeInTheDocument()
   })
 
-  it('marks a held geste with the visible word « tenu »', () => {
+  it('marks a held geste with the visible word « acquis », not the criterion word', () => {
     render(
       <AttributionList
         attributions={[{ label: 'Revue de diff avant merge', held: true }]}
       />,
     )
 
-    expect(screen.getByText('tenu')).toBeInTheDocument()
-    expect(screen.queryByText('manqué')).not.toBeInTheDocument()
+    expect(screen.getByText('acquis')).toBeInTheDocument()
+    expect(screen.queryByText('pas acquis')).not.toBeInTheDocument()
   })
 
-  it('marks a missed geste with the visible word « manqué », distinct from a held one', () => {
+  it('marks a missed geste with « pas acquis », distinct from a held one', () => {
     render(
       <AttributionList
         attributions={[
@@ -38,14 +38,14 @@ describe('attribution list', () => {
       />,
     )
 
-    expect(screen.getByText('manqué')).toBeInTheDocument()
-    expect(screen.queryByText('tenu')).not.toBeInTheDocument()
+    expect(screen.getByText('pas acquis')).toBeInTheDocument()
+    expect(screen.queryByText('acquis')).not.toBeInTheDocument()
   })
 
   it('never confuses held and missed: both words render for a mixed list', () => {
     render(<AttributionList attributions={attributions} />)
 
-    expect(screen.getAllByText('tenu')).toHaveLength(1)
-    expect(screen.getAllByText('manqué')).toHaveLength(1)
+    expect(screen.getAllByText('acquis')).toHaveLength(1)
+    expect(screen.getAllByText('pas acquis')).toHaveLength(1)
   })
 })

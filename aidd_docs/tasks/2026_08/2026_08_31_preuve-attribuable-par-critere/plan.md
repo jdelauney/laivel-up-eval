@@ -1,6 +1,6 @@
 ---
 objective: "Un critère manqué nomme ce qui l'a manqué — « ces trois pratiques-là ne sont pas là où elles se tiennent » — au lieu de rendre un booléen et de jeter le détail qui l'explique."
-status: draft
+status: implemented
 ---
 
 # Plan: La preuve attribuable par critère
