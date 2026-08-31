@@ -45,25 +45,25 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Au moins un chantier a-t-il été mergé ?',
     rule: { type: 'merged-at-least', threshold: 1 },
-    mapping: [{ dimension: 'parallele', weight: 2 }],
+    mapping: [{ dimension: 'parallele', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: 'Au moins trois chantiers ont-ils été mergés ?',
     rule: { type: 'merged-at-least', threshold: 3 },
-    mapping: [{ dimension: 'parallele', weight: 2 }],
+    mapping: [{ dimension: 'parallele', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: "Aucun chantier n'a-t-il été abandonné ?",
     rule: { type: 'no-abandoned-track' },
-    mapping: [{ dimension: 'parallele', weight: 1 }],
+    mapping: [{ dimension: 'parallele', weight: 1, evidence: 'measured' }],
   },
   {
     id: 'c4',
     question: 'La médiane des chantiers vivants atteint-elle deux ?',
     rule: { type: 'median-live-tracks-at-least', threshold: 2 },
-    mapping: [{ dimension: 'parallele', weight: 1 }],
+    mapping: [{ dimension: 'parallele', weight: 1, evidence: 'measured' }],
   },
 ]
 

@@ -44,25 +44,25 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Le score net de la revue atteint-il son seuil ?',
     rule: { type: 'net-score-at-least', threshold: 4 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: 'Au moins 80 % des défauts ont-ils été trouvés ?',
     rule: { type: 'found-ratio-at-least', threshold: 0.8 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: 'La dépendance hallucinée a-t-elle été trouvée ?',
     rule: { type: 'kinds-found-including', kinds: ['hallucinated-dependency'] },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c4',
     question: 'La revue a-t-elle été rendue dans le temps imparti ?',
     rule: { type: 'within-time-budget' },
-    mapping: [{ dimension: 'verification', weight: 1 }],
+    mapping: [{ dimension: 'verification', weight: 1, evidence: 'measured' }],
   },
 ]
 

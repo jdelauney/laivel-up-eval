@@ -46,8 +46,8 @@ describe('game session facade', () => {
     expect(result.dimension('taille')?.score).toBe(1)
     expect(result.dimension('harness')?.score).toBe(1)
     expect(result.groups[0].games[0].criteria).toHaveLength(2)
-    expect(level.level.id).toBeDefined()
-    expect(level.hint).toBe(level.level.nextLevelHint)
+    expect(level.level?.id).toBeDefined()
+    expect(level.hint).toBe(level.level?.nextLevelHint)
   })
 
   it('drops the level when the answer misses every criterion', () => {
@@ -56,15 +56,15 @@ describe('game session facade', () => {
     const { result, level } = facade.getVerdict()
 
     expect(result.dimension('taille')?.score).toBe(0)
-    expect(level.level.id).toBe('white')
+    expect(level.level?.id).toBe('white')
   })
 
   it('leaves an unmeasured dimension out of the score, without failing', () => {
     facade.submitAnswer(goodAnswer)
 
-    expect(facade.getVerdict().result.dimension('initiative')?.measured).toBe(
-      false,
-    )
+    expect(
+      facade.getVerdict().result.dimension('initiative')?.measurement,
+    ).toBe('unmeasured')
   })
 
   it('refuses an answer outside the game contract, leaving no trace', () => {

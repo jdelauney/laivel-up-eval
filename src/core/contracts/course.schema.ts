@@ -6,9 +6,18 @@ import { z } from 'zod'
  * le schéma du jeu concerné les valide, le moteur ne les interprète jamais.
  */
 
+/**
+ * `measured` : le jeu qui produit le critère lit un résultat sur l'axe visé.
+ * `inferred` : il lit un jugement, ou vise un axe qui n'est pas le sujet de
+ * son groupe — un même critère peut donc être l'un pour un axe et l'autre
+ * pour un autre, d'où le champ porté par le mapping et non par le critère.
+ */
+export const mappingEvidenceSchema = z.enum(['measured', 'inferred'])
+
 export const criterionMappingSchema = z.object({
   dimension: z.string().min(1),
   weight: z.number().positive(),
+  evidence: mappingEvidenceSchema.default('measured'),
 })
 
 export const criterionRuleSchema = z
@@ -44,6 +53,7 @@ export const courseSchema = z.object({
   groups: z.array(groupSchema).min(1),
 })
 
+export type MappingEvidence = z.infer<typeof mappingEvidenceSchema>
 export type CriterionMapping = z.infer<typeof criterionMappingSchema>
 export type CriterionRule = z.infer<typeof criterionRuleSchema>
 export type Criterion = z.infer<typeof criterionSchema>

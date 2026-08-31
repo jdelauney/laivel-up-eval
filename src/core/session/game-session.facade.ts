@@ -24,10 +24,15 @@ import type {
   ScoringStrategy,
 } from '../ports/scoring-strategy.interface'
 import type { GameRegistry } from '../registry/game-registry'
+import { type AxisProof, proveAxes } from '../scoring/helpers/axis-proof.helper'
 import {
   type LevelVerdict,
   resolveLevel,
 } from '../scoring/helpers/level-resolver.helper'
+import {
+  type PlanStep,
+  planProgression,
+} from '../scoring/helpers/progression-plan.helper'
 
 /**
  * Le seul point d'entrée applicatif. Il cache le registre, les évaluateurs, le
@@ -46,6 +51,10 @@ export type Progress = {
 export type Verdict = {
   result: EvaluationResult
   level: LevelVerdict
+  /** La preuve par axe : cran, seuils et signaux, calculée une fois. */
+  proof: readonly AxisProof[]
+  /** Une étape par axe qui bloque le cran suivant, le plafond en tête. */
+  plan: readonly PlanStep[]
   /**
    * La seconde lecture des mêmes critères, quand une signature est câblée.
    * Elle décrit la rigueur du flux ; elle ne pèse sur aucun niveau officiel.
@@ -56,6 +65,7 @@ export type Verdict = {
 export type SignatureReading = {
   level: LevelVerdict
   dimensions: readonly DimensionScore[]
+  proof: readonly AxisProof[]
 }
 
 /**
@@ -257,10 +267,13 @@ export class GameSessionFacade {
       .flatMap((group) => group.games)
       .flatMap((game) => game.criteria)
     const dimensions = this.scoring.score(criteria, this.grid.dimensions)
+    const level = resolveLevel(this.grid, dimensions)
 
     return {
       result: new EvaluationResult(groups, dimensions),
-      level: resolveLevel(this.grid, dimensions),
+      level,
+      proof: proveAxes(this.grid, dimensions, criteria),
+      plan: planProgression(this.grid, level.blocking),
       signature: this.readSignature(criteria),
     }
   }
@@ -269,7 +282,8 @@ export class GameSessionFacade {
    * Les mêmes critères, lus une seconde fois avec les dimensions de la
    * signature. Deux scorings distincts plutôt qu'un seul jeu de dimensions
    * mélangées : un axe du référentiel et une lecture complémentaire n'ont ni
-   * la même autorité ni la même échelle.
+   * la même autorité ni la même échelle. La preuve par axe passe par la même
+   * façade et le même helper que le verdict officiel.
    */
   private readSignature(
     criteria: readonly CriterionOutcome[],
@@ -277,7 +291,11 @@ export class GameSessionFacade {
     if (this.signature === undefined) return undefined
 
     const dimensions = this.scoring.score(criteria, this.signature.dimensions)
-    return { level: resolveLevel(this.signature, dimensions), dimensions }
+    return {
+      level: resolveLevel(this.signature, dimensions),
+      dimensions,
+      proof: proveAxes(this.signature, dimensions, criteria),
+    }
   }
 
   auditTrail(): readonly SubmitAnswerCommand[] {

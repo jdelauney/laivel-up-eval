@@ -41,25 +41,25 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'La mise moyenne sur les défectueux est-elle sous 50 ?',
     rule: { type: 'mean-stake-on-flawed-below', threshold: 50 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: 'La mise moyenne sur les sains est-elle au-dessus de 70 ?',
     rule: { type: 'mean-stake-on-sound-above', threshold: 70 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: 'La calibration atteint-elle 0.5 ?',
     rule: { type: 'calibration-at-least', threshold: 0.5 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c4',
     question: 'Chaque mise sur un indécidable est-elle dans la bande ?',
     rule: { type: 'stake-within-band-on-undecidable', from: 40, to: 60 },
-    mapping: [{ dimension: 'verification', weight: 1 }],
+    mapping: [{ dimension: 'verification', weight: 1, evidence: 'measured' }],
   },
 ]
 

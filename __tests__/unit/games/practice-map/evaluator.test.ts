@@ -78,21 +78,27 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Assez de pratiques sont-elles situées là où elles se tiennent ?',
     rule: { type: 'placements-in-zone-at-least', threshold: 4 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 2, evidence: 'measured' },
+    ],
   },
   {
     id: 'c2',
     question:
       'Une pratique de haute rigueur a-t-elle été située dans son quadrant ?',
     rule: { type: 'high-rigor-zone-hit' },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
   {
     id: 'c3',
     question:
       'Les pratiques sont-elles situées les unes par rapport aux autres comme elles se tiennent ?',
     rule: { type: 'orderings-held-at-least', threshold: 6 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 

@@ -1,6 +1,6 @@
 ---
 type: epic
-status: proposed
+status: done
 goal: aidd_docs/product/laivel-eval.md
 source: aidd_docs/tasks/2026_08/2026_08_29_parcours-sept-groupes/brainstorm.md
 depends_on:

@@ -46,19 +46,19 @@ const criteria: Criterion[] = [
     question:
       'La reprise la plus lourde a-t-elle eu lieu avant la génération ?',
     rule: { type: 'heaviest-recovery-before', stage: 'generation' },
-    mapping: [{ dimension: 'intervention', weight: 3 }],
+    mapping: [{ dimension: 'intervention', weight: 3, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: "Aucune reprise n'a-t-elle eu lieu après la revue ?",
     rule: { type: 'no-recovery-after', stage: 'revue' },
-    mapping: [{ dimension: 'intervention', weight: 3 }],
+    mapping: [{ dimension: 'intervention', weight: 3, evidence: 'measured' }],
   },
   {
     id: 'c3',
     question: "L'IA a-t-elle produit l'essentiel du livrable ?",
     rule: { type: 'ai-produced-most-of-deliverable', threshold: 0.5 },
-    mapping: [{ dimension: 'intervention', weight: 1 }],
+    mapping: [{ dimension: 'intervention', weight: 1, evidence: 'measured' }],
   },
 ]
 

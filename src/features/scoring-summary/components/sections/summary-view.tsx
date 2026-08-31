@@ -1,67 +1,66 @@
 import { useSessionFacade } from '@/providers/session-context'
 import { Button } from '../../../../components/ui/button'
 import { useSessionStore } from '../../../../store/session.store'
-import { DimensionRow } from '../composites/dimension-row'
+import { AxisProofRow } from '../composites/axis-proof-row'
+import { CappingAxis } from '../composites/capping-axis'
+import { LevelBlock } from '../composites/level-block'
+import { ProgressionStep } from '../composites/progression-step'
+import { SignatureBlock } from '../composites/signature-block'
 
 /**
- * Le verdict, et surtout ce qui l'a produit. Le niveau est l'objet le plus
- * grand de l'écran ; le détail remonte la chaîne critère → jeu → groupe telle
- * que l'entité de résultat la porte, sans rien recalculer ici.
+ * Le verdict, et surtout ce qui l'a produit. Le niveau et la signature sont
+ * deux blocs de même rang, chacun dans son propre cadre : le second éclaire
+ * le premier, il ne le subordonne pas. Le détail remonte la chaîne
+ * critère → jeu → groupe telle que l'entité de résultat la porte, sans rien
+ * recalculer ici.
  */
 export const SummaryView = () => {
   const facade = useSessionFacade()
   const reset = useSessionStore((state) => state.reset)
-  const { result, level, signature } = facade.getVerdict()
+  const { result, level, proof, plan, signature } = facade.getVerdict()
 
   return (
     <div className="flex flex-col gap-12">
-      <header className="flex flex-col gap-4">
-        <p className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
-          Niveau atteint
-        </p>
-        <h2 className="font-semibold text-5xl leading-[0.95] tracking-tight md:text-7xl">
-          {level.level.label}
-        </h2>
-        <p className="max-w-[54ch] border-plane-rule border-t pt-4 text-plane-foreground/80">
-          {level.hint}
-        </p>
-        {level.nextLevel ? (
-          <p className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
-            Niveau suivant · {level.nextLevel.label}
-          </p>
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
+        <div className="flex flex-1 flex-col gap-8 rounded-2xl border border-plane-rule p-6">
+          <LevelBlock level={level} />
+          <CappingAxis capping={level.capping} />
+        </div>
+        {signature !== undefined ? (
+          <div className="flex flex-1 rounded-2xl border border-plane-rule p-6">
+            <SignatureBlock signature={signature} />
+          </div>
         ) : null}
-      </header>
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <h3 className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
+          Ce qui vous ferait monter
+        </h3>
+        {plan.length === 0 ? (
+          <p className="text-plane-foreground/80 text-sm">
+            Le sommet du référentiel est atteint : il n'y a plus de cran à
+            ouvrir.
+          </p>
+        ) : (
+          <ul className="flex flex-col border-plane-rule border-t">
+            {plan.map((step) => (
+              <ProgressionStep key={step.dimensionId} step={step} />
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="flex flex-col gap-3">
         <h3 className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
           Les axes du référentiel
         </h3>
         <ul className="flex flex-col border-plane-rule border-t">
-          {result.dimensions.map((dimension) => (
-            <DimensionRow key={dimension.dimensionId} dimension={dimension} />
+          {proof.map((axisProof) => (
+            <AxisProofRow key={axisProof.dimensionId} proof={axisProof} />
           ))}
         </ul>
       </section>
-
-      {signature ? (
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">
-            Lecture complémentaire
-          </h3>
-          <p className="max-w-[54ch] text-plane-foreground/60 text-sm">
-            La rigueur du flux, lue sur les mêmes réponses. Elle éclaire le
-            niveau, elle ne le décide pas.
-          </p>
-          <p className="font-semibold text-2xl tracking-tight">
-            {signature.level.level.label}
-          </p>
-          <ul className="flex flex-col border-plane-rule border-t">
-            {signature.dimensions.map((dimension) => (
-              <DimensionRow key={dimension.dimensionId} dimension={dimension} />
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       <section className="flex flex-col gap-3">
         <h3 className="font-medium text-plane-foreground/50 text-xs uppercase tracking-[0.14em]">

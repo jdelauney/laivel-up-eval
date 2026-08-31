@@ -53,7 +53,7 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'La fausse affirmation a-t-elle été identifiée ?',
     rule: { type: 'lies-unmasked-at-least', threshold: 3 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
@@ -62,7 +62,7 @@ const criteria: Criterion[] = [
     // manches à objection creuse) : `minOpportunities: 2` y est le seuil
     // maximal atteignable, sur le même chiffre que `config/course.json`.
     rule: { type: 'held-chances-at-least', minOpportunities: 2 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
 ]
 

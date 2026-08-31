@@ -16,13 +16,15 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: 'Toutes les propositions attendues sont-elles retenues ?',
     rule: { type: 'all-expected-selected' },
-    mapping: [{ dimension: 'verification', weight: 1 }],
+    mapping: [{ dimension: 'verification', weight: 1, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question: 'Aucune proposition non attendue n’est-elle retenue ?',
     rule: { type: 'no-unexpected-selected' },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 

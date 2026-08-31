@@ -16,7 +16,7 @@ const game = (id: string, criterionIds: readonly string[]): Game => ({
     id: criterionId,
     question: `Critère ${criterionId} ?`,
     rule: { type: 'test-rule' },
-    mapping: [{ dimension: 'verification', weight: 1 }],
+    mapping: [{ dimension: 'verification', weight: 1, evidence: 'measured' }],
   })),
 })
 

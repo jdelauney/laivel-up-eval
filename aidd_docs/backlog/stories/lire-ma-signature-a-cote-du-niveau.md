@@ -1,6 +1,6 @@
 ---
 type: story
-status: proposed
+status: done
 parent: aidd_docs/backlog/epics/restitution-du-verdict.md
 source: aidd_docs/tasks/2026_08/2026_08_29_parcours-sept-groupes/brainstorm.md
 order: 3

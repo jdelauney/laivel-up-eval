@@ -104,19 +104,25 @@ const criteria: Criterion[] = [
     question:
       "L'incident a-t-il été résolu en achetant moins de la moitié des indices ?",
     rule: { type: 'frugal-solves-at-least', share: 0.5, threshold: 2 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 2, evidence: 'measured' },
+    ],
   },
   {
     id: 'c2',
     question: 'Le contexte a-t-il été posé avant le premier indice ?',
     rule: { type: 'framed-first-at-least', threshold: 2 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
   {
     id: 'c3',
     question: 'Ce contexte était-il fondé sur le rapport ?',
     rule: { type: 'grounded-framings-at-least', threshold: 2 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 
