@@ -12,7 +12,13 @@
           "label": "Quelle confiance accordez-vous à ce code ?",
           "config": {
             "statement": "Six extraits de code vous sont présentés un par un. Pour chacun, misez la confiance que vous accordez à son exactitude — pas ce que vous en feriez en revue — avant de voir le verdict : la mise se verrouille dès qu'elle est engagée, elle ne se reprend jamais. Sur un extrait sain, une mise haute rapporte ; sur un extrait défectueux, une mise basse rapporte. Certains extraits ne peuvent pas être tranchés avec ce qui est montré : s'en écarter y coûte, dans un sens comme dans l'autre.",
-            "stakes": [10, 30, 50, 70, 90],
+            "stakes": [
+              10,
+              30,
+              50,
+              70,
+              90
+            ],
             "neutralStake": 50,
             "startingCapital": 100,
             "snippets": [
@@ -205,7 +211,9 @@
               "question": "Le défaut qui ne se lit pas dans l'extrait a-t-il été trouvé ?",
               "rule": {
                 "type": "kinds-found-including",
-                "kinds": ["hallucinated-dependency"]
+                "kinds": [
+                  "hallucinated-dependency"
+                ]
               },
               "mapping": [
                 {
@@ -468,35 +476,45 @@
                     "label": "Vérifier l'en-tête Authorization envoyé par le client",
                     "cost": 5,
                     "text": "L'en-tête est bien formé, avec le schéma Bearer attendu : ce n'est pas l'en-tête qui bloque la requête.",
-                    "eliminates": ["s1-c-header"]
+                    "eliminates": [
+                      "s1-c-header"
+                    ]
                   },
                   {
                     "id": "s1-h2",
                     "label": "Vérifier la date d'expiration du certificat TLS du reverse proxy",
                     "cost": 10,
                     "text": "Le certificat présenté par le proxy est valide encore huit mois : ce n'est pas le certificat.",
-                    "eliminates": ["s1-c-tls"]
+                    "eliminates": [
+                      "s1-c-tls"
+                    ]
                   },
                   {
                     "id": "s1-h3",
                     "label": "Comparer la clé secrète de signature entre les deux environnements",
                     "cost": 15,
                     "text": "La même clé signe les jetons des deux côtés, au caractère près : ce n'est pas la clé de signature.",
-                    "eliminates": ["s1-c-secret"]
+                    "eliminates": [
+                      "s1-c-secret"
+                    ]
                   },
                   {
                     "id": "s1-h4",
                     "label": "Demander la clé de signature effectivement chargée en production",
                     "cost": 20,
                     "text": "La clé chargée au démarrage correspond à celle du coffre de secrets : ce n'est pas la clé de signature.",
-                    "eliminates": ["s1-c-secret"]
+                    "eliminates": [
+                      "s1-c-secret"
+                    ]
                   },
                   {
                     "id": "s1-h5",
                     "label": "Demander une vérification complète de la chaîne de certificats",
                     "cost": 25,
                     "text": "La chaîne de certificats du proxy est complète et valide jusqu'à son terme : ce n'est pas le certificat.",
-                    "eliminates": ["s1-c-tls"]
+                    "eliminates": [
+                      "s1-c-tls"
+                    ]
                   }
                 ],
                 "causes": [
@@ -583,35 +601,45 @@
                     "label": "Vérifier la devise déclarée sur chaque ligne de la facture",
                     "cost": 5,
                     "text": "Toutes les lignes sont libellées dans la même devise, sans conversion appliquée : ce n'est pas la devise.",
-                    "eliminates": ["s2-c-currency"]
+                    "eliminates": [
+                      "s2-c-currency"
+                    ]
                   },
                   {
                     "id": "s2-h2",
                     "label": "Rechercher une remise appliquée sur les lignes concernées",
                     "cost": 10,
                     "text": "Aucune ligne de cette facture ne porte de remise, simple ou double : ce n'est pas une remise.",
-                    "eliminates": ["s2-c-discount"]
+                    "eliminates": [
+                      "s2-c-discount"
+                    ]
                   },
                   {
                     "id": "s2-h3",
                     "label": "Vérifier si une remise s'applique à ce type de facture",
                     "cost": 15,
                     "text": "Aucune remise n'est configurée pour ce type de facture : ce n'est pas une remise.",
-                    "eliminates": ["s2-c-discount"]
+                    "eliminates": [
+                      "s2-c-discount"
+                    ]
                   },
                   {
                     "id": "s2-h4",
                     "label": "Comparer la devise de facturation à celle des lignes concernées",
                     "cost": 20,
                     "text": "La devise de facturation et celle des lignes concordent, sans taux appliqué : ce n'est pas la devise.",
-                    "eliminates": ["s2-c-currency"]
+                    "eliminates": [
+                      "s2-c-currency"
+                    ]
                   },
                   {
                     "id": "s2-h5",
                     "label": "Vérifier le taux de TVA appliqué à chaque ligne",
                     "cost": 25,
                     "text": "Le taux de TVA est identique sur toutes les lignes de la facture : ce n'est pas la TVA qui creuse l'écart.",
-                    "eliminates": ["s2-c-vat"]
+                    "eliminates": [
+                      "s2-c-vat"
+                    ]
                   }
                 ],
                 "causes": [
@@ -698,35 +726,45 @@
                     "label": "Lister les variables d'environnement présentes sur l'agent CI",
                     "cost": 5,
                     "text": "Toutes les variables requises par la suite sont présentes sur l'agent : ce n'est pas une variable absente.",
-                    "eliminates": ["s3-c-env"]
+                    "eliminates": [
+                      "s3-c-env"
+                    ]
                   },
                   {
                     "id": "s3-h2",
                     "label": "Comparer la version de Node entre l'agent CI et le poste local",
                     "cost": 10,
                     "text": "Les deux environnements installent exactement la même version de Node : ce n'est pas la version.",
-                    "eliminates": ["s3-c-node"]
+                    "eliminates": [
+                      "s3-c-node"
+                    ]
                   },
                   {
                     "id": "s3-h3",
                     "label": "Comparer les versions mineures de Node résolues de part et d'autre",
                     "cost": 15,
                     "text": "Les deux environnements résolvent la même version mineure : ce n'est pas la version de Node.",
-                    "eliminates": ["s3-c-node"]
+                    "eliminates": [
+                      "s3-c-node"
+                    ]
                   },
                   {
                     "id": "s3-h4",
                     "label": "Comparer le fuseau horaire de l'agent CI à celui du poste local",
                     "cost": 20,
                     "text": "Les deux environnements sont configurés sur le même fuseau horaire : ce n'est pas le fuseau.",
-                    "eliminates": ["s3-c-timezone"]
+                    "eliminates": [
+                      "s3-c-timezone"
+                    ]
                   },
                   {
                     "id": "s3-h5",
                     "label": "Demander la liste des variables lues au démarrage de la suite",
                     "cost": 25,
                     "text": "Chaque variable lue au démarrage est bien définie sur l'agent : ce n'est pas une variable absente.",
-                    "eliminates": ["s3-c-env"]
+                    "eliminates": [
+                      "s3-c-env"
+                    ]
                   }
                 ],
                 "causes": [
@@ -1008,76 +1046,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "g2-3",
-          "type": "test-bench",
-          "label": "Comment répartissez-vous le temps ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g2-3-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "pilotage-contexte",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g2-3-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "pilotage-contexte",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -1101,9 +1069,24 @@
                 "flawed": true,
                 "flaw": "Seuls les tests unitaires ont tourné. Les deux tests d'intégration qui couvrent ce module n'ont jamais été exécutés sur cette branche, et l'un des deux échoue.",
                 "replies": [
-                  { "id": "n1-challenge", "text": "Un vendredi soir, ça me semble aller vite.", "stance": "challenge", "nextId": "n2" },
-                  { "id": "n1-accept", "text": "Va pour la fusion, je ne relis pas.", "stance": "accept", "nextId": "c1" },
-                  { "id": "n1-verify", "text": "Montrez-moi le rapport complet de la suite.", "stance": "verify", "nextId": "n2" }
+                  {
+                    "id": "n1-challenge",
+                    "text": "Un vendredi soir, ça me semble aller vite.",
+                    "stance": "challenge",
+                    "nextId": "n2"
+                  },
+                  {
+                    "id": "n1-accept",
+                    "text": "Va pour la fusion, je ne relis pas.",
+                    "stance": "accept",
+                    "nextId": "c1"
+                  },
+                  {
+                    "id": "n1-verify",
+                    "text": "Montrez-moi le rapport complet de la suite.",
+                    "stance": "verify",
+                    "nextId": "n2"
+                  }
                 ]
               },
               {
@@ -1112,9 +1095,24 @@
                 "message": "Vous avez raison, seuls les tests unitaires sont passés. Sinon, les dépendances du module sont toutes épinglées à une version précise et à jour.",
                 "flawed": false,
                 "replies": [
-                  { "id": "n2-accept", "text": "Notez ça, et voyons la suite.", "stance": "accept", "nextId": "n3" },
-                  { "id": "n2-verify", "text": "Montrez-moi la liste exacte des dépendances épinglées.", "stance": "verify", "nextId": "n3" },
-                  { "id": "n2-challenge", "text": "Ça arrive souvent, ces trous dans la suite ?", "stance": "challenge", "nextId": "n3" }
+                  {
+                    "id": "n2-accept",
+                    "text": "Notez ça, et voyons la suite.",
+                    "stance": "accept",
+                    "nextId": "n3"
+                  },
+                  {
+                    "id": "n2-verify",
+                    "text": "Montrez-moi la liste exacte des dépendances épinglées.",
+                    "stance": "verify",
+                    "nextId": "n3"
+                  },
+                  {
+                    "id": "n2-challenge",
+                    "text": "Ça arrive souvent, ces trous dans la suite ?",
+                    "stance": "challenge",
+                    "nextId": "n3"
+                  }
                 ]
               },
               {
@@ -1124,9 +1122,24 @@
                 "flawed": true,
                 "flaw": "Le paquet de parsing utilisé est fixé sur `latest`, pas sur une version précise, et sa version courante porte une faille corrigée depuis trois semaines en amont.",
                 "replies": [
-                  { "id": "n3-reformulate", "text": "Fixez chaque dépendance à une version précise avant qu'on continue.", "stance": "reformulate", "nextId": "n4" },
-                  { "id": "n3-challenge", "text": "« Toutes », vraiment, sans exception ?", "stance": "challenge", "nextId": "n4" },
-                  { "id": "n3-accept", "text": "Parfait, ça peut rester tel quel.", "stance": "accept", "nextId": "c2" }
+                  {
+                    "id": "n3-reformulate",
+                    "text": "Fixez chaque dépendance à une version précise avant qu'on continue.",
+                    "stance": "reformulate",
+                    "nextId": "n4"
+                  },
+                  {
+                    "id": "n3-challenge",
+                    "text": "« Toutes », vraiment, sans exception ?",
+                    "stance": "challenge",
+                    "nextId": "n4"
+                  },
+                  {
+                    "id": "n3-accept",
+                    "text": "Parfait, ça peut rester tel quel.",
+                    "stance": "accept",
+                    "nextId": "c2"
+                  }
                 ]
               },
               {
@@ -1135,9 +1148,24 @@
                 "message": "D'accord, je fige chaque dépendance à une version précise avant la prochaine remise.",
                 "flawed": false,
                 "replies": [
-                  { "id": "n4-challenge", "text": "Avant la prochaine remise, pas tout de suite ?", "stance": "challenge", "nextId": "n5" },
-                  { "id": "n4-reformulate", "text": "Faites-le tout de suite, pas seulement avant la prochaine remise.", "stance": "reformulate", "nextId": "n5" },
-                  { "id": "n4-accept", "text": "Notez ça aussi, et voyons la suite.", "stance": "accept", "nextId": "n5" }
+                  {
+                    "id": "n4-challenge",
+                    "text": "Avant la prochaine remise, pas tout de suite ?",
+                    "stance": "challenge",
+                    "nextId": "n5"
+                  },
+                  {
+                    "id": "n4-reformulate",
+                    "text": "Faites-le tout de suite, pas seulement avant la prochaine remise.",
+                    "stance": "reformulate",
+                    "nextId": "n5"
+                  },
+                  {
+                    "id": "n4-accept",
+                    "text": "Notez ça aussi, et voyons la suite.",
+                    "stance": "accept",
+                    "nextId": "n5"
+                  }
                 ]
               },
               {
@@ -1147,9 +1175,22 @@
                 "flawed": true,
                 "flaw": "Le cas du champ vide n'est pas traité : la fonction lève une exception non interceptée dès qu'elle reçoit une chaîne vide, jamais testée avant cette remise.",
                 "replies": [
-                  { "id": "n5-accept", "text": "C'est réglé, on peut considérer que la remise est bonne pour la production.", "stance": "accept", "nextId": "c1" },
-                  { "id": "n5-challenge", "text": "Ce cas précis, vous l'avez vu passer où, au juste ?", "stance": "challenge" },
-                  { "id": "n5-reformulate", "text": "Ajoutez un test sur le champ vide avant qu'on referme ce point.", "stance": "reformulate" }
+                  {
+                    "id": "n5-accept",
+                    "text": "C'est réglé, on peut considérer que la remise est bonne pour la production.",
+                    "stance": "accept",
+                    "nextId": "c1"
+                  },
+                  {
+                    "id": "n5-challenge",
+                    "text": "Ce cas précis, vous l'avez vu passer où, au juste ?",
+                    "stance": "challenge"
+                  },
+                  {
+                    "id": "n5-reformulate",
+                    "text": "Ajoutez un test sur le champ vide avant qu'on referme ce point.",
+                    "stance": "reformulate"
+                  }
                 ]
               },
               {
@@ -1159,9 +1200,21 @@
                 "flawed": false,
                 "consequence": "Une fusion acceptée sans vérification a laissé partir un test d'intégration en échec jusqu'en production.",
                 "replies": [
-                  { "id": "c1-verify", "text": "Montrez-moi le rapport d'échec complet.", "stance": "verify" },
-                  { "id": "c1-accept", "text": "Compris, j'ouvre un correctif tout de suite.", "stance": "accept" },
-                  { "id": "c1-challenge", "text": "Comment ce test a-t-il pu ne jamais tourner ?", "stance": "challenge" }
+                  {
+                    "id": "c1-verify",
+                    "text": "Montrez-moi le rapport d'échec complet.",
+                    "stance": "verify"
+                  },
+                  {
+                    "id": "c1-accept",
+                    "text": "Compris, j'ouvre un correctif tout de suite.",
+                    "stance": "accept"
+                  },
+                  {
+                    "id": "c1-challenge",
+                    "text": "Comment ce test a-t-il pu ne jamais tourner ?",
+                    "stance": "challenge"
+                  }
                 ]
               },
               {
@@ -1171,9 +1224,21 @@
                 "flawed": false,
                 "consequence": "Une dépendance laissée sur `latest` a fait entrer une faille connue dans la branche, sans qu'aucune version n'ait jamais été figée.",
                 "replies": [
-                  { "id": "c2-challenge", "text": "Le registre a mis à jour l'artefact sans qu'on le sache ?", "stance": "challenge" },
-                  { "id": "c2-reformulate", "text": "Épinglez chaque dépendance à une version précise, immédiatement.", "stance": "reformulate" },
-                  { "id": "c2-accept", "text": "Je fige les versions et je relance l'analyse.", "stance": "accept" }
+                  {
+                    "id": "c2-challenge",
+                    "text": "Le registre a mis à jour l'artefact sans qu'on le sache ?",
+                    "stance": "challenge"
+                  },
+                  {
+                    "id": "c2-reformulate",
+                    "text": "Épinglez chaque dépendance à une version précise, immédiatement.",
+                    "stance": "reformulate"
+                  },
+                  {
+                    "id": "c2-accept",
+                    "text": "Je fige les versions et je relance l'analyse.",
+                    "stance": "accept"
+                  }
                 ]
               }
             ]
@@ -1209,146 +1274,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "g3-2",
-          "type": "test-bench",
-          "label": "Tenez-vous votre ligne ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g3-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "resilience",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g3-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "resilience",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "g3-3",
-          "type": "test-bench",
-          "label": "D'où vient cet incident ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g3-3-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "resilience",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g3-3-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "resilience",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -1357,76 +1282,6 @@
       "label": "Sécurité et responsabilité",
       "order": 4,
       "games": [
-        {
-          "id": "g4-1",
-          "type": "test-bench",
-          "label": "Acceptez-vous ce raccourci ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g4-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 2,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "verification",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g4-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "intervention",
-                  "weight": 1,
-                  "evidence": "inferred"
-                },
-                {
-                  "dimension": "verification",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
         {
           "id": "g4-2",
           "type": "keep-or-toss",
@@ -1549,66 +1404,6 @@
       "order": 5,
       "games": [
         {
-          "id": "g5-1",
-          "type": "test-bench",
-          "label": "Remettez cette architecture debout",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g5-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "taille",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g5-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "taille",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
-        {
           "id": "g5-2",
           "type": "flow-order",
           "label": "Dans quel ordre travaille-t-on ?",
@@ -1705,66 +1500,6 @@
       "label": "Qualité du prompt",
       "order": 6,
       "games": [
-        {
-          "id": "g6-1",
-          "type": "test-bench",
-          "label": "Qu'est-ce qui manque à ce prompt ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g6-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g6-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
         {
           "id": "g6-2",
           "type": "ambiguity-scan",
@@ -2093,186 +1828,6 @@
                 {
                   "dimension": "parallele",
                   "weight": 1
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "g7-3",
-          "type": "test-bench",
-          "label": "Que confiez-vous sans surveiller ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g7-3-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "initiative",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g7-3-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "initiative",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "g7-4",
-          "type": "test-bench",
-          "label": "Comment découpez-vous cette feature ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g7-4-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "taille",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g7-4-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "taille",
-                  "weight": 1,
-                  "evidence": "inferred"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "g7-5",
-          "type": "test-bench",
-          "label": "Qu'installez-vous avant de lâcher l'IA ?",
-          "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
-              {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
-              },
-              {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
-              },
-              {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
-              },
-              {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
-              }
-            ]
-          },
-          "criteria": [
-            {
-              "id": "g7-5-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
-              "rule": {
-                "type": "all-expected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 2,
-                  "evidence": "inferred"
-                }
-              ]
-            },
-            {
-              "id": "g7-5-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
-              "rule": {
-                "type": "no-unexpected-selected"
-              },
-              "mapping": [
-                {
-                  "dimension": "harness",
-                  "weight": 1,
-                  "evidence": "inferred"
                 }
               ]
             }

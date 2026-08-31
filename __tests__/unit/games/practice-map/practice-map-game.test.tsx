@@ -495,8 +495,10 @@ describe('practice map game, rendered', () => {
    * suit désormais le pointeur et se pose là où il est lâché.
    */
   it('places a token where the pointer drops it, dragged from the legend onto the plane', () => {
-    const onSubmit = vi.fn()
-    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+    const onLock = vi.fn()
+    render(
+      <PracticeMapGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     dragFromReserve(config.practices[0].label, { clientX: 20, clientY: 20 })
 
@@ -511,7 +513,7 @@ describe('practice map game, rendered', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       placements: { practiceId: string; intensity: number; rigor: number }[]
     }
     // Le carré mocké est 100×100 à l'origine : (20, 20) est à un cinquième
@@ -524,8 +526,10 @@ describe('practice map game, rendered', () => {
   })
 
   it('moves an already-placed token by dragging its badge, replacing the placement without duplicating it', () => {
-    const onSubmit = vi.fn()
-    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+    const onLock = vi.fn()
+    render(
+      <PracticeMapGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     config.practices.forEach((entry) => {
       holdFromReserve(entry.label)
@@ -542,7 +546,7 @@ describe('practice map game, rendered', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       placements: { practiceId: string; intensity: number; rigor: number }[]
     }
     expect(answer.placements).toHaveLength(config.practices.length)
@@ -558,7 +562,9 @@ describe('practice map game, rendered', () => {
    * non plus : le geste est simplement abandonné.
    */
   it('places nothing when a token is dropped outside the plane, releasing it instead', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     dragFromReserve(config.practices[0].label, { clientX: 400, clientY: 300 })
 
@@ -577,7 +583,9 @@ describe('practice map game, rendered', () => {
    * emprunte.
    */
   it('keeps the hold-then-designate path intact when the press does not move', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const row = within(reserveSection()).getByRole('button', {
       name: config.practices[0].label,
