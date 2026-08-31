@@ -46,6 +46,19 @@ const inferredProof = (): AxisProof => ({
   missed: [],
 })
 
+const entirelyMissedProof = (): AxisProof => ({
+  dimensionId: 'parallele',
+  label: 'Chantiers menés en parallèle',
+  measurement: 'measured',
+  band: 'aucun',
+  crossed: 0,
+  missedBand: { label: '1 chantier', from: 0.33 },
+  earned: 0,
+  possible: 4,
+  held: [],
+  missed: [signal('c-heavy', 3, false), signal('c-light', 1, false)],
+})
+
 const unmeasuredProof = (): AxisProof => ({
   dimensionId: 'initiative',
   label: 'Initiative des agents',
@@ -74,14 +87,20 @@ describe('axis proof row', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders the observed value and both thresholds around the band', () => {
+  it('renders the observed value and both thresholds around the band, in the words of the grid', () => {
     render(<AxisProofRow proof={measuredProof()} />)
 
     expect(screen.getByText(/5 sur 6 contributions/)).toBeInTheDocument()
-    expect(screen.getByText(/franchi 0.5/)).toBeInTheDocument()
     expect(
-      screen.getByText(/manqué 0.75 → L — multi-étapes/),
+      screen.getByText(/franchi « M — complexité moyenne »/),
     ).toBeInTheDocument()
+    expect(screen.getByText(/manqué « L — multi-étapes »/)).toBeInTheDocument()
+  })
+
+  it('renders no raw decimal anywhere on the row', () => {
+    const { container } = render(<AxisProofRow proof={measuredProof()} />)
+
+    expect(container.textContent).not.toMatch(/0\.\d/)
   })
 
   it('marks a measured axis with the visible word « mesuré »', () => {
@@ -121,5 +140,16 @@ describe('axis proof row', () => {
     const { container } = render(<AxisProofRow proof={measuredProof()} />)
 
     expect(container.textContent).not.toMatch(/%/)
+  })
+
+  it('names the heaviest unanswered signal as a lack, not a cause, when nothing was held', () => {
+    render(<AxisProofRow proof={entirelyMissedProof()} />)
+
+    expect(
+      screen.getByText(
+        'aucun signal tenu — le plus proche resté sans réponse : « Question c-heavy ? »',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/^fixé par/)).not.toBeInTheDocument()
   })
 })

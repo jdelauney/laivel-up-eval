@@ -1,9 +1,8 @@
 import type { SignatureReading } from '@/core/session/game-session.facade'
 import { AxisProofRow } from './axis-proof-row'
+import { NO_LEVEL_LABEL } from './level-block'
 
 type SignatureBlockProps = Readonly<{ signature: SignatureReading }>
-
-const NO_LEVEL_LABEL = 'Aucun niveau ne peut être annoncé'
 
 /**
  * La signature, dans son propre cadre : elle éclaire le niveau officiel,

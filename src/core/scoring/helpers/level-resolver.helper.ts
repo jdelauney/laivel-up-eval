@@ -15,6 +15,22 @@ import type { DimensionScore } from '@/core/ports/scoring-strategy.interface'
  * - aucun niveau qui ne tient pas ses conditions n'est jamais annoncé par
  *   défaut. Quand même le plus bas échoue, `level` est absent et `unranked`
  *   porte la raison — jamais un repli silencieux sur le niveau le plus bas.
+ *
+ * Non classé, deux règles :
+ * 1. **La direction se lit sur la borne qui a cédé** (`ConditionGap.violated`),
+ *    jamais sur la simple présence de `min` : le schéma autorise une
+ *    condition à porter les deux bornes, et seule celle qui a effectivement
+ *    cédé dit s'il faut monter ou descendre.
+ * 2. **La cible visée est le niveau le plus bas, en ordre croissant, dont
+ *    aucune condition `max` n'est violée** — le premier cran atteignable en
+ *    montant. Un profil au-dessus de White sur `taille` mais en dessous de
+ *    Red sur `parallele` ne doit jamais lire un plan qui lui demande de
+ *    redescendre sous White : il lit un plan qui vise Red. `nextLevel`,
+ *    `blocking` et `capping` pointent cette cible ; `unranked` reste les
+ *    conditions non tenues du niveau le **plus bas** — la raison pour
+ *    laquelle aucun niveau n'est annonçable — et n'est plus le même objet
+ *    que `blocking`. Repli sur le niveau le plus bas si aucun n'échappe à
+ *    une borne `max` violée.
  */
 
 export type ConditionGap = {
@@ -22,6 +38,8 @@ export type ConditionGap = {
   dimension: DimensionScore | undefined
   /** L'écart à la borne violée. Absent quand l'axe n'a pas été mesuré. */
   gap: number | undefined
+  /** La borne qui a cédé. Absente quand l'axe n'a pas été mesuré. */
+  violated: 'min' | 'max' | undefined
 }
 
 export type LevelVerdict = {
@@ -43,6 +61,7 @@ type ConditionEvaluation = {
   dimension: DimensionScore | undefined
   holds: boolean
   gap: number | undefined
+  violated: 'min' | 'max' | undefined
 }
 
 /**
@@ -57,15 +76,25 @@ const evaluateCondition = (
     (candidate) => candidate.dimensionId === condition.dimension,
   )
   if (dimension === undefined || dimension.measurement === 'unmeasured') {
-    return { dimension, holds: false, gap: undefined }
+    return { dimension, holds: false, gap: undefined, violated: undefined }
   }
   if (condition.min !== undefined && dimension.score < condition.min) {
-    return { dimension, holds: false, gap: condition.min - dimension.score }
+    return {
+      dimension,
+      holds: false,
+      gap: condition.min - dimension.score,
+      violated: 'min',
+    }
   }
   if (condition.max !== undefined && dimension.score > condition.max) {
-    return { dimension, holds: false, gap: dimension.score - condition.max }
+    return {
+      dimension,
+      holds: false,
+      gap: dimension.score - condition.max,
+      violated: 'max',
+    }
   }
-  return { dimension, holds: true, gap: undefined }
+  return { dimension, holds: true, gap: undefined, violated: undefined }
 }
 
 const holds = (
@@ -88,6 +117,7 @@ const unmetConditionGaps = (
       condition,
       dimension: evaluation.dimension,
       gap: evaluation.gap,
+      violated: evaluation.violated,
     }))
 
 /**
@@ -112,6 +142,26 @@ const sortByBlockingOrder = (
   })
 }
 
+/**
+ * Le niveau le plus bas, en ordre croissant, dont aucune condition `max`
+ * n'est violée — le premier cran atteignable en montant. Une borne `max`
+ * violée dit que le profil est déjà au-dessus : viser ce niveau reviendrait à
+ * demander de régresser. Une borne `min` violée n'écarte rien, elle se comble
+ * en avançant. Repli sur le niveau le plus bas si aucun n'y échappe.
+ */
+const resolveClimbTarget = (
+  byOrder: readonly Level[],
+  dimensions: readonly DimensionScore[],
+): Level => {
+  const climbable = byOrder.find(
+    (level) =>
+      !unmetConditionGaps(level, dimensions).some(
+        (gap) => gap.violated === 'max',
+      ),
+  )
+  return climbable ?? byOrder[0]
+}
+
 export const resolveLevel = (
   grid: Grid,
   dimensions: readonly DimensionScore[],
@@ -125,18 +175,23 @@ export const resolveLevel = (
   )
 
   if (reached === undefined) {
-    const gaps = sortByBlockingOrder(
+    const unranked = sortByBlockingOrder(
       unmetConditionGaps(lowest, dimensions),
+      grid,
+    )
+    const target = resolveClimbTarget(byOrder, dimensions)
+    const blocking = sortByBlockingOrder(
+      unmetConditionGaps(target, dimensions),
       grid,
     )
     return {
       level: undefined,
-      unranked: gaps,
+      unranked,
       satisfiedConditions: [],
-      blocking: gaps,
-      capping: gaps[0],
+      blocking,
+      capping: blocking[0],
       hint: undefined,
-      nextLevel: lowest,
+      nextLevel: target,
     }
   }
 

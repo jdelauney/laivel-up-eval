@@ -4,6 +4,7 @@ import type {
   Grid,
 } from '../../contracts/grid.schema'
 import type { MeasurementStatus } from '../../ports/scoring-strategy.interface'
+import { bandFor } from './dimension-band.helper'
 import type { ConditionGap } from './level-resolver.helper'
 
 /**
@@ -32,14 +33,40 @@ export type PlanStep = {
   observed: number | undefined
   /** La borne exigée par la condition qui bloque. */
   required: number
+  /**
+   * Le cran actuel de l'axe, dans les mots de la grille — résolu par
+   * `bandFor`. Absent quand l'axe est `unmeasured` ou n'a pas d'échelle.
+   */
+  observedBand: string | undefined
+}
+
+const requireBound = (
+  value: number | undefined,
+  dimensionId: string,
+  bound: 'min' | 'max',
+): number => {
+  if (value === undefined) {
+    throw new Error(
+      `la condition sur « ${dimensionId} » ne porte pas de borne ${bound}`,
+    )
+  }
+  return value
 }
 
 /**
- * La borne posée par la condition qui bloque. Le schéma garantit qu'une
- * condition porte au moins l'une des deux ; l'absence des deux est une
- * incohérence de câblage, pas un cas produit.
+ * La borne posée par la condition qui bloque, lue sur la borne qui a
+ * effectivement cédé (`gap.violated`) — jamais sur la simple présence de
+ * `min`, qu'une condition à deux bornes rendrait ambiguë. Sans axe mesuré,
+ * aucune borne n'a cédé : on retombe sur celle que la condition déclare,
+ * `min` d'abord. Le schéma garantit qu'une condition porte au moins l'une
+ * des deux ; l'absence des deux est une incohérence de câblage, pas un cas
+ * produit.
  */
 const requiredBound = (gap: ConditionGap): number => {
+  if (gap.violated === 'max')
+    return requireBound(gap.condition.max, gap.condition.dimension, 'max')
+  if (gap.violated === 'min')
+    return requireBound(gap.condition.min, gap.condition.dimension, 'min')
   if (gap.condition.min !== undefined) return gap.condition.min
   if (gap.condition.max !== undefined) return gap.condition.max
   throw new Error(
@@ -47,10 +74,19 @@ const requiredBound = (gap: ConditionGap): number => {
   )
 }
 
+const bandAtOrAbove = (scale: readonly DimensionBand[], min: number) =>
+  scale.find((band) => band.from >= min)
+
+const bandAtOrBelow = (scale: readonly DimensionBand[], max: number) =>
+  [...scale].reverse().find((band) => band.from <= max)
+
 /**
  * La bande visée par la condition, sur l'échelle brute de la grille — jamais
- * recalculée depuis un libellé. Borne `min` : la bande la plus basse qui la
- * franchit. Borne `max` : la bande la plus haute qui n'y échappe pas.
+ * recalculée depuis un libellé. La direction se lit sur la borne qui a cédé
+ * (`gap.violated`) : borne `min` violée, la bande la plus basse qui la
+ * franchit ; borne `max` violée, la bande la plus haute qui n'y échappe pas.
+ * Sans axe mesuré, aucune borne n'a cédé : on retombe sur celle que la
+ * condition déclare.
  */
 const resolveTargetBand = (
   gridDimension: Dimension | undefined,
@@ -59,15 +95,31 @@ const resolveTargetBand = (
   const scale = gridDimension?.scale
   if (scale === undefined) return undefined
 
+  if (gap.violated === 'max' && gap.condition.max !== undefined) {
+    return bandAtOrBelow(scale, gap.condition.max)
+  }
+  if (gap.violated === 'min' && gap.condition.min !== undefined) {
+    return bandAtOrAbove(scale, gap.condition.min)
+  }
   if (gap.condition.min !== undefined) {
-    const min = gap.condition.min
-    return scale.find((band) => band.from >= min)
+    return bandAtOrAbove(scale, gap.condition.min)
   }
   if (gap.condition.max !== undefined) {
-    const max = gap.condition.max
-    return [...scale].reverse().find((band) => band.from <= max)
+    return bandAtOrBelow(scale, gap.condition.max)
   }
   return undefined
+}
+
+const resolveObservedBand = (
+  gridDimension: Dimension | undefined,
+  gap: ConditionGap,
+  measurement: MeasurementStatus,
+): string | undefined => {
+  if (measurement === 'unmeasured') return undefined
+  if (gridDimension === undefined || gap.dimension === undefined) {
+    return undefined
+  }
+  return bandFor(gridDimension, gap.dimension.score)
 }
 
 const buildStep = (grid: Grid, gap: ConditionGap): PlanStep => {
@@ -90,6 +142,7 @@ const buildStep = (grid: Grid, gap: ConditionGap): PlanStep => {
     proof: target?.proof,
     observed: measurement === 'unmeasured' ? undefined : gap.dimension?.score,
     required: requiredBound(gap),
+    observedBand: resolveObservedBand(gridDimension, gap, measurement),
   }
 }
 

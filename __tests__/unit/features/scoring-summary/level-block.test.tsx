@@ -1,11 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { Level, LevelCondition } from '@/core/contracts/grid.schema'
-import type { DimensionScore } from '@/core/ports/scoring-strategy.interface'
-import type {
-  ConditionGap,
-  LevelVerdict,
-} from '@/core/scoring/helpers/level-resolver.helper'
+import type { Level } from '@/core/contracts/grid.schema'
+import type { LevelVerdict } from '@/core/scoring/helpers/level-resolver.helper'
+import type { PlanStep } from '@/core/scoring/helpers/progression-plan.helper'
 import { LevelBlock } from '@/features/scoring-summary/components/composites/level-block'
 
 const level = (id: string, label: string, order: number): Level => ({
@@ -16,20 +13,17 @@ const level = (id: string, label: string, order: number): Level => ({
   nextLevelHint: `Passer à ce qui suit ${label}.`,
 })
 
-const dimension = (dimensionId: string, band: string): DimensionScore => ({
-  dimensionId,
-  label: dimensionId,
-  score: 0.5,
-  band,
+const step = (overrides: Partial<PlanStep> = {}): PlanStep => ({
+  dimensionId: 'taille',
+  label: 'taille',
   measurement: 'measured',
-  earned: 1,
-  possible: 2,
-  contributions: [],
-})
-
-const condition = (dimensionId: string): LevelCondition => ({
-  dimension: dimensionId,
-  min: 0.75,
+  target: { label: 'M — complexité moyenne', from: 0.5 },
+  action: undefined,
+  proof: undefined,
+  observed: 0.25,
+  required: 0.75,
+  observedBand: 'S — peu de complexité',
+  ...overrides,
 })
 
 const reachedVerdict = (): LevelVerdict => ({
@@ -42,34 +36,31 @@ const reachedVerdict = (): LevelVerdict => ({
   nextLevel: level('green', '🟢 Green', 4),
 })
 
-const unrankedVerdict = (): LevelVerdict => {
-  const gaps: ConditionGap[] = [
-    {
-      condition: condition('taille'),
-      dimension: dimension('taille', 'S — peu de complexité'),
-      gap: 0.25,
-    },
-    {
-      condition: condition('initiative'),
-      dimension: undefined,
-      gap: undefined,
-    },
-  ]
+const unrankedVerdict = (): LevelVerdict => ({
+  level: undefined,
+  unranked: [],
+  satisfiedConditions: [],
+  blocking: [],
+  capping: undefined,
+  hint: undefined,
+  nextLevel: level('white', '❖ White', 1),
+})
 
-  return {
-    level: undefined,
-    unranked: gaps,
-    satisfiedConditions: [],
-    blocking: gaps,
-    capping: gaps[0],
-    hint: undefined,
-    nextLevel: level('white', '❖ White', 1),
-  }
-}
+const unrankedReasonFixture = (): PlanStep[] => [
+  step(),
+  step({
+    dimensionId: 'initiative',
+    label: 'initiative',
+    measurement: 'unmeasured',
+    observed: undefined,
+    observedBand: undefined,
+    target: undefined,
+  }),
+]
 
 describe('level block', () => {
   it('names the official label of a reached level, as the level-2 heading', () => {
-    render(<LevelBlock level={reachedVerdict()} />)
+    render(<LevelBlock level={reachedVerdict()} unrankedReason={undefined} />)
 
     expect(
       screen.getByRole('heading', { level: 2, name: '🔹 Blue' }),
@@ -78,7 +69,12 @@ describe('level block', () => {
   })
 
   it('never announces White by default when no level is reached', () => {
-    render(<LevelBlock level={unrankedVerdict()} />)
+    render(
+      <LevelBlock
+        level={unrankedVerdict()}
+        unrankedReason={unrankedReasonFixture()}
+      />,
+    )
 
     expect(
       screen.getByRole('heading', {
@@ -90,9 +86,40 @@ describe('level block', () => {
   })
 
   it('explains the unranked state with each axis in cause', () => {
-    render(<LevelBlock level={unrankedVerdict()} />)
+    render(
+      <LevelBlock
+        level={unrankedVerdict()}
+        unrankedReason={unrankedReasonFixture()}
+      />,
+    )
 
     expect(screen.getByText(/taille/)).toBeInTheDocument()
     expect(screen.getByText(/non mesuré/)).toBeInTheDocument()
+  })
+
+  it('names the current rung and the targeted rung, both in the words of the grid', () => {
+    render(
+      <LevelBlock
+        level={unrankedVerdict()}
+        unrankedReason={unrankedReasonFixture()}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        'taille — actuellement « S — peu de complexité », la condition demande « M — complexité moyenne »',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('renders no reason when no reason is passed', () => {
+    render(<LevelBlock level={unrankedVerdict()} unrankedReason={undefined} />)
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'Aucun niveau ne peut être annoncé',
+      }),
+    ).toBeInTheDocument()
   })
 })

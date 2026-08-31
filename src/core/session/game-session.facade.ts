@@ -56,6 +56,13 @@ export type Verdict = {
   /** Une étape par axe qui bloque le cran suivant, le plafond en tête. */
   plan: readonly PlanStep[]
   /**
+   * Les conditions non tenues du niveau le plus bas, transformées par le même
+   * `planProgression` que `plan` — la raison pour laquelle aucun niveau n'est
+   * annonçable, dans les mots de la grille. Absent dès qu'un niveau est
+   * atteint.
+   */
+  unrankedReason: readonly PlanStep[] | undefined
+  /**
    * La seconde lecture des mêmes critères, quand une signature est câblée.
    * Elle décrit la rigueur du flux ; elle ne pèse sur aucun niveau officiel.
    */
@@ -274,6 +281,10 @@ export class GameSessionFacade {
       level,
       proof: proveAxes(this.grid, dimensions, criteria),
       plan: planProgression(this.grid, level.blocking),
+      unrankedReason:
+        level.unranked === undefined
+          ? undefined
+          : planProgression(this.grid, level.unranked),
       signature: this.readSignature(criteria),
     }
   }

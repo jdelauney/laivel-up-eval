@@ -88,13 +88,15 @@ describe('level resolution', () => {
     expect(resolveLevel(grid, axes(1, 1, 1, 1, 1)).level?.id).toBe('gold')
   })
 
-  it('announces no level when the profile sits in a gap of the referential', () => {
+  it('announces no level when the profile sits in a gap of the referential, and aims the climbable level, not the one it violates', () => {
     // taille au-dessus de White (max 0) mais en dessous de Red (min 0.25) :
-    // aucun niveau ne peut tenir.
+    // aucun niveau ne peut tenir. White viole une borne max — regresser vers
+    // lui n'a pas de sens — donc la cible grimpe jusqu'à Red, le premier
+    // niveau que rien n'interdit d'atteindre en avançant.
     const verdict = resolveLevel(grid, axes(0.1, 0, 0, 0, 0))
 
     expect(verdict.level).toBeUndefined()
-    expect(verdict.nextLevel?.id).toBe('white')
+    expect(verdict.nextLevel?.id).toBe('red')
     expect(verdict.unranked).toHaveLength(1)
     expect(verdict.unranked?.[0].condition.dimension).toBe('taille')
     expect(verdict.unranked?.[0].gap).toBeCloseTo(0.1)
@@ -121,6 +123,38 @@ describe('level resolution', () => {
     expect(resolveLevel(grid, dimensions)).toEqual(
       resolveLevel(grid, dimensions),
     )
+  })
+
+  it('flags which bound gave way on a violated condition', () => {
+    const verdict = resolveLevel(grid, axes(1, 1, 1, 0.66, 1))
+
+    expect(verdict.capping?.violated).toBe('min')
+  })
+})
+
+describe("the referential's gap", () => {
+  it('aims Red by climbing when the profile falls into the gap between White and Red, never White by descending', () => {
+    // Le profil que D2 anticipe nommément : une feature de taille moyenne
+    // (taille ≈ 0.5, largement au-dessus de White qui exige max 0) mais
+    // aucun chantier mené en parallèle (parallele = 0, en dessous du
+    // minimum de Red). Aucun niveau ne tient. White viole `max` sur taille
+    // et harness : le viser demanderait de désapprendre ce qui est déjà
+    // acquis. Red ne viole que des bornes `min` : c'est la cible qui monte.
+    const verdict = resolveLevel(grid, axes(0.5, 0.5, 1, 0))
+
+    expect(verdict.level).toBeUndefined()
+    expect(verdict.nextLevel?.id).toBe('red')
+    expect(verdict.capping?.condition.dimension).toBe('parallele')
+    expect(verdict.blocking.map((gap) => gap.condition.dimension)).toEqual([
+      'parallele',
+    ])
+
+    // La raison de l'état non classé reste celle de White — un objet
+    // distinct du plan qui, lui, vise Red : plus de phrase dupliquée.
+    expect(
+      verdict.unranked?.map((gap) => gap.condition.dimension).sort(),
+    ).toEqual(['harness', 'taille'])
+    expect(verdict.blocking).not.toBe(verdict.unranked)
   })
 })
 

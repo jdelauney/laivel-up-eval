@@ -95,10 +95,16 @@ const gap = (
   bound: { min?: number; max?: number },
   dimensionScore: DimensionScore | undefined,
   gapValue: number | undefined,
+  violated: 'min' | 'max' | undefined = bound.min !== undefined
+    ? 'min'
+    : bound.max !== undefined
+      ? 'max'
+      : undefined,
 ): ConditionGap => ({
   condition: { dimension, ...bound },
   dimension: dimensionScore,
   gap: gapValue,
+  violated,
 })
 
 describe('progression plan', () => {
@@ -179,6 +185,41 @@ describe('progression plan', () => {
     expect(step.action).toBeUndefined()
     expect(step.proof).toBeUndefined()
     expect(step.dimensionId).toBe('sans-echelle')
+    expect(step.observedBand).toBeUndefined()
+  })
+
+  it('names the currently reached band as observedBand, resolved by bandFor', () => {
+    const blocking = [
+      gap(
+        'parallele',
+        { min: 1 },
+        measuredDimension('parallele', 'Chantiers menés en parallèle', 0.66),
+        0.34,
+      ),
+    ]
+
+    const [step] = planProgression(grid, blocking)
+
+    expect(step.observedBand).toBe('2 chantiers')
+  })
+
+  it('picks the direction from the bound that actually gave way, not merely from having a min', () => {
+    // Une condition à deux bornes : seul `max` a cédé (score 0.6 > 0.4), même
+    // si `min` (0.1) est aussi déclaré. La cible doit descendre, pas monter.
+    const blocking = [
+      gap(
+        'intervention',
+        { min: 0.1, max: 0.4 },
+        measuredDimension('intervention', 'Reprise humaine', 0.6),
+        0.2,
+        'max',
+      ),
+    ]
+
+    const [step] = planProgression(grid, blocking)
+
+    expect(step.target).toEqual({ label: 'rien à reprendre', from: 0 })
+    expect(step.required).toBe(0.4)
   })
 
   it('invents no text on a band without an action: both stay absent', () => {
@@ -276,6 +317,7 @@ describe('progression plan', () => {
 
     expect(step.measurement).toBe('unmeasured')
     expect(step.observed).toBeUndefined()
+    expect(step.observedBand).toBeUndefined()
     expect(step.action).toBe('Mener trois chantiers de front le même jour.')
   })
 

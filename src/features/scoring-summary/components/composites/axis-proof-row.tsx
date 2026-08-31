@@ -5,11 +5,14 @@ import { MeasurementMark } from '../elements/measurement-mark'
  * Un axe, dans l'ordre de lecture de la preuve : le cran atteint — l'objet
  * le plus grand de la ligne, jamais un chiffre —, le libellé de l'axe, le
  * signal qui l'a fixé, la valeur observée en contributions, puis les deux
- * seuils qui l'encadrent. Aucun pourcentage nulle part.
+ * seuils qui l'encadrent, dans les mots de la grille. Aucun pourcentage,
+ * aucune décimale nulle part.
  *
  * Un axe non mesuré affiche la phrase à la place du cran et aucun chiffre :
- * un cran inconnu n'est pas un cran bas. Un axe inféré ajoute une phrase sur
- * le nombre de signaux indirects qui l'ont fixé.
+ * un cran inconnu n'est pas un cran bas. Un axe mesuré ou inféré qui n'a
+ * tenu aucun signal reste sur ses gardes : la ligne nomme le signal le plus
+ * proche resté sans réponse plutôt que de se taire. Un axe inféré ajoute une
+ * phrase sur le nombre de signaux indirects qui l'ont fixé.
  */
 type AxisProofRowProps = Readonly<{ proof: AxisProof }>
 
@@ -21,6 +24,7 @@ const indirectSignalWording = (count: number): string =>
 export const AxisProofRow = ({ proof }: AxisProofRowProps) => {
   const isUnmeasured = proof.measurement === 'unmeasured'
   const decisiveSignal = proof.held[0]
+  const closestMiss = proof.missed[0]
   const indirectSignalCount = proof.held.length + proof.missed.length
 
   return (
@@ -40,17 +44,19 @@ export const AxisProofRow = ({ proof }: AxisProofRowProps) => {
         <p className="text-plane-foreground/80 text-sm">
           fixé par « {decisiveSignal.question} »
         </p>
+      ) : closestMiss !== undefined ? (
+        <p className="text-plane-foreground/80 text-sm">
+          aucun signal tenu — le plus proche resté sans réponse : «{' '}
+          {closestMiss.question} »
+        </p>
       ) : null}
 
       {isUnmeasured ? null : (
         <p className="text-plane-foreground/60 text-sm tabular-nums">
           {proof.earned} sur {proof.possible} contributions
-          {proof.crossed !== undefined ? <> · franchi {proof.crossed}</> : null}
+          {proof.band !== undefined ? <> · franchi « {proof.band} »</> : null}
           {proof.missedBand !== undefined ? (
-            <>
-              {' '}
-              · manqué {proof.missedBand.from} → {proof.missedBand.label}
-            </>
+            <> · manqué « {proof.missedBand.label} »</>
           ) : null}
         </p>
       )}

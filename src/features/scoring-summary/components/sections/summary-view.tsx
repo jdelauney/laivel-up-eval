@@ -17,14 +17,15 @@ import { SignatureBlock } from '../composites/signature-block'
 export const SummaryView = () => {
   const facade = useSessionFacade()
   const reset = useSessionStore((state) => state.reset)
-  const { result, level, proof, plan, signature } = facade.getVerdict()
+  const { result, level, proof, plan, unrankedReason, signature } =
+    facade.getVerdict()
 
   return (
     <div className="flex flex-col gap-12">
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <div className="flex flex-1 flex-col gap-8 rounded-2xl border border-plane-rule p-6">
-          <LevelBlock level={level} />
-          <CappingAxis capping={level.capping} />
+          <LevelBlock level={level} unrankedReason={unrankedReason} />
+          <CappingAxis capping={plan[0]} />
         </div>
         {signature !== undefined ? (
           <div className="flex flex-1 rounded-2xl border border-plane-rule p-6">

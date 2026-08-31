@@ -13,6 +13,7 @@ const step = (overrides: Partial<PlanStep> = {}): PlanStep => ({
     'Trois PR mergées dans la même journée, sur trois branches ouvertes en même temps.',
   observed: 0.66,
   required: 1,
+  observedBand: '2 chantiers',
   ...overrides,
 })
 
@@ -74,5 +75,17 @@ describe('progression step', () => {
     render(<ProgressionStep step={step({ target: undefined })} />)
 
     expect(screen.getByText('Chantiers menés en parallèle')).toBeInTheDocument()
+  })
+
+  it('reads the observed rung against the required one, in words, never as a raw number', () => {
+    render(<ProgressionStep step={step()} />)
+
+    expect(
+      screen.getByText(
+        'Lu à « 2 chantiers », le cran demande « 3 chantiers et plus ».',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('0.66')).not.toBeInTheDocument()
+    expect(screen.queryByText(/^1$/)).not.toBeInTheDocument()
   })
 })
