@@ -1609,56 +1609,88 @@
         },
         {
           "id": "g6-2",
-          "type": "test-bench",
+          "type": "ambiguity-scan",
           "label": "Qu'est-ce qui est ambigu ici ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Un chef de produit vous transmet cette demande de fonctionnalité, telle quelle. Repérez les segments qui laissent une marge d'interprétation à l'IA qui l'exécutera — sans savoir combien il y en a.",
+            "promptTitle": "La demande transmise",
+            "segments": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "s1",
+                "text": "Ajoute une notification par email envoyée au client",
+                "ambiguous": false
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "s2",
+                "text": "dès que la commande passe au statut « payée » dans Stripe,",
+                "ambiguous": false
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "s3",
+                "text": "avec un contenu qui reprend le ton habituel de la marque,",
+                "ambiguous": true,
+                "reading": "« Le ton habituel » ne fixe ni gabarit, ni champs, ni longueur : une IA choisira elle-même la mise en forme, sans que personne ne l'ait validée."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "s4",
+                "text": "un lien vers la facture PDF déjà générée par le module de facturation,",
+                "ambiguous": false
+              },
+              {
+                "id": "s5",
+                "text": "sur un design similaire aux autres emails transactionnels,",
+                "ambiguous": true,
+                "reading": "« Similaire » ne désigne aucun gabarit précis : une IA retiendra le plus proche à ses yeux, pas nécessairement celui qu'on avait en tête."
+              },
+              {
+                "id": "s6",
+                "text": "avec une relance en cas d'échec d'envoi,",
+                "ambiguous": true,
+                "reading": "Ni le nombre de relances, ni le délai entre elles, ni ce qui compte comme un échec ne sont fixés : une IA choisira ces trois nombres seule."
+              },
+              {
+                "id": "s7",
+                "text": "limité aux commandes de plus de dix euros,",
+                "ambiguous": false
+              },
+              {
+                "id": "s8",
+                "text": "en priorité sur les nouveaux clients,",
+                "ambiguous": true,
+                "reading": "« En priorité » ne dit pas si les autres clients sont exclus ou seulement traités après : une IA tranchera entre exclusion et ordre d'envoi sans le dire."
+              },
+              {
+                "id": "s9",
+                "text": "à livrer avant la fin du sprint en cours.",
+                "ambiguous": false
               }
             ]
           },
           "criteria": [
             {
               "id": "g6-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La part des segments ambigus réellement repérés dépasse-t-elle le seuil ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "ambiguity-net-share-at-least",
+                "threshold": 0.5
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 2
                 }
               ]
             },
             {
               "id": "g6-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Les segments clairs ont-ils été laissés tranquilles ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "clear-segments-spared-at-least",
+                "threshold": 0.8
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
                 }
               ]

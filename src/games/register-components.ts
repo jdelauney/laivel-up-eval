@@ -1,3 +1,4 @@
+import { AmbiguityScanGame } from './ambiguity-scan/components/composites/ambiguity-scan-game'
 import { CheckpointsGame } from './checkpoints/components/composites/checkpoints-game'
 import { ConfidenceBetGame } from './confidence-bet/components/composites/confidence-bet-game'
 import { DefectHuntGame } from './defect-hunt/components/composites/defect-hunt-game'
@@ -26,6 +27,7 @@ const components: Record<string, GameComponent> = {
   'lie-detector': LieDetectorGame,
   'hint-budget': HintBudgetGame,
   'practice-map': PracticeMapGame,
+  'ambiguity-scan': AmbiguityScanGame,
 }
 
 export const resolveGameComponent = (

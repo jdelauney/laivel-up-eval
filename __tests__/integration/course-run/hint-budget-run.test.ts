@@ -726,6 +726,12 @@ describe('hint-budget in the course', () => {
           config.stages.map(() => 'laisser-passer'),
         )
       }
+      /**
+       * `g6-2` porte ambiguity-scan depuis la phase 4 de son propre plan :
+       * ce test ne mesure pas `pilotage-contexte`, donc n'importe quelle
+       * trace conforme suffit — ici, aucun segment signalé.
+       */
+      if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
       return { selected: [] }
     }
 

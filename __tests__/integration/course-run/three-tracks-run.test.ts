@@ -128,6 +128,14 @@ const answerFor = (game: Game, allocation: readonly PlayedTurn[]): unknown => {
    * propre zone.
    */
   if (game.type === 'practice-map') return correctPracticeMapAnswer(game.config)
+  /**
+   * `g6-2` porte ambiguity-scan depuis la phase 4 de son propre plan : ce
+   * test mesure `parallele`, jamais `pilotage-contexte`, donc n'importe
+   * quelle trace conforme suffit — ici, aucun segment signalé, une trace
+   * valide au sens du contrat même si l'écran ne la laisserait pas
+   * soumettre telle quelle.
+   */
+  if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
   return { selected: [] }
 }
 

@@ -1,3 +1,6 @@
+import { AmbiguityScanEvaluator } from '@/games/ambiguity-scan/ambiguity-scan.evaluator'
+import { ambiguityScanAnswerSchema } from '@/games/ambiguity-scan/schema/answer.schema'
+import { ambiguityScanConfigSchema } from '@/games/ambiguity-scan/schema/config.schema'
 import { CheckpointsEvaluator } from '@/games/checkpoints/checkpoints.evaluator'
 import { checkpointsAnswerSchema } from '@/games/checkpoints/schema/answer.schema'
 import { checkpointsConfigSchema } from '@/games/checkpoints/schema/config.schema'
@@ -78,6 +81,12 @@ export const buildGameRegistry = (): GameRegistry => {
     evaluator: new PracticeMapEvaluator(),
     configSchema: practiceMapConfigSchema,
     answerSchema: practiceMapAnswerSchema,
+  })
+
+  registry.register('ambiguity-scan', {
+    evaluator: new AmbiguityScanEvaluator(),
+    configSchema: ambiguityScanConfigSchema,
+    answerSchema: ambiguityScanAnswerSchema,
   })
 
   return registry
