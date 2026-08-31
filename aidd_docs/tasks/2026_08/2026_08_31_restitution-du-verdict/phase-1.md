@@ -99,21 +99,29 @@ export type LevelVerdict = {
   /** Ce qui empêche d'annoncer un niveau. Absent dès qu'un niveau est atteint. */
   unranked: readonly ConditionGap[] | undefined
   satisfiedConditions: readonly LevelCondition[]
-  /** Les conditions du cran suivant qui ne tiennent pas, la plus bloquante en tête. */
+  /** Les conditions de la cible qui ne tiennent pas, la plus bloquante en tête. */
   blocking: readonly ConditionGap[]
-  /** L'axe qui plafonne : la tête de `blocking`. Absent au sommet du référentiel. */
-  capping: ConditionGap | undefined
   /** Ce que le niveau atteint dit pour monter. Absent quand aucun n'est atteint. */
   hint: string | undefined
   nextLevel: Level | undefined
 }
 ```
 
+> **Écart avec le code livré** (revue du 2026-08-31, résidus C2/C3/C6) :
+> `capping` a disparu du type. L'écran lit l'axe qui plafonne sur `plan[0]`
+> (la tête du plan de progression), pas sur un champ dédié qui dupliquait la
+> même information sous deux formes. `LevelVerdict` porte aussi
+> `noNextLevelReason: 'summit' | 'unreachable' | undefined`, absent de ce
+> plan initial : `resolveClimbTarget` peut ne retenir aucune cible (toute la
+> grille au-dessus de la position courante viole une borne `max`), et
+> l'écran doit distinguer ce cas du sommet du référentiel atteint plutôt que
+> de les confondre dans une phrase unique.
+
 Règles :
 
 - `holds` refuse une dimension absente ou `unmeasured` ; `inferred` passe comme `measured`.
-- Aucun niveau ne tient → `level: undefined`, `nextLevel` = le niveau le plus bas, `unranked` et `blocking` = ses conditions non tenues, `hint: undefined`.
-- Un niveau tient → `blocking` = les conditions non tenues de `nextLevel`. Au sommet, `nextLevel` et `capping` sont absents et `blocking` est vide.
+- Aucun niveau ne tient → `level: undefined`, `nextLevel` = la cible atteignable en montant (jamais un repli sur le niveau le plus bas), `unranked` et `blocking` = les conditions non tenues respectivement du niveau le plus bas et de la cible, `hint: undefined`.
+- Un niveau tient → `blocking` = les conditions non tenues de la cible atteignable au-dessus. Sans cible (sommet atteint, ou aucune atteignable en montant), `nextLevel` est absent et `blocking` est vide.
 - Tri de `blocking` : `gap === undefined` (axe non mesuré) d'abord, puis `gap` décroissant, puis l'ordre des dimensions dans `grid.dimensions`.
 - `gap` : pour une borne `min` violée, `min - score` ; pour une borne `max` violée, `score - max`.
 - Aucune horloge, aucun aléa : deux appels sur les mêmes entrées rendent le même objet.
@@ -125,7 +133,7 @@ Règles :
 - niveau atteint → le libellé officiel en titre de niveau 2, et le cran suivant nommé s'il existe ;
 - aucun niveau → « Aucun niveau ne peut être annoncé » en titre de niveau 2, suivi de la raison construite sur `unranked` : chaque axe en cause, sa borne exigée, et — pour un axe non mesuré — le fait qu'il ne l'a pas été.
 
-`capping-axis.tsx` (dumb) reçoit `capping` et nomme l'axe, sa borne exigée et la valeur observée. Au sommet, il rend la phrase qui dit qu'aucun axe ne plafonne plus.
+`capping-axis.tsx` (dumb) reçoit la tête du plan de progression (`plan[0]`) et nomme l'axe, sa borne exigée et la valeur observée. Sans axe qui plafonne, il distingue le sommet atteint de l'absence de cran atteignable en montant, sur `LevelVerdict.noNextLevelReason`.
 
 Aucun pourcentage dans ces deux composants.
 

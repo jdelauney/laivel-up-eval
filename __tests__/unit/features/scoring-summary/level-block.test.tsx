@@ -31,9 +31,9 @@ const reachedVerdict = (): LevelVerdict => ({
   unranked: undefined,
   satisfiedConditions: [],
   blocking: [],
-  capping: undefined,
   hint: 'Automatiser la relance.',
   nextLevel: level('green', '🟢 Green', 4),
+  noNextLevelReason: undefined,
 })
 
 const unrankedVerdict = (): LevelVerdict => ({
@@ -41,9 +41,9 @@ const unrankedVerdict = (): LevelVerdict => ({
   unranked: [],
   satisfiedConditions: [],
   blocking: [],
-  capping: undefined,
   hint: undefined,
   nextLevel: level('white', '❖ White', 1),
+  noNextLevelReason: undefined,
 })
 
 const unrankedReasonFixture = (): PlanStep[] => [

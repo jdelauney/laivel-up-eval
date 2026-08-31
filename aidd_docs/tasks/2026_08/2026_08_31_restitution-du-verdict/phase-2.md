@@ -51,10 +51,8 @@ export type AxisProof = {
   measurement: MeasurementStatus
   /** Le cran atteint, dans les mots de la grille. Absent sans échelle. */
   band: string | undefined
-  /** Le seuil franchi : le `from` de la bande atteinte. */
-  crossed: number | undefined
-  /** Le cran juste au-dessus et le seuil manqué. Absent au sommet de l'échelle. */
-  missedBand: { label: string; from: number } | undefined
+  /** Le cran juste au-dessus, manqué. Absent au sommet de l'échelle. */
+  missedBand: { label: string } | undefined
   /** La valeur observée, en contributions — jamais un pourcentage. */
   earned: number
   possible: number
@@ -71,9 +69,15 @@ export const proveAxes = (
 ): AxisProof[]
 ```
 
+> **Écart avec le code livré** (revue du 2026-08-31, résidu C6) : `crossed`
+> et `missedBand.from` ont disparu. Une fois le seuil franchi rendu comme le
+> libellé de bande déjà en tête de ligne (`proof.band`), `crossed` dupliquait
+> la même donnée sous un second nom sans consommateur ; `missedBand.from`
+> n'en avait jamais eu, l'écran ne lisant que `.label`.
+
 - `question` se résout depuis `criteria` par `criterionId` ; un critère introuvable est une incohérence de câblage, pas un cas nominal — lever, comme `buildGameOutcome` le fait déjà.
 - Tri de `held` et `missed` : poids décroissant, puis `criterionId` pour rester déterministe.
-- Un axe `unmeasured` a `band`, `crossed`, `missedBand` absents et `held` / `missed` vides.
+- Un axe `unmeasured` a `band` et `missedBand` absents et `held` / `missed` vides.
 - Pur : aucune horloge, aucun aléa, aucun accès réseau.
 
 La façade expose `proof` sur le verdict et sur la lecture de signature — mêmes axes, même helper.

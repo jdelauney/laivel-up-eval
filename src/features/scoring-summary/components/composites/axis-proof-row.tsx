@@ -4,9 +4,10 @@ import { MeasurementMark } from '../elements/measurement-mark'
 /**
  * Un axe, dans l'ordre de lecture de la preuve : le cran atteint — l'objet
  * le plus grand de la ligne, jamais un chiffre —, le libellé de l'axe, le
- * signal qui l'a fixé, la valeur observée en contributions, puis les deux
- * seuils qui l'encadrent, dans les mots de la grille. Aucun pourcentage,
- * aucune décimale nulle part.
+ * signal qui l'a fixé, la valeur observée en contributions, puis le seuil
+ * manqué, dans les mots de la grille. Le seuil franchi n'est pas répété : il
+ * est déjà le cran atteint, en tête de ligne. Aucun pourcentage, aucune
+ * décimale nulle part.
  *
  * Un axe non mesuré affiche la phrase à la place du cran et aucun chiffre :
  * un cran inconnu n'est pas un cran bas. Un axe mesuré ou inféré qui n'a
@@ -54,7 +55,6 @@ export const AxisProofRow = ({ proof }: AxisProofRowProps) => {
       {isUnmeasured ? null : (
         <p className="text-plane-foreground/60 text-sm tabular-nums">
           {proof.earned} sur {proof.possible} contributions
-          {proof.band !== undefined ? <> · franchi « {proof.band} »</> : null}
           {proof.missedBand !== undefined ? (
             <> · manqué « {proof.missedBand.label} »</>
           ) : null}

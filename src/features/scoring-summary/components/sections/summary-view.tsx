@@ -25,7 +25,10 @@ export const SummaryView = () => {
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <div className="flex flex-1 flex-col gap-8 rounded-2xl border border-plane-rule p-6">
           <LevelBlock level={level} unrankedReason={unrankedReason} />
-          <CappingAxis capping={plan[0]} />
+          <CappingAxis
+            capping={plan[0]}
+            noNextLevelReason={level.noNextLevelReason}
+          />
         </div>
         {signature !== undefined ? (
           <div className="flex flex-1 rounded-2xl border border-plane-rule p-6">
@@ -40,8 +43,9 @@ export const SummaryView = () => {
         </h3>
         {plan.length === 0 ? (
           <p className="text-plane-foreground/80 text-sm">
-            Le sommet du référentiel est atteint : il n'y a plus de cran à
-            ouvrir.
+            {level.noNextLevelReason === 'unreachable'
+              ? "Aucun cran au-dessus n'est atteignable en montant : la grille n'en propose pas."
+              : "Le sommet du référentiel est atteint : il n'y a plus de cran à ouvrir."}
           </p>
         ) : (
           <ul className="flex flex-col border-plane-rule border-t">

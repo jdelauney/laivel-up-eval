@@ -52,8 +52,8 @@ describe('level resolution', () => {
 
     expect(verdict.level?.id).toBe('gold')
     expect(verdict.nextLevel).toBeUndefined()
-    expect(verdict.capping).toBeUndefined()
     expect(verdict.blocking).toHaveLength(0)
+    expect(verdict.noNextLevelReason).toBe('summit')
   })
 
   it('names the single axis that caps the next level when the rest are at the top', () => {
@@ -61,7 +61,7 @@ describe('level resolution', () => {
 
     expect(verdict.level?.id).toBe('green')
     expect(verdict.nextLevel?.id).toBe('copper')
-    expect(verdict.capping?.condition.dimension).toBe('parallele')
+    expect(verdict.blocking[0]?.condition.dimension).toBe('parallele')
     expect(verdict.blocking).toHaveLength(1)
   })
 
@@ -128,7 +128,7 @@ describe('level resolution', () => {
   it('flags which bound gave way on a violated condition', () => {
     const verdict = resolveLevel(grid, axes(1, 1, 1, 0.66, 1))
 
-    expect(verdict.capping?.violated).toBe('min')
+    expect(verdict.blocking[0]?.violated).toBe('min')
   })
 })
 
@@ -144,17 +144,105 @@ describe("the referential's gap", () => {
 
     expect(verdict.level).toBeUndefined()
     expect(verdict.nextLevel?.id).toBe('red')
-    expect(verdict.capping?.condition.dimension).toBe('parallele')
+    expect(verdict.blocking[0]?.condition.dimension).toBe('parallele')
     expect(verdict.blocking.map((gap) => gap.condition.dimension)).toEqual([
       'parallele',
     ])
 
-    // La raison de l'état non classé reste celle de White — un objet
-    // distinct du plan qui, lui, vise Red : plus de phrase dupliquée.
-    expect(
-      verdict.unranked?.map((gap) => gap.condition.dimension).sort(),
-    ).toEqual(['harness', 'taille'])
-    expect(verdict.blocking).not.toBe(verdict.unranked)
+    // La raison de l'état non classé reste celle de White — un contenu
+    // distinct de celui du plan qui, lui, vise Red : plus de phrase
+    // dupliquée. Comparaison de contenu, pas de référence : `[...gaps].sort()`
+    // rend toujours un tableau neuf, donc `not.toBe` ne protégerait rien.
+    const unrankedAxes = (verdict.unranked ?? [])
+      .map((gap) => gap.condition.dimension)
+      .sort()
+    const blockingAxes = verdict.blocking
+      .map((gap) => gap.condition.dimension)
+      .sort()
+    expect(unrankedAxes).toEqual(['harness', 'taille'])
+    expect(blockingAxes).not.toEqual(unrankedAxes)
+  })
+})
+
+describe('a reached level follows the same climb rule as an unranked one', () => {
+  it('never offers a regressive next level, even when it holds the naive next order', () => {
+    // La grille où `byOrder[position + 1]` serait « mid » — un niveau
+    // intermédiaire dont la borne max est déjà dépassée. Le viser
+    // redemanderait de régresser, exactement la pathologie de DB-2, mais sur
+    // un profil classé. `resolveClimbTarget` doit sauter par-dessus, comme
+    // pour un profil non classé.
+    const regressiveGrid: Grid = {
+      version: 'test',
+      title: 'Grille de test',
+      dimensions: [{ id: 'a', label: 'A', weight: 1 }],
+      levels: [
+        {
+          id: 'low',
+          label: 'Low',
+          order: 1,
+          conditions: [{ dimension: 'a', min: 0 }],
+          nextLevelHint: 'Monter.',
+        },
+        {
+          id: 'mid',
+          label: 'Mid',
+          order: 2,
+          conditions: [{ dimension: 'a', max: 0.3 }],
+          nextLevelHint: 'Ne devrait jamais être visé ici.',
+        },
+        {
+          id: 'high',
+          label: 'High',
+          order: 3,
+          conditions: [{ dimension: 'a', min: 0.8 }],
+          nextLevelHint: 'Sommet.',
+        },
+      ],
+    }
+
+    const verdict = resolveLevel(regressiveGrid, [dim('a', 0.5)])
+
+    expect(verdict.level?.id).toBe('low')
+    expect(verdict.nextLevel?.id).toBe('high')
+    expect(verdict.blocking.map((gap) => gap.condition.dimension)).toEqual([
+      'a',
+    ])
+  })
+})
+
+describe('no climbable target', () => {
+  it('says no rung above is reachable when every level in the grid violates a max bound', () => {
+    // Cas signalé par la revue comme non couvert : même le niveau le plus
+    // haut porte une borne max dépassée. Le repli sur le plancher a
+    // disparu — aucune cible, la raison le dit, distincte du sommet atteint.
+    const allCappedGrid: Grid = {
+      version: 'test',
+      title: 'Grille de test',
+      dimensions: [{ id: 'a', label: 'A', weight: 1 }],
+      levels: [
+        {
+          id: 'low',
+          label: 'Low',
+          order: 1,
+          conditions: [{ dimension: 'a', max: 0 }],
+          nextLevelHint: 'Monter.',
+        },
+        {
+          id: 'high',
+          label: 'High',
+          order: 2,
+          conditions: [{ dimension: 'a', max: 0.3 }],
+          nextLevelHint: 'Toujours hors d’atteinte.',
+        },
+      ],
+    }
+
+    const verdict = resolveLevel(allCappedGrid, [dim('a', 0.5)])
+
+    expect(verdict.level).toBeUndefined()
+    expect(verdict.nextLevel).toBeUndefined()
+    expect(verdict.blocking).toHaveLength(0)
+    expect(verdict.noNextLevelReason).toBe('unreachable')
   })
 })
 
@@ -202,7 +290,7 @@ describe('capping order', () => {
     ])
 
     expect(verdict.level?.id).toBe('low')
-    expect(verdict.capping?.condition.dimension).toBe('c')
+    expect(verdict.blocking[0]?.condition.dimension).toBe('c')
   })
 
   it('puts the measured axis with the largest gap ahead of a smaller one', () => {

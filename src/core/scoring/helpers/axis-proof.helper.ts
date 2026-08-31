@@ -9,8 +9,8 @@ import type {
 
 /**
  * La preuve d'un axe, calculée une fois pour l'écran comme pour la
- * signature : le cran atteint, ce qui l'a fixé, la valeur observée et les
- * deux seuils qui l'encadrent. Rien n'est rédigé ici, tout vient de la
+ * signature : le cran atteint, ce qui l'a fixé, la valeur observée et le
+ * cran manqué juste au-dessus. Rien n'est rédigé ici, tout vient de la
  * grille et de la trace des critères.
  *
  * Pur : aucune horloge, aucun aléa, aucun accès réseau. Deux appels sur le
@@ -32,10 +32,8 @@ export type AxisProof = {
   measurement: MeasurementStatus
   /** Le cran atteint, dans les mots de la grille. Absent sans échelle. */
   band: string | undefined
-  /** Le seuil franchi : le `from` de la bande atteinte. */
-  crossed: number | undefined
-  /** Le cran juste au-dessus et le seuil manqué. Absent au sommet de l'échelle. */
-  missedBand: { label: string; from: number } | undefined
+  /** Le cran juste au-dessus, manqué. Absent au sommet de l'échelle. */
+  missedBand: { label: string } | undefined
   /** La valeur observée, en contributions — jamais un pourcentage. */
   earned: number
   possible: number
@@ -84,30 +82,23 @@ const sortByWeightThenId = (signals: readonly AxisSignal[]): AxisSignal[] =>
   )
 
 /**
- * Le seuil franchi et le cran manqué, lus sur l'échelle brute de la grille —
- * jamais recalculés depuis le libellé de bande. Absents dès que la dimension
- * n'a pas de bande à l'écran, mesure comme échelle.
+ * Le cran manqué, lu sur l'échelle brute de la grille — jamais recalculé
+ * depuis le libellé de bande. Absent dès que la dimension n'a pas de bande à
+ * l'écran, mesure comme échelle.
  */
-const resolveThresholds = (
+const resolveMissedBand = (
   gridDimension: Dimension | undefined,
   dimensionScore: DimensionScore,
-): Pick<AxisProof, 'crossed' | 'missedBand'> => {
+): AxisProof['missedBand'] => {
   const scale = gridDimension?.scale
   if (dimensionScore.band === undefined || scale === undefined) {
-    return { crossed: undefined, missedBand: undefined }
+    return undefined
   }
 
   const reached = scale.filter((band) => dimensionScore.score >= band.from)
-  const crossed = reached.at(-1)?.from
   const missed = scale.at(reached.length)
 
-  return {
-    crossed,
-    missedBand:
-      missed === undefined
-        ? undefined
-        : { label: missed.label, from: missed.from },
-  }
+  return missed === undefined ? undefined : { label: missed.label }
 }
 
 const buildAxisProof = (
@@ -127,7 +118,7 @@ const buildAxisProof = (
     label: dimensionScore.label,
     measurement: dimensionScore.measurement,
     band: dimensionScore.band,
-    ...resolveThresholds(gridDimension, dimensionScore),
+    missedBand: resolveMissedBand(gridDimension, dimensionScore),
     earned: dimensionScore.earned,
     possible: dimensionScore.possible,
     held: sortByWeightThenId(signals.filter((signal) => signal.satisfied)),

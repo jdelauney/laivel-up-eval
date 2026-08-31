@@ -18,7 +18,7 @@ const step = (overrides: Partial<PlanStep> = {}): PlanStep => ({
 
 describe('capping axis', () => {
   it('names the axis, the current rung and the targeted rung, both in the words of the grid', () => {
-    render(<CappingAxis capping={step()} />)
+    render(<CappingAxis capping={step()} noNextLevelReason={undefined} />)
 
     expect(
       screen.getByText(
@@ -30,13 +30,26 @@ describe('capping axis', () => {
   })
 
   it('says the top of the referential is reached when nothing caps anymore', () => {
-    render(<CappingAxis capping={undefined} />)
+    render(<CappingAxis capping={undefined} noNextLevelReason="summit" />)
 
     expect(
       screen.getByText(
         'Le sommet du référentiel est atteint : aucun axe ne plafonne plus.',
       ),
     ).toBeInTheDocument()
+  })
+
+  it('says no rung above is reachable, a distinct reason from the summit being reached', () => {
+    render(<CappingAxis capping={undefined} noNextLevelReason="unreachable" />)
+
+    expect(
+      screen.getByText(
+        "Aucun cran au-dessus n'est atteignable en montant : la grille n'en propose pas.",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/sommet du référentiel est atteint/),
+    ).not.toBeInTheDocument()
   })
 
   it('tells an unmeasured capping axis apart, without borrowing the wording of a low rung', () => {
@@ -47,6 +60,7 @@ describe('capping axis', () => {
           observed: undefined,
           observedBand: undefined,
         })}
+        noNextLevelReason={undefined}
       />,
     )
 

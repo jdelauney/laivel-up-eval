@@ -16,21 +16,24 @@ import type { DimensionScore } from '@/core/ports/scoring-strategy.interface'
  *   défaut. Quand même le plus bas échoue, `level` est absent et `unranked`
  *   porte la raison — jamais un repli silencieux sur le niveau le plus bas.
  *
- * Non classé, deux règles :
+ * Deux règles, **une seule** qu'on soit classé ou non :
  * 1. **La direction se lit sur la borne qui a cédé** (`ConditionGap.violated`),
  *    jamais sur la simple présence de `min` : le schéma autorise une
  *    condition à porter les deux bornes, et seule celle qui a effectivement
  *    cédé dit s'il faut monter ou descendre.
- * 2. **La cible visée est le niveau le plus bas, en ordre croissant, dont
- *    aucune condition `max` n'est violée** — le premier cran atteignable en
- *    montant. Un profil au-dessus de White sur `taille` mais en dessous de
- *    Red sur `parallele` ne doit jamais lire un plan qui lui demande de
- *    redescendre sous White : il lit un plan qui vise Red. `nextLevel`,
- *    `blocking` et `capping` pointent cette cible ; `unranked` reste les
- *    conditions non tenues du niveau le **plus bas** — la raison pour
- *    laquelle aucun niveau n'est annonçable — et n'est plus le même objet
- *    que `blocking`. Repli sur le niveau le plus bas si aucun n'échappe à
- *    une borne `max` violée.
+ * 2. **La cible du plan est toujours le niveau le plus bas, strictement
+ *    au-dessus de la position courante, qu'aucune borne `max` dépassée
+ *    n'exclut** — le premier cran atteignable en montant. Un profil classé
+ *    comme un profil non classé (sa position : « avant le premier niveau »)
+ *    suivent la même règle : viser un niveau intermédiaire dont une borne
+ *    `max` est déjà dépassée reviendrait à demander de régresser, que le
+ *    joueur tienne déjà un niveau ou non. `nextLevel` et `blocking` pointent
+ *    cette cible ; `unranked` reste les conditions non tenues du niveau le
+ *    **plus bas** — la raison pour laquelle aucun niveau n'est annonçable —
+ *    et n'est jamais le même contenu que `blocking` dès qu'une cible existe.
+ *    **Sans cible atteignable**, `nextLevel` est absent, `blocking` est vide
+ *    et `noNextLevelReason` porte la raison : aucun repli sur le niveau le
+ *    plus bas, qui redemanderait de régresser.
  */
 
 export type ConditionGap = {
@@ -48,13 +51,25 @@ export type LevelVerdict = {
   /** Ce qui empêche d'annoncer un niveau. Absent dès qu'un niveau est atteint. */
   unranked: readonly ConditionGap[] | undefined
   satisfiedConditions: readonly LevelCondition[]
-  /** Les conditions du cran suivant qui ne tiennent pas, la plus bloquante en tête. */
+  /**
+   * Les conditions de la cible qui ne tiennent pas, la plus bloquante en
+   * tête. L'axe qui plafonne, à l'écran, est la tête de ce tableau — lue sur
+   * `plan[0]`, pas sur un champ dédié. Vide quand `nextLevel` est absent.
+   */
   blocking: readonly ConditionGap[]
-  /** L'axe qui plafonne : la tête de `blocking`. Absent au sommet du référentiel. */
-  capping: ConditionGap | undefined
   /** Ce que le niveau atteint dit pour monter. Absent quand aucun n'est atteint. */
   hint: string | undefined
+  /** La cible du plan de progression. Absente sans cible atteignable. */
   nextLevel: Level | undefined
+  /**
+   * Pourquoi `nextLevel` est absent — absent tant que `nextLevel` existe.
+   * `'summit'` : rien n'existe au-dessus de la position courante dans
+   * l'ordre de la grille, le sommet du référentiel est atteint. `'unreachable'` :
+   * un niveau existe au-dessus, mais chacun viole une borne `max` déjà
+   * dépassée — la grille n'en propose aucun sans redemander de régresser.
+   * Les deux raisons ne se confondent pas à l'écran.
+   */
+  noNextLevelReason: 'summit' | 'unreachable' | undefined
 }
 
 type ConditionEvaluation = {
@@ -143,24 +158,44 @@ const sortByBlockingOrder = (
 }
 
 /**
- * Le niveau le plus bas, en ordre croissant, dont aucune condition `max`
- * n'est violée — le premier cran atteignable en montant. Une borne `max`
- * violée dit que le profil est déjà au-dessus : viser ce niveau reviendrait à
- * demander de régresser. Une borne `min` violée n'écarte rien, elle se comble
- * en avançant. Repli sur le niveau le plus bas si aucun n'y échappe.
+ * Le niveau visé par le plan de progression : le premier niveau, en ordre
+ * croissant, strictement au-dessus de `position`, dont aucune condition
+ * `max` n'est violée — le premier cran atteignable en montant. Une borne
+ * `max` violée dit que le profil est déjà au-dessus : viser ce niveau
+ * reviendrait à demander de régresser. Une borne `min` violée n'écarte rien,
+ * elle se comble en avançant.
+ *
+ * `position` est l'index (dans `byOrder`) du niveau déjà atteint, ou `-1`
+ * pour un profil non classé — sa position est « avant le premier niveau »,
+ * donc tous les niveaux de la grille sont candidats. Une seule fonction, une
+ * seule règle pour les deux profils : aucun repli sur le niveau le plus bas
+ * quand rien n'est atteignable.
  */
 const resolveClimbTarget = (
   byOrder: readonly Level[],
+  position: number,
   dimensions: readonly DimensionScore[],
-): Level => {
-  const climbable = byOrder.find(
-    (level) =>
-      !unmetConditionGaps(level, dimensions).some(
-        (gap) => gap.violated === 'max',
-      ),
-  )
-  return climbable ?? byOrder[0]
-}
+): Level | undefined =>
+  byOrder
+    .slice(position + 1)
+    .find(
+      (level) =>
+        !unmetConditionGaps(level, dimensions).some(
+          (gap) => gap.violated === 'max',
+        ),
+    )
+
+/**
+ * Pourquoi `resolveClimbTarget` n'a rien retenu. `'summit'` quand aucun
+ * niveau n'existe au-dessus de `position` dans l'ordre de la grille ;
+ * `'unreachable'` quand un niveau existe au-dessus mais que chacun viole une
+ * borne `max` déjà dépassée.
+ */
+const resolveNoNextLevelReason = (
+  byOrder: readonly Level[],
+  position: number,
+): 'summit' | 'unreachable' =>
+  position >= byOrder.length - 1 ? 'summit' : 'unreachable'
 
 export const resolveLevel = (
   grid: Grid,
@@ -179,28 +214,31 @@ export const resolveLevel = (
       unmetConditionGaps(lowest, dimensions),
       grid,
     )
-    const target = resolveClimbTarget(byOrder, dimensions)
-    const blocking = sortByBlockingOrder(
-      unmetConditionGaps(target, dimensions),
-      grid,
-    )
+    const target = resolveClimbTarget(byOrder, -1, dimensions)
+    const blocking =
+      target === undefined
+        ? []
+        : sortByBlockingOrder(unmetConditionGaps(target, dimensions), grid)
     return {
       level: undefined,
       unranked,
       satisfiedConditions: [],
       blocking,
-      capping: blocking[0],
       hint: undefined,
       nextLevel: target,
+      noNextLevelReason:
+        target === undefined
+          ? resolveNoNextLevelReason(byOrder, -1)
+          : undefined,
     }
   }
 
   const position = byOrder.findIndex((level) => level.id === reached.id)
-  const nextLevel = byOrder[position + 1]
+  const target = resolveClimbTarget(byOrder, position, dimensions)
   const blocking =
-    nextLevel === undefined
+    target === undefined
       ? []
-      : sortByBlockingOrder(unmetConditionGaps(nextLevel, dimensions), grid)
+      : sortByBlockingOrder(unmetConditionGaps(target, dimensions), grid)
 
   return {
     level: reached,
@@ -209,8 +247,11 @@ export const resolveLevel = (
       holds(condition, dimensions),
     ),
     blocking,
-    capping: blocking[0],
     hint: reached.nextLevelHint,
-    nextLevel,
+    nextLevel: target,
+    noNextLevelReason:
+      target === undefined
+        ? resolveNoNextLevelReason(byOrder, position)
+        : undefined,
   }
 }

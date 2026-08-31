@@ -73,6 +73,13 @@ export type SignatureReading = {
   level: LevelVerdict
   dimensions: readonly DimensionScore[]
   proof: readonly AxisProof[]
+  /**
+   * Les conditions non tenues du niveau le plus bas de la signature,
+   * transformées par le même `planProgression` que `Verdict.unrankedReason`
+   * — la raison pour laquelle la signature ne peut annoncer aucun niveau.
+   * Absent dès qu'un niveau de signature est atteint.
+   */
+  unrankedReason: readonly PlanStep[] | undefined
 }
 
 /**
@@ -302,10 +309,15 @@ export class GameSessionFacade {
     if (this.signature === undefined) return undefined
 
     const dimensions = this.scoring.score(criteria, this.signature.dimensions)
+    const level = resolveLevel(this.signature, dimensions)
     return {
-      level: resolveLevel(this.signature, dimensions),
+      level,
       dimensions,
       proof: proveAxes(this.signature, dimensions, criteria),
+      unrankedReason:
+        level.unranked === undefined
+          ? undefined
+          : planProgression(this.signature, level.unranked),
     }
   }
 

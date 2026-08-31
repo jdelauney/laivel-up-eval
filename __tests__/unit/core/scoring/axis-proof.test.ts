@@ -59,7 +59,7 @@ const criterion = (
 const strategy = new WeightedMappingStrategy()
 
 describe('axis proof', () => {
-  it('resolves the reached band and the threshold crossed from the raw scale', () => {
+  it('resolves the reached band from the raw scale', () => {
     const criteria = [
       criterion('c1', true, [{ dimension: 'taille', weight: 1 }]),
     ]
@@ -68,10 +68,9 @@ describe('axis proof', () => {
     const [proof] = proveAxes(grid, dimensions, criteria)
 
     expect(proof.band).toBe('XL')
-    expect(proof.crossed).toBe(1)
   })
 
-  it('names the band above and its threshold when the axis sits under the top', () => {
+  it('names the band above when the axis sits under the top', () => {
     const criteria = [
       criterion('c1', true, [{ dimension: 'taille', weight: 1 }]),
       criterion('c2', false, [{ dimension: 'taille', weight: 1 }]),
@@ -81,8 +80,7 @@ describe('axis proof', () => {
     const [proof] = proveAxes(grid, dimensions, criteria)
 
     expect(proof.band).toBe('M')
-    expect(proof.crossed).toBe(0.5)
-    expect(proof.missedBand).toEqual({ label: 'L', from: 0.75 })
+    expect(proof.missedBand).toEqual({ label: 'L' })
   })
 
   it('names no missed band once the axis sits at the top of the scale', () => {
@@ -105,7 +103,6 @@ describe('axis proof', () => {
     const [, sansEchelle] = proveAxes(grid, dimensions, criteria)
 
     expect(sansEchelle.band).toBeUndefined()
-    expect(sansEchelle.crossed).toBeUndefined()
     expect(sansEchelle.missedBand).toBeUndefined()
     expect(sansEchelle.earned).toBe(2)
     expect(sansEchelle.possible).toBe(2)
@@ -153,7 +150,6 @@ describe('axis proof', () => {
 
     expect(proof.measurement).toBe('unmeasured')
     expect(proof.band).toBeUndefined()
-    expect(proof.crossed).toBeUndefined()
     expect(proof.missedBand).toBeUndefined()
     expect(proof.held).toHaveLength(0)
     expect(proof.missed).toHaveLength(0)

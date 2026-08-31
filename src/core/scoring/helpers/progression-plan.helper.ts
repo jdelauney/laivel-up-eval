@@ -29,9 +29,16 @@ export type PlanStep = {
   action: string | undefined
   /** La preuve, lue sur la bande visée. Absente quand la grille n'en porte pas. */
   proof: string | undefined
-  /** La valeur observée. Absente quand l'axe n'a pas été mesuré. */
+  /**
+   * La valeur observée, en nombre exact. Absente quand l'axe n'a pas été
+   * mesuré. Ne duplique pas `observedBand` : c'est la précision que le
+   * libellé de bande perd, gardée pour un usage futur de l'écran.
+   */
   observed: number | undefined
-  /** La borne exigée par la condition qui bloque. */
+  /**
+   * La borne exigée par la condition qui bloque, en nombre exact — même
+   * rôle que `observed` : la précision que `target.label` ne porte pas.
+   */
   required: number
   /**
    * Le cran actuel de l'axe, dans les mots de la grille — résolu par

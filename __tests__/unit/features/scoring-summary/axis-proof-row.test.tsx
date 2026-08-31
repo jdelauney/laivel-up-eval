@@ -25,8 +25,7 @@ const measuredProof = (): AxisProof => ({
   label: "Taille de la plus grosse feature livrée avec l'IA",
   measurement: 'measured',
   band: 'M — complexité moyenne',
-  crossed: 0.5,
-  missedBand: { label: 'L — multi-étapes', from: 0.75 },
+  missedBand: { label: 'L — multi-étapes' },
   earned: 5,
   possible: 6,
   held: [signal('c-heavy', 3, true), signal('c-light', 1, true)],
@@ -38,7 +37,6 @@ const inferredProof = (): AxisProof => ({
   label: 'Harness monté autour du modèle',
   measurement: 'inferred',
   band: 'context engineering',
-  crossed: 0.5,
   missedBand: undefined,
   earned: 4,
   possible: 4,
@@ -51,8 +49,7 @@ const entirelyMissedProof = (): AxisProof => ({
   label: 'Chantiers menés en parallèle',
   measurement: 'measured',
   band: 'aucun',
-  crossed: 0,
-  missedBand: { label: '1 chantier', from: 0.33 },
+  missedBand: { label: '1 chantier' },
   earned: 0,
   possible: 4,
   held: [],
@@ -64,7 +61,6 @@ const unmeasuredProof = (): AxisProof => ({
   label: 'Initiative des agents',
   measurement: 'unmeasured',
   band: undefined,
-  crossed: undefined,
   missedBand: undefined,
   earned: 0,
   possible: 0,
@@ -87,14 +83,17 @@ describe('axis proof row', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders the observed value and both thresholds around the band, in the words of the grid', () => {
+  it('renders the observed value and the missed threshold, in the words of the grid', () => {
     render(<AxisProofRow proof={measuredProof()} />)
 
     expect(screen.getByText(/5 sur 6 contributions/)).toBeInTheDocument()
-    expect(
-      screen.getByText(/franchi « M — complexité moyenne »/),
-    ).toBeInTheDocument()
     expect(screen.getByText(/manqué « L — multi-étapes »/)).toBeInTheDocument()
+  })
+
+  it('never repeats the crossed threshold: it is already the headline band', () => {
+    render(<AxisProofRow proof={measuredProof()} />)
+
+    expect(screen.queryByText(/franchi/)).not.toBeInTheDocument()
   })
 
   it('renders no raw decimal anywhere on the row', () => {
