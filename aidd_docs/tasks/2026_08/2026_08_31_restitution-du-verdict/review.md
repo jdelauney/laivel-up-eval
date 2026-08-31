@@ -1,17 +1,19 @@
 ---
 type: review
-target: "feat/comprendre-mon-verdict — 2496b26 · 48defa9"
+target: "feat/comprendre-mon-verdict — 2496b26 · 48defa9 · 4821c0b"
 spec: ./spec.md
 verdict: approved
-score: 88/100
+score: 90/100
 passes:
   - { date: 2026-08-31, commit: 2496b26, verdict: changes-requested, score: 72 }
   - { date: 2026-08-31, commit: 48defa9, verdict: approved, score: 88 }
+  - { date: 2026-08-31, commit: 4821c0b, verdict: approved, score: 90 }
 ---
 
-> **Deux passages.** Le premier, sur `2496b26`, est conservé intégralement ci-dessous —
-> il porte les constats. Le second, sur `48defa9`, est en fin de document et **fait foi**
-> pour le verdict global et le tableau d'acceptance.
+> **Trois passages.** Le premier, sur `2496b26`, est conservé intégralement ci-dessous —
+> il porte les constats. Le second, sur `48defa9`, statue sur les acceptances. Le
+> troisième, sur `4821c0b`, est ciblé sur trois questions et **fait foi** pour le verdict
+> global.
 
 # Review: La restitution du verdict
 
@@ -465,5 +467,186 @@ test de non-régression inopérant sur la propriété précisément corrigée �
 SUG-9 / SUG-10, deux chemins où la correction tient par la configuration plutôt que par le
 code. Retrait mineur pour SUG-11 et SUG-12, qui sont de l'hygiène introduite par le
 correctif lui-même.
+
+Aucune violation dure. Le seuil de passage appartient à l'appelant.
+
+---
+---
+
+# Troisième passage — 2026-08-31, commit `4821c0b`
+
+> `refactor(verdict): make the climb rule hold on any grid, not just this one`
+> Vérification **ciblée**, trois questions. Ce n'est pas une revue complète : les douze
+> acceptances statuées au second passage ne sont pas rejouées.
+
+## Verdict
+
+**`approved` — 90 / 100.** Deux questions sur trois passent sans réserve. La troisième
+révèle une fuite de vocabulaire, plus deux résidus dont un que je croyais clos et qui ne
+l'est pas. Aucun n'atteint le chemin produit ; tous sont corrigeables en quelques lignes.
+
+## Q1 — La règle de cible unifiée est-elle correcte pour un profil classé ? **Oui.**
+
+`resolveClimbTarget(byOrder, position, dimensions)` rend
+`byOrder.slice(position + 1).find(niveau sans borne max violée)`
+(`level-resolver.helper.ts:174-186`).
+
+**Peut-elle sauter un niveau légitimement visable ?** Non. Le seul motif d'exclusion est
+une borne `max` **violée**, c'est-à-dire un niveau dont le profil est déjà sorti par le
+haut : le viser reviendrait à demander de désapprendre. Une violation `min` — la seule
+forme de « pas encore atteint » — n'exclut rien. La règle ne peut donc écarter qu'un
+niveau inatteignable sans régression.
+
+**Peut-elle en retenir un inatteignable ?** Elle retient un niveau dont les conditions non
+tenues peuvent inclure un axe non mesuré, qu'aucune action n'ouvre. C'est le comportement
+voulu depuis D1 : `sortByBlockingOrder` met cet axe en tête et l'écran dit « non mesuré,
+aucune condition ne peut tenir ». Rien de neuf.
+
+**Non-régression sur la grille réelle : vérifiée empiriquement, pas déduite.** Sonde
+exécutée via `vite-node` sur `config/grid.json` parsé, un profil par cran :
+
+```
+white   -> level=white  next=red     reason=—
+red     -> level=red    next=blue    reason=—
+blue    -> level=blue   next=green   reason=—
+green   -> level=green  next=copper  reason=—
+copper  -> level=copper next=silver  reason=—
+silver  -> level=silver next=gold    reason=—
+gold    -> level=gold   next=—       reason=summit
+```
+
+La chaîne est identique à celle d'avant la refonte. La raison structurelle : **seul
+`white` (`order: 1`) porte des bornes `max`** dans `config/grid.json`, et **seul
+`vibe-coder` (`order: 1`) dans `config/signature.json`** — pour toute position `>= 0`,
+`slice(position + 1)` ne contient jamais ces niveaux, donc `find` retient toujours
+`byOrder[position + 1]`. Le saut ne peut pas se déclencher sur les deux grilles livrées.
+
+Les deux cas que je signalais non couverts le sont maintenant : `level-resolver.test.ts` —
+`'never offers a regressive next level, even when it holds the naive next order'` (profil
+classé, saut par-dessus un `mid` régressif) et `'says no rung above is reachable when every
+level in the grid violates a max bound'`.
+
+### Résidu R-A · `hint` et `nextLevel` peuvent se contredire quand la règle saute
+
+`hint` reste `reached.nextLevelHint` (`level-resolver.helper.ts:250`), un texte rédigé dans
+la grille pour le cran **immédiatement** suivant. Quand `resolveClimbTarget` en saute un,
+`LevelBlock` rend ce texte (`level-block.tsx:39-43`) juste au-dessus de
+« Niveau suivant · <le niveau atteint après le saut> » (`:44-48`). Leur propre fixture de
+test le montre : `low.nextLevelHint = 'Monter.'` est rendu alors que la cible est `high`,
+`mid` ayant été sauté. Latent : ne se déclenche pas sur les deux grilles livrées, pour la
+raison ci-dessus. À trancher — soit `hint` suit la cible, soit il est tu quand il y a saut.
+
+## Q2 — La suppression du repli laisse-t-elle un écran muet, ou `noNextLevelReason` absent sans cible ? **Non, ni l'un ni l'autre.**
+
+- **`noNextLevelReason` est posé exactement quand il faut.** Les deux sites de retour
+  l'écrivent sous la même forme `target === undefined ? resolveNoNextLevelReason(...) : undefined`
+  (`level-resolver.helper.ts:222-225` et `:253-256`). Il n'existe pas de troisième chemin :
+  `resolveLevel` n'a que ces deux `return`.
+- **`'summit'` ne peut pas être annoncé à tort sur un profil non classé.**
+  `resolveNoNextLevelReason(byOrder, -1)` teste `-1 >= byOrder.length - 1` ;
+  `gridSchema` impose `levels.min(1)`, donc le test est toujours faux et la raison est
+  toujours `'unreachable'`. Correct : un profil non classé n'est jamais au sommet.
+- **Aucun écran muet.** `CappingAxis` couvre trois cas et rend toujours une phrase
+  (`capping-axis.tsx:38-44`) ; la section du plan en couvre deux (`summary-view.tsx:44-50`) ;
+  `LevelBlock` rend toujours un `h2`.
+- **Pas d'incohérence « plan vide alors qu'une cible existe ».** `reached` est le niveau le
+  plus haut dont toutes les conditions tiennent ; tout niveau au-dessus en a donc au moins
+  une non tenue, et `blocking` est non vide dès que `nextLevel` existe.
+
+### Résidu R-B · La phrase « aucun cran atteignable » est dupliquée, et s'affiche deux fois
+
+`capping-axis.tsx:18` et `summary-view.tsx:47` portent la **même chaîne au caractère près** :
+`"Aucun cran au-dessus n'est atteignable en montant : la grille n'en propose pas."`
+Les deux branches se déclenchent sur le même état (`noNextLevelReason === 'unreachable'`),
+donc l'écran affiche la phrase deux fois, dans « Ce qui plafonne » puis dans « Ce qui vous
+ferait monter ». C'est le motif de duplication déjà relevé aux deux passages précédents,
+réintroduit sur la nouvelle branche. Item « pas de duplication d'information » du checklist.
+La paire `summit`, elle, emploie deux phrases distinctes et complémentaires : correcte.
+
+### Résidu R-C · SUG-9 cas (ii) n'est pas clos — vérifié, pas supposé
+
+Le repli `climbable ?? byOrder[0]` a bien disparu, ce qui clôt le cas (i). **Le cas (ii)
+subsiste** : quand le niveau le plus bas échoue **sans violer de borne `max`**,
+`resolveClimbTarget(byOrder, -1, …)` part de `slice(0)` — il inclut donc ce niveau — et le
+retient. `unranked` et `blocking` sont alors calculés sur le même niveau.
+
+Sonde `vite-node` sur la grille réelle, `taille` non mesurée :
+
+```
+level      = undefined
+nextLevel  = white
+noNextRsn  = undefined
+unranked   = [ 'taille' ]
+blocking   = [ 'taille' ]
+COINCIDENT = true
+```
+
+Conséquence à l'écran : `CappingAxis` (`plan[0]`) répète mot pour mot une ligne de la liste
+de `LevelBlock` (`unrankedReason`), et `ProgressionStep` vise la bande `from: 0`
+(« aucune feature livrée avec l'IA ») sans action — les deux symptômes de DB-2, revenus par
+cette porte. L'état existant `'announces no level and names the axis that was never
+measured'` (`level-resolver.test.ts:105`) traverse exactement ce chemin mais n'assère ni
+`nextLevel` ni la non-coïncidence, donc rien ne le signale.
+
+**Atteignabilité : nulle en l'état**, pour la raison établie au second passage — l'écran de
+résumé n'est monté que sur `progress.finished`, et les cinq axes de la grille ont tous des
+mappings. Le trou reste structurel et dépend de la donnée, pas du code.
+
+## Q3 — La signature affiche-t-elle quelque chose qu'elle ne doit pas ? **Ni plafond ni plan. Mais une phrase, oui.**
+
+**Ce qui est correct** : `SignatureBlock` ne rend ni `CappingAxis` ni `ProgressionStep`
+(`signature-block.tsx:21-47`), et `SignatureReading` ne porte aucun `plan`
+(`game-session.facade.ts:71-82`). La phrase de portée « La signature ne déplace aucun
+niveau » est toujours là, le titre reste en `h3`. Le partage de `UnrankedReasonList` évite
+bien la duplication de balisage que j'aurais sinon signalée.
+
+### Résidu R-D · La signature emprunte le vocabulaire du référentiel officiel
+
+`UnrankedReasonList` (`level-block.tsx:69-79`) code en dur son paragraphe d'entête :
+
+```
+Le référentiel demande, pour son premier cran :
+```
+
+`SignatureBlock:31` le rend tel quel. Or la signature **n'est pas** le référentiel : le mot
+est, partout ailleurs dans le produit, le nom de la grille qui décide — « Les axes du
+référentiel », « Le sommet du référentiel », `BRIEF.md` §3. Le lecteur voit donc, dans le
+cadre « Signature » :
+
+> **Aucun niveau ne peut être annoncé**
+> Le référentiel demande, pour son premier cran : …
+> La signature ne déplace aucun niveau.
+
+Les deux dernières phrases se contredisent à trois lignes d'écart, et la première désigne
+la mauvaise grille : ce qui bloque ici, c'est l'échelle de la signature, pas le référentiel.
+C'est précisément « une phrase qui laisserait croire qu'elle décide un niveau ».
+
+**Pourquoi ça compte** : c'est la story `lire-ma-signature-a-cote-du-niveau` — « deux blocs
+distincts, jamais mélangés » — et l'unique promesse de D6. A8 tient au sens strict (deux
+blocs, disclaimer présent), donc ce n'est pas un deal-breaker ; mais c'est la seule chose de
+ce passage que je corrigerais **avant** d'ouvrir la PR. L'extraction du composant a rendu
+partageable un texte qui ne l'était pas : le paragraphe doit devenir une prop.
+
+## Ce que j'ai vérifié moi-même, troisième passage
+
+| Vérification | Commande | Résultat |
+| --- | --- | --- |
+| Périmètre | `git diff HEAD~1 HEAD --stat` | 18 fichiers, +662 / −133, commit `4821c0b` |
+| Typage | `npm run typecheck` | propre |
+| Suite complète | `npm run test` | `Test Files 93 passed` · `Tests 847 passed` |
+| Périmètre verdict | `npx vitest run __tests__/unit/core/scoring __tests__/unit/features/scoring-summary __tests__/integration/config-loading __tests__/unit/core/session` | `16 fichiers` · `147 tests` (contre 143 au passage 2) |
+| Lint / format | `npx biome check src __tests__ config` | `Checked 245 files in 72ms. No fixes applied.` |
+| Bornes `max` par niveau, deux grilles | `node -e` sur `grid.json` et `signature.json` | `white` et `vibe-coder` seuls, tous deux `order: 1` |
+| Cible par cran, grille réelle | sonde `vite-node` sur `resolveLevel` | chaîne `white→red→…→gold`, `gold = summit` — identique à avant la refonte |
+| Coïncidence `unranked` / `blocking` | même sonde, `taille` non mesurée | `COINCIDENT = true`, `nextLevel = white` → R-C |
+| Test tautologique du passage 2 | lecture `level-resolver.test.ts:156-163` | remplacé par une comparaison de contenu, avec le commentaire qui explique pourquoi `not.toBe` ne protégeait rien — **résidu 1 clos** |
+| Fuite de plafond / plan dans la signature | lecture `signature-block.tsx`, `game-session.facade.ts:71-82` | aucune |
+
+## Score
+
+**90 / 100.** Les douze acceptances tiennent toujours ; la refonte n'introduit aucune
+régression sur le chemin produit, et elle est correcte au sens de sa propre règle. Retrait
+pour R-D — une fuite de vocabulaire dans le bloc dont la séparation est la raison d'être —
+et pour R-C, un résidu annoncé clos qui ne l'est pas. R-A et R-B sont mineurs.
 
 Aucune violation dure. Le seuil de passage appartient à l'appelant.

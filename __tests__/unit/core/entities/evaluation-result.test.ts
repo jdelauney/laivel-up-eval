@@ -73,6 +73,26 @@ describe('evaluation result aggregation', () => {
     expect(outcome.games).toHaveLength(2)
   })
 
+  it('carries a criterion attributable detail through, without recomputing it', () => {
+    const outcome = buildGameOutcome(game('g1', ['c1', 'c2']), [
+      {
+        criterionId: 'c1',
+        satisfied: false,
+        attributions: [
+          { label: 'Boucle de relance sur commande', held: false },
+          { label: 'Fichier de contexte projet', held: true },
+        ],
+      },
+      { criterionId: 'c2', satisfied: true },
+    ])
+
+    expect(outcome.criteria[0].attributions).toEqual([
+      { label: 'Boucle de relance sur commande', held: false },
+      { label: 'Fichier de contexte projet', held: true },
+    ])
+    expect(outcome.criteria[1].attributions).toBeUndefined()
+  })
+
   it('walks from a dimension score back to the criteria that produced it', () => {
     const outcome = buildGameOutcome(game('g1', ['c1', 'c2']), [
       { criterionId: 'c1', satisfied: true },

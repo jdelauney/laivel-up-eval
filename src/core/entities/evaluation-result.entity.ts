@@ -1,5 +1,8 @@
 import type { CriterionMapping, Game, Group } from '../contracts/course.schema'
-import type { CriterionResult } from '../ports/game-evaluator.interface'
+import type {
+  CriterionAttribution,
+  CriterionResult,
+} from '../ports/game-evaluator.interface'
 import type { DimensionScore } from '../ports/scoring-strategy.interface'
 
 /**
@@ -14,6 +17,8 @@ export type CriterionOutcome = {
   question: string
   satisfied: boolean
   mapping: readonly CriterionMapping[]
+  /** Ce qui a produit le verdict, porté tel quel depuis le résultat du jeu. */
+  attributions?: readonly CriterionAttribution[]
 }
 
 export type GameOutcome = {
@@ -58,6 +63,7 @@ export const buildGameOutcome = (
       question: criterion.question,
       satisfied: result.satisfied,
       mapping: criterion.mapping,
+      attributions: result.attributions,
     }
   })
 

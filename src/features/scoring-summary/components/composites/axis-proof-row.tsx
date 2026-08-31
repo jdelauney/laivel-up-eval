@@ -1,4 +1,5 @@
 import type { AxisProof } from '@/core/scoring/helpers/axis-proof.helper'
+import { AttributionList } from '../elements/attribution-list'
 import { MeasurementMark } from '../elements/measurement-mark'
 
 /**
@@ -14,6 +15,10 @@ import { MeasurementMark } from '../elements/measurement-mark'
  * tenu aucun signal reste sur ses gardes : la ligne nomme le signal le plus
  * proche resté sans réponse plutôt que de se taire. Un axe inféré ajoute une
  * phrase sur le nombre de signaux indirects qui l'ont fixé.
+ *
+ * Quand le signal nommé porte un détail attribuable, la liste des gestes qui
+ * l'ont produit s'affiche juste en dessous — jamais recalculée, portée telle
+ * quelle depuis le critère.
  */
 type AxisProofRowProps = Readonly<{ proof: AxisProof }>
 
@@ -27,6 +32,7 @@ export const AxisProofRow = ({ proof }: AxisProofRowProps) => {
   const decisiveSignal = proof.held[0]
   const closestMiss = proof.missed[0]
   const indirectSignalCount = proof.held.length + proof.missed.length
+  const namedSignal = decisiveSignal ?? closestMiss
 
   return (
     <li className="flex flex-col gap-3 border-plane-rule border-b py-4">
@@ -50,6 +56,11 @@ export const AxisProofRow = ({ proof }: AxisProofRowProps) => {
           aucun signal tenu — le plus proche resté sans réponse : «{' '}
           {closestMiss.question} »
         </p>
+      ) : null}
+
+      {namedSignal?.attributions !== undefined &&
+      namedSignal.attributions.length > 0 ? (
+        <AttributionList attributions={namedSignal.attributions} />
       ) : null}
 
       {isUnmeasured ? null : (

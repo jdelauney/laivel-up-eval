@@ -44,6 +44,7 @@ const criterion = (
   criterionId: string,
   satisfied: boolean,
   mapping: readonly MappingInput[],
+  attributions?: CriterionOutcome['attributions'],
 ): CriterionOutcome => ({
   criterionId,
   gameId: 'g1',
@@ -54,6 +55,7 @@ const criterion = (
     weight: entry.weight,
     evidence: entry.evidence ?? 'measured',
   })),
+  attributions,
 })
 
 const strategy = new WeightedMappingStrategy()
@@ -125,6 +127,35 @@ describe('axis proof', () => {
     expect(proof.missed.map((signal) => signal.criterionId)).toEqual([
       'c-missed-heavy',
     ])
+  })
+
+  it('carries a criterion attributable detail onto the signal it fixed, without recomputing it', () => {
+    const criteria = [
+      criterion(
+        'c1',
+        true,
+        [{ dimension: 'taille', weight: 1 }],
+        [{ label: 'Fichier de contexte projet', held: true }],
+      ),
+    ]
+    const dimensions = strategy.score(criteria, grid.dimensions)
+
+    const [proof] = proveAxes(grid, dimensions, criteria)
+
+    expect(proof.held[0].attributions).toEqual([
+      { label: 'Fichier de contexte projet', held: true },
+    ])
+  })
+
+  it('leaves a signal without attributions when its criterion carries none', () => {
+    const criteria = [
+      criterion('c1', true, [{ dimension: 'taille', weight: 1 }]),
+    ]
+    const dimensions = strategy.score(criteria, grid.dimensions)
+
+    const [proof] = proveAxes(grid, dimensions, criteria)
+
+    expect(proof.held[0].attributions).toBeUndefined()
   })
 
   it('breaks a tie on equal weight by criterionId', () => {

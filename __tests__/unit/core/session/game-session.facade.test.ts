@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Course } from '../../../../src/core/contracts/course.schema'
+import type { Grid } from '../../../../src/core/contracts/grid.schema'
 import type { PersistenceSessionAdapter } from '../../../../src/core/ports/persistence-session-adapter.interface'
 import { UnknownGameTypeError } from '../../../../src/core/registry/game-registry'
 import { WeightedMappingStrategy } from '../../../../src/core/scoring/weighted-mapping.strategy'
@@ -20,6 +21,167 @@ const buildFacade = (
 
 const goodAnswer = { selected: ['p1', 'p3'] }
 const badAnswer = { selected: ['p2', 'p4'] }
+
+/**
+ * Un parcours minimal, autonome de `config/`, pour prouver qu'une reprise ne
+ * perd pas le détail attribuable qu'un jeu a produit. Les sept zones et les
+ * sept relations sont celles, déjà éprouvées, de
+ * `__tests__/unit/games/practice-map/evaluator.test.ts` : seuls les libellés
+ * changent, pour distinguer un libellé résolu d'un `practiceId` brut.
+ */
+const practiceMapGrid: Grid = {
+  version: 'test',
+  title: 'Grille de test',
+  dimensions: [{ id: 'taille', label: 'Taille', weight: 1 }],
+  levels: [
+    {
+      id: 'low',
+      label: 'Low',
+      order: 1,
+      conditions: [{ dimension: 'taille', min: 0 }],
+      nextLevelHint: 'Monter.',
+    },
+  ],
+}
+
+const zone = (
+  intensityFrom: number,
+  intensityTo: number,
+  rigorFrom: number,
+  rigorTo: number,
+) => ({ intensityFrom, intensityTo, rigorFrom, rigorTo })
+
+const practiceMapConfig = {
+  statement: 'Consigne de test.',
+  highRigorFrom: 0.6,
+  poles: {
+    intensityLow: 'vous le faites',
+    intensityHigh: "l'agent le fait seul",
+    rigorLow: 'rien ne la vérifie',
+    rigorHigh: 'un garde-fou la tient sans vous',
+  },
+  quadrants: {
+    highRigorLowIntensity: 'Outillé, à la main',
+    highRigorHighIntensity: 'Outillé, délégué',
+    lowRigorLowIntensity: 'À la main, sans filet',
+    lowRigorHighIntensity: 'Délégué, sans filet',
+  },
+  practices: [
+    {
+      id: 'p1',
+      label: 'Relire chaque diff avant de l’accepter',
+      shortLabel: 'Relire diff',
+      expected: zone(0, 0.1, 0, 0.1),
+      marker: 'Repère p1.',
+    },
+    {
+      id: 'p2',
+      label: 'Écrire le fichier de contexte du dépôt',
+      shortLabel: 'Fichier contexte',
+      expected: zone(0.15, 0.25, 0.15, 0.25),
+      marker: 'Repère p2.',
+    },
+    {
+      id: 'p3',
+      label: 'Brancher une boucle qui relance la commande',
+      shortLabel: 'Boucle relance',
+      expected: zone(0.3, 0.4, 0.3, 0.4),
+      marker: 'Repère p3.',
+    },
+    {
+      id: 'p4',
+      label: 'Confier une tâche floue à un agent en autonomie',
+      shortLabel: 'Tâche autonome',
+      expected: zone(0.45, 0.55, 0.45, 0.55),
+      marker: 'Repère p4.',
+    },
+    {
+      id: 'p5',
+      label: 'Poser un hook qui bloque le commit et rend la main',
+      shortLabel: 'Hook bloquant',
+      expected: zone(0.6, 0.7, 0.6, 0.7),
+      marker: 'Repère p5.',
+    },
+    {
+      id: 'p6',
+      label: 'Écrire la fonction soi-même sans rien demander',
+      shortLabel: 'Fonction soi-même',
+      expected: zone(0.75, 0.85, 0.75, 0.85),
+      marker: 'Repère p6.',
+    },
+    {
+      id: 'p7',
+      label: 'Relancer le même prompt sans rien changer',
+      shortLabel: 'Relance identique',
+      expected: zone(0.9, 1, 0, 0.1),
+      marker: 'Repère p7.',
+    },
+  ],
+  orderings: [
+    { id: 'o1', axis: 'rigor', higherId: 'p5', lowerId: 'p2' },
+    { id: 'o2', axis: 'rigor', higherId: 'p6', lowerId: 'p1' },
+    { id: 'o3', axis: 'intensity', higherId: 'p7', lowerId: 'p6' },
+    { id: 'o4', axis: 'intensity', higherId: 'p5', lowerId: 'p1' },
+    { id: 'o5', axis: 'rigor', higherId: 'p4', lowerId: 'p1' },
+    { id: 'o6', axis: 'rigor', higherId: 'p3', lowerId: 'p1' },
+    { id: 'o7', axis: 'intensity', higherId: 'p2', lowerId: 'p1' },
+  ],
+}
+
+const practiceMapCourse: Course = {
+  version: 'test',
+  groups: [
+    {
+      id: 'groupe-pratiques',
+      label: 'Groupe pratiques',
+      order: 1,
+      games: [
+        {
+          id: 'practice-map-1',
+          type: 'practice-map',
+          label: 'Où placez-vous ces pratiques ?',
+          config: practiceMapConfig,
+          criteria: [
+            {
+              id: 'c1',
+              question:
+                'Assez de pratiques sont-elles situées là où elles se tiennent ?',
+              rule: { type: 'placements-in-zone-at-least', threshold: 4 },
+              mapping: [
+                { dimension: 'taille', weight: 1, evidence: 'measured' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+/** Deux pratiques dans leur zone, cinq posées au même coin, hors de toutes. */
+const practiceMapAnswer = () => ({
+  placements: [
+    { practiceId: 'p1', intensity: 0.05, rigor: 0.05 },
+    { practiceId: 'p2', intensity: 0.2, rigor: 0.2 },
+    { practiceId: 'p3', intensity: 0.05, rigor: 0.95 },
+    { practiceId: 'p4', intensity: 0.05, rigor: 0.95 },
+    { practiceId: 'p5', intensity: 0.05, rigor: 0.95 },
+    { practiceId: 'p6', intensity: 0.05, rigor: 0.95 },
+    { practiceId: 'p7', intensity: 0.05, rigor: 0.95 },
+  ],
+})
+
+const buildPracticeMapFacade = (
+  persistence: PersistenceSessionAdapter = new MemoryPersistence(),
+) =>
+  new GameSessionFacade({
+    registry: buildGameRegistry(),
+    scoring: new WeightedMappingStrategy(),
+    persistence,
+    clock: new FixedClock(),
+    grid: practiceMapGrid,
+    course: practiceMapCourse,
+  })
 
 describe('game session facade', () => {
   let facade: GameSessionFacade
@@ -270,5 +432,92 @@ describe('game session facade', () => {
           signature,
         }),
     ).toThrow(UnknownGameTypeError)
+  })
+
+  it('keeps a criterion attributable detail across a resume, on a new facade over the same storage', () => {
+    const persistence = new MemoryPersistence()
+    const first = buildPracticeMapFacade(persistence)
+    first.start('Alice')
+    first.submitAnswer(practiceMapAnswer())
+
+    const second = buildPracticeMapFacade(persistence)
+    expect(second.resume()).toBe(true)
+
+    const criterion = second
+      .getVerdict()
+      .result.allCriteria()
+      .find((entry) => entry.criterionId === 'c1')
+
+    expect(criterion?.satisfied).toBe(false)
+    expect(criterion?.attributions).toHaveLength(7)
+    expect(
+      criterion?.attributions?.find(
+        (entry) => entry.label === 'Relire chaque diff avant de l’accepter',
+      ),
+    ).toEqual({ label: 'Relire chaque diff avant de l’accepter', held: true })
+    expect(
+      criterion?.attributions?.find(
+        (entry) =>
+          entry.label === 'Poser un hook qui bloque le commit et rend la main',
+      ),
+    ).toEqual({
+      label: 'Poser un hook qui bloque le commit et rend la main',
+      held: false,
+    })
+    // Jamais un `practiceId` brut.
+    expect(criterion?.attributions?.some((entry) => entry.label === 'p1')).toBe(
+      false,
+    )
+  })
+
+  it('resumes a run stored before the attributions field existed, leaving them absent', () => {
+    const persistence = new MemoryPersistence()
+    persistence.write({
+      playerName: 'Alice',
+      groupIndex: 0,
+      gameIndex: 0,
+      submissions: [
+        {
+          gameId: 'practice-map-1',
+          answer: practiceMapAnswer(),
+          results: [{ criterionId: 'c1', satisfied: false }],
+          submittedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    })
+
+    const resumed = buildPracticeMapFacade(persistence)
+    expect(resumed.resume()).toBe(true)
+
+    const criterion = resumed
+      .getVerdict()
+      .result.allCriteria()
+      .find((entry) => entry.criterionId === 'c1')
+    expect(criterion?.attributions).toBeUndefined()
+  })
+
+  it('ignores a stored submission whose attribution is out of contract', () => {
+    const persistence = new MemoryPersistence()
+    persistence.write({
+      playerName: 'Alice',
+      groupIndex: 0,
+      gameIndex: 0,
+      submissions: [
+        {
+          gameId: 'practice-map-1',
+          answer: practiceMapAnswer(),
+          results: [
+            {
+              criterionId: 'c1',
+              satisfied: false,
+              attributions: [{ label: '', held: true }],
+            },
+          ],
+          submittedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    })
+
+    expect(buildPracticeMapFacade(persistence).resume()).toBe(false)
   })
 })

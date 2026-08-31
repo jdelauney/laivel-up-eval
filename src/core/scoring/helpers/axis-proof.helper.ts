@@ -1,6 +1,7 @@
 import type { MappingEvidence } from '../../contracts/course.schema'
 import type { Dimension, Grid } from '../../contracts/grid.schema'
 import type { CriterionOutcome } from '../../entities/evaluation-result.entity'
+import type { CriterionAttribution } from '../../ports/game-evaluator.interface'
 import type {
   DimensionContribution,
   DimensionScore,
@@ -24,6 +25,8 @@ export type AxisSignal = {
   weight: number
   satisfied: boolean
   evidence: MappingEvidence
+  /** Le détail du critère qui a produit ce signal, porté sans être recalculé. */
+  attributions?: readonly CriterionAttribution[]
 }
 
 export type AxisProof = {
@@ -48,10 +51,10 @@ export type AxisProof = {
  * scoring et l'agrégation des résultats, pas un signal sans question :
  * `buildGameOutcome` refuse déjà ce cas de la même façon.
  */
-const resolveQuestion = (
+const resolveCriterion = (
   criterionId: string,
   criteria: readonly CriterionOutcome[],
-): string => {
+): CriterionOutcome => {
   const criterion = criteria.find(
     (candidate) => candidate.criterionId === criterionId,
   )
@@ -60,20 +63,24 @@ const resolveQuestion = (
       `le critère « ${criterionId} » est absent de la trace des critères`,
     )
   }
-  return criterion.question
+  return criterion
 }
 
 const toSignal = (
   contribution: DimensionContribution,
   criteria: readonly CriterionOutcome[],
-): AxisSignal => ({
-  criterionId: contribution.criterionId,
-  gameId: contribution.gameId,
-  question: resolveQuestion(contribution.criterionId, criteria),
-  weight: contribution.weight,
-  satisfied: contribution.satisfied,
-  evidence: contribution.evidence,
-})
+): AxisSignal => {
+  const criterion = resolveCriterion(contribution.criterionId, criteria)
+  return {
+    criterionId: contribution.criterionId,
+    gameId: contribution.gameId,
+    question: criterion.question,
+    weight: contribution.weight,
+    satisfied: contribution.satisfied,
+    evidence: contribution.evidence,
+    attributions: criterion.attributions,
+  }
+}
 
 /** Poids décroissant, puis `criterionId` pour rester déterministe. */
 const sortByWeightThenId = (signals: readonly AxisSignal[]): AxisSignal[] =>
