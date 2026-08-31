@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu keep-or-toss se joue de bout en bout à la place du placeholder g4-2, mesure sur la dimension verification ce qu'un joueur sait des pratiques de sécurité sans le temps de le chercher, et ne rend aucun verdict avant la fin du chronomètre."
-status: draft
+status: reviewed
 ---
 
 # Plan: Le jeu `keep-or-toss`, trier des pratiques de sécurité sous le chronomètre

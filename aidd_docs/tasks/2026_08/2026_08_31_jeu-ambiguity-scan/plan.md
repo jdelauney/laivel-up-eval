@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu ambiguity-scan se joue de bout en bout à la place du placeholder g6-2, mesure sur la dimension pilotage-contexte si le joueur voit l'ambiguïté d'un prompt avant qu'une IA ne l'exploite, et ne fait bouger aucun contrat existant."
-status: draft
+status: reviewed
 ---
 
 # Plan: Le jeu `ambiguity-scan`, repérer ce qui est ambigu dans un prompt

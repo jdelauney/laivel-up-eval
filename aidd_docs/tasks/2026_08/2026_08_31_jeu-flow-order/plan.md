@@ -1,6 +1,6 @@
 ---
 objective: "Le jeu flow-order se joue de bout en bout à la place du placeholder g5-2, mesure sur la dimension pilotage-contexte si le joueur sait où se place chaque geste du flux AIDD, et distingue l'ordre exact de l'ordre presque juste par deux critères séparés."
-status: draft
+status: reviewed
 ---
 
 # Plan: Le jeu `flow-order`, remettre les étapes du flux dans l'ordre
