@@ -36,13 +36,17 @@ const criteria: Criterion[] = [
     question:
       'Une fois retranchés les segments clairs signalés à tort, la part des segments ambigus repérés reste-t-elle suffisante ?',
     rule: { type: 'ambiguity-net-share-at-least', threshold: 0.5 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 2, evidence: 'measured' },
+    ],
   },
   {
     id: 'c2',
     question: 'Les segments clairs ont-ils été laissés tranquilles ?',
     rule: { type: 'clear-segments-spared-at-least', threshold: 0.8 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 

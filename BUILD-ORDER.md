@@ -123,8 +123,8 @@ Vingt Stories, une par jeu. C'est le gros du travail et le cœur du produit.
 | 3 | [miser-ma-confiance-a-l-aveugle.md](aidd_docs/backlog/stories/miser-ma-confiance-a-l-aveugle.md) | **livrée** (jeu `confidence-bet`) |
 | 4 | [trouver-les-erreurs-sans-liste.md](aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md) | **livrée** (jeu `defect-hunt`) |
 | 5 | [demasquer-l-affirmation-qui-ment.md](aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md) | **livrée** (jeu `lie-detector`) |
-| 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | |
-| 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | |
+| 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | **livrée** |
+| 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | **livrée** |
 | 8 | [repartir-un-budget-de-projet.md](aidd_docs/backlog/stories/repartir-un-budget-de-projet.md) | |
 | 9 | [repondre-a-une-ia-qui-se-trompe.md](aidd_docs/backlog/stories/repondre-a-une-ia-qui-se-trompe.md) | **livrée** (jeu `wrong-assistant`) |
 | 10 | [tenir-une-suite-de-decisions.md](aidd_docs/backlog/stories/tenir-une-suite-de-decisions.md) | |

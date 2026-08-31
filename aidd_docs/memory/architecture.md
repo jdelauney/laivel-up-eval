@@ -47,6 +47,6 @@ Le sens des dépendances va toujours vers le domaine : UI → contexte → faça
 - **Neutralité d'outil.** La reconnaissance des artefacts se fait par *familles* de motifs de chemin déclarées en JSON, jamais par une marque en dur. Reconnaître un seul outil, c'est rater tout profil qui en utilise un autre.
 - **Le piège symétrique de `intervention`** : qui n'utilise pas l'IA n'a rien à reprendre. Un score élevé n'a de sens que si l'assistant est effectivement à l'œuvre.
 - **L'absence est un cas nominal**, jamais une erreur. Elle se traduit en statut de mesure, pas en zéro.
-- **Le déclaratif ne monte jamais un niveau.** Il alimente une ligne du rapport : « se décrit avancé, les faits disent Red ».
+- **Le déclaratif ne monte jamais un niveau.** Il alimente une ligne du rapport : « se décrit avancé, les faits disent Red ». `taille`, `harness` et `initiative` montent aujourd'hui sur des bancs de jugement — `test-bench` — faute de `scope-break`, `repo-kit` et `task-board` : l'écran les marque `inféré`. La dette se solde en construisant les trois jeux, pas en changeant la règle.
 - **La clé API** est saisie par le participant, jamais commitée, jamais persistée hors LocalStorage.
 - **En cas de contradiction entre `TECHNICAL.md` et le code, le code fait foi.** Le document a déjà dérivé une fois sur la position de `register-games.ts` et sur l'API de façade ; il a été recalé, il redérivera.

@@ -70,14 +70,14 @@ const criteria: Criterion[] = [
     question:
       "Chaque erreur rencontrée a-t-elle été repérée avant d'être acceptée ?",
     rule: { type: 'flaws-caught-before-accepting' },
-    mapping: [{ dimension: 'resilience', weight: 2 }],
+    mapping: [{ dimension: 'resilience', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question:
       'La branche reformuler ou vérifier a-t-elle été choisie au moins deux fois ?',
     rule: { type: 'corrective-replies-at-least', threshold: 2 },
-    mapping: [{ dimension: 'resilience', weight: 1 }],
+    mapping: [{ dimension: 'resilience', weight: 1, evidence: 'measured' }],
   },
 ]
 
@@ -140,7 +140,7 @@ describe('wrong-assistant evaluator', () => {
       id: 'c9',
       question: 'Question inconnue ?',
       rule: { type: 'inconnue' },
-      mapping: [{ dimension: 'resilience', weight: 1 }],
+      mapping: [{ dimension: 'resilience', weight: 1, evidence: 'measured' }],
     }
 
     expect(() =>

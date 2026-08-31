@@ -4,12 +4,16 @@ import type {
   CriterionRule,
 } from '../../core/contracts/course.schema'
 import type {
+  CriterionAttribution,
   CriterionResult,
   GameEvaluator,
 } from '../../core/ports/game-evaluator.interface'
-import { readRounds } from './helpers/read-rounds.helper'
+import { type RoundReading, readRounds } from './helpers/read-rounds.helper'
 import { parseLieDetectorTrace } from './schema/answer.schema'
-import { lieDetectorConfigSchema } from './schema/config.schema'
+import {
+  type LieDetectorConfig,
+  lieDetectorConfigSchema,
+} from './schema/config.schema'
 
 /**
  * Le point de contact public avec le port `GameEvaluator`, d'où sa place à
@@ -32,13 +36,60 @@ class UnknownRuleError extends Error {
   }
 }
 
-/** Le nombre de manches démasquées à la désignation finale, borne incluse. */
+/** Le verdict d'une règle, et le détail attribuable qui l'explique. */
+type RuleVerdict = {
+  satisfied: boolean
+  attributions?: readonly CriterionAttribution[]
+}
+
+/**
+ * Le texte de l'affirmation menteuse de chaque manche, résolu une seule fois
+ * depuis la config — jamais un `roundId` ou un `claimId` brut ne doit
+ * atteindre une attribution. Le schéma de configuration garantit exactement
+ * une affirmation `lying` par manche, sur le même invariant que
+ * `read-rounds.helper.ts`.
+ */
+const liarTextByRoundId = (
+  config: LieDetectorConfig,
+): ReadonlyMap<string, string> =>
+  new Map(
+    config.rounds.map((round) => [
+      round.id,
+      round.claims.find((claim) => claim.lying)?.text ?? '',
+    ]),
+  )
+
+const resolveLiarText = (
+  liarTexts: ReadonlyMap<string, string>,
+  roundId: string,
+): string => {
+  const text = liarTexts.get(roundId)
+  if (text === undefined) {
+    throw new Error(`la manche « ${roundId} » n'a pas d'affirmation à nommer`)
+  }
+  return text
+}
+
+/**
+ * Le nombre de manches démasquées à la désignation finale, borne incluse.
+ *
+ * Chaque manche nomme son affirmation menteuse, tenue quand la première
+ * désignation l'a visée — le verdict que la règle rend au joueur.
+ */
 const liesUnmaskedAtLeast = (
+  rounds: readonly RoundReading[],
+  liarTexts: ReadonlyMap<string, string>,
   unmaskedCount: number,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = countRuleSchema.parse(rule)
-  return unmaskedCount >= threshold
+  return {
+    satisfied: unmaskedCount >= threshold,
+    attributions: rounds.map((round) => ({
+      label: resolveLiarText(liarTexts, round.roundId),
+      held: round.unmasked,
+    })),
+  }
 }
 
 /**
@@ -92,14 +143,28 @@ const liesUnmaskedAtLeast = (
  * À 3, des lecteurs légitimes échoueraient faute de matière, pas faute de
  * tenue. Toucher au corpus (déplacer l'objection fondée, ajouter une
  * manche) invalide ce calcul et doit le refaire avant de relever le seuil.
+ *
+ * Le détail ne porte que sur les manches qui offraient une occasion : les
+ * autres n'ont rien à dire de la stabilité que ce critère mesure. Tenu
+ * quand l'occasion n'a pas été lâchée.
  */
 const heldChancesAtLeast = (
+  rounds: readonly RoundReading[],
+  liarTexts: ReadonlyMap<string, string>,
   opportunityCount: number,
   capitulationCount: number,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { minOpportunities } = stabilityRuleSchema.parse(rule)
-  return opportunityCount >= minOpportunities && capitulationCount === 0
+  return {
+    satisfied: opportunityCount >= minOpportunities && capitulationCount === 0,
+    attributions: rounds
+      .filter((round) => round.opportunity)
+      .map((round) => ({
+        label: resolveLiarText(liarTexts, round.roundId),
+        held: !round.capitulated,
+      })),
+  }
 }
 
 export class LieDetectorEvaluator implements GameEvaluator {
@@ -114,25 +179,39 @@ export class LieDetectorEvaluator implements GameEvaluator {
     // Les manches sont lues une seule fois : les deux règles lisent la même
     // lecture, jamais un recalcul propre à chacune.
     const reading = readRounds(parsedConfig, trace)
+    const liarTexts = liarTextByRoundId(parsedConfig)
 
     const verdictInputs: VerdictInputs = {
+      rounds: reading.rounds,
+      liarTexts,
       unmaskedCount: reading.unmaskedCount,
       opportunityCount: reading.opportunityCount,
       capitulationCount: reading.capitulationCount,
     }
 
-    return criteria.map((criterion) => ({
-      criterionId: criterion.id,
-      satisfied: this.applyRule(criterion.rule, verdictInputs),
-    }))
+    return criteria.map((criterion) => {
+      const verdict = this.applyRule(criterion.rule, verdictInputs)
+      return {
+        criterionId: criterion.id,
+        satisfied: verdict.satisfied,
+        attributions: verdict.attributions,
+      }
+    })
   }
 
-  private applyRule(rule: CriterionRule, inputs: VerdictInputs): boolean {
+  private applyRule(rule: CriterionRule, inputs: VerdictInputs): RuleVerdict {
     switch (rule.type) {
       case 'lies-unmasked-at-least':
-        return liesUnmaskedAtLeast(inputs.unmaskedCount, rule)
+        return liesUnmaskedAtLeast(
+          inputs.rounds,
+          inputs.liarTexts,
+          inputs.unmaskedCount,
+          rule,
+        )
       case 'held-chances-at-least':
         return heldChancesAtLeast(
+          inputs.rounds,
+          inputs.liarTexts,
           inputs.opportunityCount,
           inputs.capitulationCount,
           rule,
@@ -145,6 +224,8 @@ export class LieDetectorEvaluator implements GameEvaluator {
 
 /** Tout ce qu'une règle peut lire, et rien de plus. */
 type VerdictInputs = {
+  rounds: readonly RoundReading[]
+  liarTexts: ReadonlyMap<string, string>
   unmaskedCount: number
   opportunityCount: number
   capitulationCount: number

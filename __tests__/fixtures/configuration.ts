@@ -132,6 +132,36 @@ export const { grid, course, signature } = parseConfiguration(
   projectSignature,
 )
 
+/**
+ * `fixtureCourse` mappe deux critères vers `verification` et
+ * `pilotage-contexte` — des axes que seule `config/signature.json` déclare,
+ * pas `config/grid.json`. Sans signature câblée, ces identifiants deviennent
+ * inconnus et le chargement refuse. Ce filtre ne garde que les dimensions du
+ * référentiel, pour rejouer exactement le même parcours sans la lecture
+ * complémentaire.
+ */
+const gridDimensionIds = new Set(
+  grid.dimensions.map((dimension) => dimension.id),
+)
+
+const keepGridDimensionsOnly = (
+  source: typeof fixtureCourse,
+): typeof fixtureCourse => ({
+  ...source,
+  groups: source.groups.map((group) => ({
+    ...group,
+    games: group.games.map((game) => ({
+      ...game,
+      criteria: game.criteria.map((criterion) => ({
+        ...criterion,
+        mapping: criterion.mapping.filter((mapping) =>
+          gridDimensionIds.has(mapping.dimension),
+        ),
+      })),
+    })),
+  })),
+})
+
 /** La composition des tests, même câblage que la production, horloge figée. */
 export const buildTestFacade = (
   persistence: PersistenceSessionAdapter = new MemoryPersistence(),
@@ -145,6 +175,31 @@ export const buildTestFacade = (
     course,
     signature,
   })
+
+/**
+ * La même façade, sans signature câblée : `config/signature.json` est un
+ * paramètre optionnel de `parseConfiguration`, pas un fichier obligatoire.
+ * Sert à prouver que l'écran reste cohérent — et le niveau annoncé
+ * identique — quand la lecture complémentaire n'existe pas.
+ */
+export const buildTestFacadeWithoutSignature = (
+  persistence: PersistenceSessionAdapter = new MemoryPersistence(),
+): GameSessionFacade => {
+  const shaped = parseConfiguration(
+    projectGrid,
+    keepGridDimensionsOnly(fixtureCourse),
+  )
+
+  return new GameSessionFacade({
+    registry: buildGameRegistry(),
+    scoring: new WeightedMappingStrategy(),
+    persistence,
+    clock: new FixedClock(),
+    grid: shaped.grid,
+    course: shaped.course,
+    signature: shaped.signature,
+  })
+}
 
 const buildShapedGame = (id: string) => ({
   id,

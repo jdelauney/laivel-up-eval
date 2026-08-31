@@ -4,12 +4,16 @@ import type {
   CriterionRule,
 } from '../../core/contracts/course.schema'
 import type {
+  CriterionAttribution,
   CriterionResult,
   GameEvaluator,
 } from '../../core/ports/game-evaluator.interface'
-import { readPlacements } from './helpers/read-placements.helper'
+import { type Reading, readPlacements } from './helpers/read-placements.helper'
 import { parsePracticeMapTrace } from './schema/answer.schema'
-import { practiceMapConfigSchema } from './schema/config.schema'
+import {
+  type PracticeMapConfig,
+  practiceMapConfigSchema,
+} from './schema/config.schema'
 
 /**
  * Le point de contact public avec le port `GameEvaluator`, d'où sa place à
@@ -35,6 +39,88 @@ class UnknownRuleError extends Error {
   }
 }
 
+/** Le verdict d'une règle, et le détail attribuable qui l'explique. */
+type RuleVerdict = {
+  satisfied: boolean
+  attributions: readonly CriterionAttribution[]
+}
+
+/**
+ * Le libellé destiné au joueur de chaque pratique, résolu une seule fois
+ * depuis la config — jamais un `practiceId` brut ne doit atteindre une
+ * attribution.
+ */
+const practiceLabels = (
+  config: PracticeMapConfig,
+): ReadonlyMap<string, string> =>
+  new Map(config.practices.map((practice) => [practice.id, practice.label]))
+
+const resolvePracticeLabel = (
+  labels: ReadonlyMap<string, string>,
+  practiceId: string,
+): string => {
+  const label = labels.get(practiceId)
+  if (label === undefined) {
+    throw new Error(`la pratique « ${practiceId} » n'a pas de libellé déclaré`)
+  }
+  return label
+}
+
+/** Un geste par pratique : tenu quand son placement tombe dans sa propre zone. */
+const buildPlacementAttributions = (
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
+): readonly CriterionAttribution[] =>
+  reading.placements.map((placement) => ({
+    label: resolvePracticeLabel(labels, placement.practiceId),
+    held: placement.inZone,
+  }))
+
+/**
+ * Un geste par pratique dont la zone attendue se tient en haute rigueur —
+ * les seules que ce critère juge —, tenu quand elle y a bien été posée.
+ */
+const buildHighRigorAttributions = (
+  config: PracticeMapConfig,
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
+): readonly CriterionAttribution[] => {
+  const highRigorPracticeIds = new Set(
+    config.practices
+      .filter((practice) => practice.expected.rigorFrom >= config.highRigorFrom)
+      .map((practice) => practice.id),
+  )
+  return reading.placements
+    .filter((placement) => highRigorPracticeIds.has(placement.practiceId))
+    .map((placement) => ({
+      label: resolvePracticeLabel(labels, placement.practiceId),
+      held: placement.inHighRigorZone,
+    }))
+}
+
+/** Un geste par relation d'ordre, nommée par les deux pratiques qu'elle compare. */
+const buildOrderingAttributions = (
+  config: PracticeMapConfig,
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
+): readonly CriterionAttribution[] => {
+  const orderingById = new Map(
+    config.orderings.map((ordering) => [ordering.id, ordering]),
+  )
+  return reading.orderings.map((orderingReading) => {
+    const ordering = orderingById.get(orderingReading.orderingId)
+    if (ordering === undefined) {
+      throw new Error(
+        `la relation « ${orderingReading.orderingId} » est absente de la configuration`,
+      )
+    }
+    return {
+      label: `${resolvePracticeLabel(labels, ordering.higherId)} se tient plus haut que ${resolvePracticeLabel(labels, ordering.lowerId)}`,
+      held: orderingReading.held,
+    }
+  })
+}
+
 /**
  * Le nombre de pratiques dont le placement tombe dans sa propre zone
  * attendue atteint au moins `threshold`. Lit la position **absolue**, rien
@@ -43,11 +129,15 @@ class UnknownRuleError extends Error {
  * relations d'ordre (`orderings-held-at-least`).
  */
 const placementsInZoneAtLeast = (
-  inZoneCount: number,
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = placementsInZoneAtLeastSchema.parse(rule)
-  return inZoneCount >= threshold
+  return {
+    satisfied: reading.inZoneCount >= threshold,
+    attributions: buildPlacementAttributions(reading, labels),
+  }
 }
 
 /**
@@ -61,11 +151,16 @@ const placementsInZoneAtLeast = (
  * zone de la pratique posée, jamais contre une case générique du plan.
  */
 const highRigorZoneHit = (
-  highRigorHit: boolean,
+  config: PracticeMapConfig,
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   highRigorZoneHitSchema.parse(rule)
-  return highRigorHit
+  return {
+    satisfied: reading.highRigorHit,
+    attributions: buildHighRigorAttributions(config, reading, labels),
+  }
 }
 
 /**
@@ -76,11 +171,16 @@ const highRigorZoneHit = (
  * joueur décalé en bloc tient les relations sans toucher aucune zone.
  */
 const orderingsHeldAtLeast = (
-  heldOrderingCount: number,
+  config: PracticeMapConfig,
+  reading: Reading,
+  labels: ReadonlyMap<string, string>,
   rule: CriterionRule,
-): boolean => {
+): RuleVerdict => {
   const { threshold } = orderingsHeldAtLeastSchema.parse(rule)
-  return heldOrderingCount >= threshold
+  return {
+    satisfied: reading.heldOrderingCount >= threshold,
+    attributions: buildOrderingAttributions(config, reading, labels),
+  }
 }
 
 export class PracticeMapEvaluator implements GameEvaluator {
@@ -95,36 +195,38 @@ export class PracticeMapEvaluator implements GameEvaluator {
     // Les placements sont lus une seule fois : les trois règles lisent la
     // même lecture, jamais un recalcul propre à chacune.
     const reading = readPlacements(parsedConfig, trace)
+    const labels = practiceLabels(parsedConfig)
 
-    const verdictInputs: VerdictInputs = {
-      inZoneCount: reading.inZoneCount,
-      highRigorHit: reading.highRigorHit,
-      heldOrderingCount: reading.heldOrderingCount,
-    }
-
-    return criteria.map((criterion) => ({
-      criterionId: criterion.id,
-      satisfied: this.applyRule(criterion.rule, verdictInputs),
-    }))
+    return criteria.map((criterion) => {
+      const verdict = this.applyRule(
+        criterion.rule,
+        parsedConfig,
+        reading,
+        labels,
+      )
+      return {
+        criterionId: criterion.id,
+        satisfied: verdict.satisfied,
+        attributions: verdict.attributions,
+      }
+    })
   }
 
-  private applyRule(rule: CriterionRule, inputs: VerdictInputs): boolean {
+  private applyRule(
+    rule: CriterionRule,
+    config: PracticeMapConfig,
+    reading: Reading,
+    labels: ReadonlyMap<string, string>,
+  ): RuleVerdict {
     switch (rule.type) {
       case 'placements-in-zone-at-least':
-        return placementsInZoneAtLeast(inputs.inZoneCount, rule)
+        return placementsInZoneAtLeast(reading, labels, rule)
       case 'high-rigor-zone-hit':
-        return highRigorZoneHit(inputs.highRigorHit, rule)
+        return highRigorZoneHit(config, reading, labels, rule)
       case 'orderings-held-at-least':
-        return orderingsHeldAtLeast(inputs.heldOrderingCount, rule)
+        return orderingsHeldAtLeast(config, reading, labels, rule)
       default:
         throw new UnknownRuleError(rule.type)
     }
   }
-}
-
-/** Tout ce qu'une règle peut lire, et rien de plus. */
-type VerdictInputs = {
-  inZoneCount: number
-  highRigorHit: boolean
-  heldOrderingCount: number
 }

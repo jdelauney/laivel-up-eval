@@ -30,14 +30,14 @@ const criteria: Criterion[] = [
     question:
       "La part de pratiques bien classées sur l'ensemble du lot atteint-elle le seuil ?",
     rule: { type: 'correct-share-at-least', threshold: 0.75 },
-    mapping: [{ dimension: 'verification', weight: 2 }],
+    mapping: [{ dimension: 'verification', weight: 2, evidence: 'measured' }],
   },
   {
     id: 'c2',
     question:
       "Le lot a-t-il été trié en entier avant la fin du temps imparti, avec un classement qui dépasse ce qu'un seul geste répété aurait obtenu ?",
     rule: { type: 'sorting-completed-beyond-blind-floor' },
-    mapping: [{ dimension: 'verification', weight: 1 }],
+    mapping: [{ dimension: 'verification', weight: 1, evidence: 'measured' }],
   },
 ]
 
@@ -149,7 +149,9 @@ describe('keep-or-toss evaluator', () => {
           id: 'cx',
           question: '?',
           rule: { type: 'introuvable' },
-          mapping: [{ dimension: 'verification', weight: 1 }],
+          mapping: [
+            { dimension: 'verification', weight: 1, evidence: 'measured' },
+          ],
         },
       ]),
     ).toThrow()
@@ -169,7 +171,9 @@ describe('keep-or-toss evaluator', () => {
           id: 'c1',
           question: '?',
           rule: { type: 'correct-share-at-least', threshold: 0.5 },
-          mapping: [{ dimension: 'verification', weight: 2 }],
+          mapping: [
+            { dimension: 'verification', weight: 2, evidence: 'measured' },
+          ],
         },
       ]),
     ).toThrow(/plancher du geste unique/)
@@ -182,7 +186,9 @@ describe('keep-or-toss evaluator', () => {
           id: 'c1',
           question: '?',
           rule: { type: 'correct-share-at-least', threshold: 1.5 },
-          mapping: [{ dimension: 'verification', weight: 2 }],
+          mapping: [
+            { dimension: 'verification', weight: 2, evidence: 'measured' },
+          ],
         },
       ]),
     ).toThrow()

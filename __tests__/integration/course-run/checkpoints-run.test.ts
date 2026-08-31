@@ -228,11 +228,19 @@ describe('checkpoints in the course', () => {
   it('carries the game submission into the audit trail', () => {
     const submission = checkpointsResults(playWholeCourse(EARLY_FRAMING))
 
-    expect(submission.results).toEqual([
+    expect(
+      submission.results.map(({ criterionId, satisfied }) => ({
+        criterionId,
+        satisfied,
+      })),
+    ).toEqual([
       { criterionId: 'g7-1-c1', satisfied: true },
       { criterionId: 'g7-1-c2', satisfied: true },
       { criterionId: 'g7-1-c3', satisfied: true },
     ])
+    // Le détail attribuable voyage avec le verdict : c'est lui qui permettra
+    // au résumé de nommer l'étape reprise, pas seulement de dire « tenu ».
+    expect(submission.results.every((result) => result.attributions)).toBe(true)
     expect(submission.answer).toMatchObject({ remainingBudget: 6 })
   })
 

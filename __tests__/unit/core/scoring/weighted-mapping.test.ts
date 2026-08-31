@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { MappingEvidence } from '../../../../src/core/contracts/course.schema'
 import type { Dimension } from '../../../../src/core/contracts/grid.schema'
 import type { CriterionOutcome } from '../../../../src/core/entities/evaluation-result.entity'
 import { WeightedMappingStrategy } from '../../../../src/core/scoring/weighted-mapping.strategy'
@@ -9,16 +10,26 @@ const dimensions: Dimension[] = [
   { id: 'autonomie', label: 'Autonomie', weight: 1 },
 ]
 
+type MappingInput = {
+  dimension: string
+  weight: number
+  evidence?: MappingEvidence
+}
+
 const criterion = (
   criterionId: string,
   satisfied: boolean,
-  mapping: readonly { dimension: string; weight: number }[],
+  mapping: readonly MappingInput[],
 ): CriterionOutcome => ({
   criterionId,
   gameId: 'g1',
   question: `Critère ${criterionId} ?`,
   satisfied,
-  mapping,
+  mapping: mapping.map((entry) => ({
+    dimension: entry.dimension,
+    weight: entry.weight,
+    evidence: entry.evidence ?? 'measured',
+  })),
 })
 
 const strategy = new WeightedMappingStrategy()
@@ -77,7 +88,7 @@ describe('weighted mapping scoring', () => {
     )
 
     const autonomie = scores[2]
-    expect(autonomie.measured).toBe(false)
+    expect(autonomie.measurement).toBe('unmeasured')
     expect(autonomie.possible).toBe(0)
     expect(autonomie.contributions).toHaveLength(0)
   })
@@ -88,9 +99,54 @@ describe('weighted mapping scoring', () => {
       dimensions,
     )
 
-    expect(scores[1].measured).toBe(true)
+    expect(scores[1].measurement).toBe('measured')
     expect(scores[1].score).toBe(0)
-    expect(scores[2].measured).toBe(false)
+    expect(scores[2].measurement).toBe('unmeasured')
+  })
+
+  it('keeps a fully missed dimension measured even though every mapping is measured', () => {
+    const scores = strategy.score(
+      [
+        criterion('c1', false, [{ dimension: 'pilotage', weight: 1 }]),
+        criterion('c2', false, [{ dimension: 'pilotage', weight: 2 }]),
+      ],
+      dimensions,
+    )
+
+    expect(scores[1].measurement).toBe('measured')
+    expect(scores[1].score).toBe(0)
+  })
+
+  it('marks a dimension measured as soon as one contribution is measured, even mixed with inferred ones', () => {
+    const scores = strategy.score(
+      [
+        criterion('c1', true, [
+          { dimension: 'pilotage', weight: 1, evidence: 'inferred' },
+        ]),
+        criterion('c2', true, [
+          { dimension: 'pilotage', weight: 1, evidence: 'measured' },
+        ]),
+      ],
+      dimensions,
+    )
+
+    expect(scores[1].measurement).toBe('measured')
+  })
+
+  it('marks a dimension inferred when every contribution is inferred', () => {
+    const scores = strategy.score(
+      [
+        criterion('c1', true, [
+          { dimension: 'pilotage', weight: 1, evidence: 'inferred' },
+        ]),
+        criterion('c2', false, [
+          { dimension: 'pilotage', weight: 1, evidence: 'inferred' },
+        ]),
+      ],
+      dimensions,
+    )
+
+    expect(scores[1].measurement).toBe('inferred')
   })
 
   it('produces the same scores on two runs of the same input', () => {

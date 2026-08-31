@@ -1048,11 +1048,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "pilotage-contexte",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1065,11 +1067,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "pilotage-contexte",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1176,7 +1180,8 @@
               "mapping": [
                 {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1190,7 +1195,8 @@
               "mapping": [
                 {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1235,11 +1241,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1252,11 +1260,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1301,11 +1311,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1318,11 +1330,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1374,11 +1388,13 @@
               "mapping": [
                 {
                   "dimension": "intervention",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "verification",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1391,11 +1407,13 @@
               "mapping": [
                 {
                   "dimension": "intervention",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "verification",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1494,7 +1512,8 @@
               "mapping": [
                 {
                   "dimension": "verification",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1507,7 +1526,8 @@
               "mapping": [
                 {
                   "dimension": "verification",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1559,7 +1579,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1572,7 +1593,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1714,7 +1736,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1727,7 +1750,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -2105,7 +2129,8 @@
               "mapping": [
                 {
                   "dimension": "initiative",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -2118,7 +2143,8 @@
               "mapping": [
                 {
                   "dimension": "initiative",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -2163,7 +2189,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -2176,7 +2203,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -2221,7 +2249,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -2234,7 +2263,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }

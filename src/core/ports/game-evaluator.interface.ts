@@ -6,9 +6,18 @@ import type { Criterion } from '../contracts/course.schema'
  * et les critères à appliquer, et reçoit un verdict binaire par critère.
  */
 
+export type CriterionAttribution = {
+  /** Le geste ou l'objet en cause, nommé pour le joueur — jamais un id. */
+  label: string
+  /** Vrai quand ce geste va dans le sens du critère. */
+  held: boolean
+}
+
 export type CriterionResult = {
   criterionId: string
   satisfied: boolean
+  /** Ce qui a produit ce verdict, quand le jeu a mieux qu'un booléen. */
+  attributions?: readonly CriterionAttribution[]
 }
 
 export interface GameEvaluator {

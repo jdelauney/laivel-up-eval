@@ -33,13 +33,17 @@ const criteria: Criterion[] = [
     id: 'c1',
     question: "La frise est-elle dans l'ordre exact ?",
     rule: { type: 'order-exact' },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 2 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 2, evidence: 'measured' },
+    ],
   },
   {
     id: 'c2',
     question: 'Chaque étape est-elle à sa place, à une position près ?',
     rule: { type: 'order-within-displacement', maxDisplacement: 1 },
-    mapping: [{ dimension: 'pilotage-contexte', weight: 1 }],
+    mapping: [
+      { dimension: 'pilotage-contexte', weight: 1, evidence: 'measured' },
+    ],
   },
 ]
 

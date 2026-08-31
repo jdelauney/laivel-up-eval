@@ -420,7 +420,7 @@ describe('three-tracks in the course', () => {
   it('measures parallele at the end of the run instead of capping the announceable level', () => {
     const played = paralleleDimension(playWholeCourse(NE_PLACE_RIEN))
 
-    expect(played.measured).toBe(true)
+    expect(played.measurement).not.toBe('unmeasured')
     expect(played.possible).toBeGreaterThan(0)
   })
 
