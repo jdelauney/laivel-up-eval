@@ -41,7 +41,9 @@ const claimButton = (text: string | RegExp) =>
 
 describe('lie detector game, rendered', () => {
   it('opens with the statement, the current round and the four claims', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByText(config.statement)).toBeInTheDocument()
     expect(screen.getByText(/manche 1 sur 3/i)).toBeInTheDocument()
@@ -52,7 +54,9 @@ describe('lie detector game, rendered', () => {
   })
 
   it('locks the first designation: a second click during the objection phase moves the final pick, and the round reveals', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(claimButton(new RegExp(config.rounds[0].claims[0].text)))
     expect(
@@ -69,7 +73,9 @@ describe('lie detector game, rendered', () => {
   })
 
   it('the second gesture is unique: once revealed, no claim remains a clickable button', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(claimButton(new RegExp(config.rounds[0].claims[0].text)))
     fireEvent.click(claimButton(new RegExp(config.rounds[0].claims[1].text)))
@@ -83,7 +89,9 @@ describe('lie detector game, rendered', () => {
   })
 
   it('presents the objection before any reveal: the argument shows, nothing else leaks with it', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(claimButton(new RegExp(config.rounds[0].claims[1].text)))
 
@@ -95,7 +103,7 @@ describe('lie detector game, rendered', () => {
 
   it('leaks nothing before the reveal: no verification text, no word naming the liar', () => {
     const { container } = render(
-      <LieDetectorGame config={config} onSubmit={vi.fn()} />,
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
     )
 
     const visible = container.textContent ?? ''
@@ -105,9 +113,47 @@ describe('lie detector game, rendered', () => {
     expect(visible).not.toMatch(/menteuse/i)
   })
 
-  it('submits a trace with one entry per round, only once even if the passage action fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<LieDetectorGame config={config} onSubmit={onSubmit} />)
+  it('locks a trace with one entry per round on the last round, before the passage action is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <LieDetectorGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
+
+    const playRound = (index: number) => {
+      fireEvent.click(
+        claimButton(new RegExp(config.rounds[index].claims[1].text)),
+      )
+      fireEvent.click(screen.getByRole('button', { name: /je maintiens/i }))
+    }
+
+    playRound(0)
+    fireEvent.click(screen.getByRole('button', { name: /manche suivante/i }))
+
+    playRound(1)
+    fireEvent.click(screen.getByRole('button', { name: /manche suivante/i }))
+
+    playRound(2)
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      picks: { roundId: string }[]
+    }
+    expect(answer.picks.map((entry) => entry.roundId)).toEqual([
+      'r1',
+      'r2',
+      'r3',
+    ])
+  })
+
+  it('advances only once, even if the passage action fires twice at the last round', () => {
+    const onAdvance = vi.fn()
+    render(
+      <LieDetectorGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    )
 
     const playRound = (index: number) => {
       fireEvent.click(
@@ -126,19 +172,13 @@ describe('lie detector game, rendered', () => {
     fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
     fireEvent.click(screen.getByRole('button', { name: /situation suivante/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      picks: { roundId: string }[]
-    }
-    expect(answer.picks.map((entry) => entry.roundId)).toEqual([
-      'r1',
-      'r2',
-      'r3',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('reveals the verdict and the verification of every claim once the round is rendered', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     fireEvent.click(claimButton(new RegExp(config.rounds[0].claims[1].text)))
     fireEvent.click(screen.getByRole('button', { name: /je maintiens/i }))
@@ -149,7 +189,9 @@ describe('lie detector game, rendered', () => {
   })
 
   it('walks claims by keyboard alone: each claim is a native, focusable button that designates on click', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const first = claimButton(new RegExp(config.rounds[0].claims[0].text))
     first.focus()
@@ -164,7 +206,9 @@ describe('lie detector game, rendered', () => {
    * jamais. Le premier temps doit porter ce coût avant tout clic.
    */
   it('announces the lock-in cost before any click is made', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(
       screen.getByText('Un clic verrouille votre désignation'),
@@ -177,7 +221,9 @@ describe('lie detector game, rendered', () => {
    * qu'une désaturation de l'écran ne peut pas effacer.
    */
   it('reads every claim state without color: a glyph and a text label both carry it', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     config.rounds[0].claims.forEach((entry) => {
       const button = claimButton(new RegExp(entry.text))
@@ -211,7 +257,7 @@ describe('lie detector game, rendered', () => {
 
     const objectionMarkup = (cfg: typeof config): string => {
       const { container, unmount } = render(
-        <LieDetectorGame config={cfg} onSubmit={vi.fn()} />,
+        <LieDetectorGame config={cfg} onLock={vi.fn()} onAdvance={vi.fn()} />,
       )
       fireEvent.click(claimButton(new RegExp(cfg.rounds[0].claims[0].text)))
       const markup = container.innerHTML
@@ -227,7 +273,9 @@ describe('lie detector game, rendered', () => {
    * de lecture du corpus, jamais un ordre visuel recomposé par la grille.
    */
   it('keeps the claim grid in the corpus reading order for keyboard and screen-reader traversal', () => {
-    render(<LieDetectorGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <LieDetectorGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const claimTexts = config.rounds[0].claims.map((entry) => entry.text)
     const claimButtons = screen

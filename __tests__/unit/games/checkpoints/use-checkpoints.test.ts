@@ -29,9 +29,10 @@ const config = {
 
 const LET_IT_RIDE: Choice[] = Array.from({ length: 6 }, () => 'laisser-passer')
 
-const renderGame = (onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useCheckpoints(config, onSubmit)),
+const renderGame = (onLock = vi.fn(), onAdvance = vi.fn()) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useCheckpoints(config, onLock, onAdvance)),
 })
 
 /**
@@ -84,37 +85,41 @@ describe('use checkpoints', () => {
     ])
   })
 
-  it('submits once, on the sixth choice and never before', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks and advances once, on the sixth choice and never before', () => {
+    const { result, onLock, onAdvance } = renderGame()
 
     playAll(result, LET_IT_RIDE.slice(0, 5))
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onLock).not.toHaveBeenCalled()
+    expect(onAdvance).not.toHaveBeenCalled()
 
     act(() => {
       result.current.choose('laisser-passer')
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onLock.mock.calls[0][0]).toMatchObject({
       remainingBudget: -2,
       remainingDefects: ['ambiguite', 'pan-non-couvert'],
     })
+    // Ce jeu ne révèle rien entre le verrou et l'avance : les deux partent du
+    // même geste, sans révélation à protéger entre les deux.
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the six stages playable once the budget is spent', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     playAll(
       result,
       Array.from({ length: 6 }, () => 'corriger'),
     )
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({ remainingBudget: -12 })
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onLock.mock.calls[0][0]).toMatchObject({ remainingBudget: -12 })
   })
 
   it('offers no way back: a seventh choice changes nothing', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     playAll(result, LET_IT_RIDE)
     const journal = result.current.journal
@@ -124,16 +129,16 @@ describe('use checkpoints', () => {
     })
 
     expect(result.current.journal).toEqual(journal)
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onLock).toHaveBeenCalledTimes(1)
     expect(result.current.stage).toBeUndefined()
   })
 
   it('submits a trace whose stages follow the config order', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     playAll(result, LET_IT_RIDE)
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       decisions: { stageId: string }[]
     }
     expect(answer.decisions.map((decision) => decision.stageId)).toEqual(

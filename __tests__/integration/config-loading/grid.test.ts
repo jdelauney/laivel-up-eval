@@ -138,4 +138,23 @@ describe('grid loading', () => {
   it('returns no partial object when the data is rejected', () => {
     expect(() => parseGrid({ version: '1.0' })).toThrow(ConfigValidationError)
   })
+
+  it('carries an action and a proof on every reachable band of the real grid', () => {
+    const grid = parseGrid(projectGrid)
+
+    for (const dimension of grid.dimensions) {
+      for (const band of dimension.scale ?? []) {
+        if (band.from === 0) continue
+
+        expect(
+          band.action,
+          `${dimension.id} — bande « ${band.label} » sans action`,
+        ).toBeTruthy()
+        expect(
+          band.proof,
+          `${dimension.id} — bande « ${band.label} » sans preuve`,
+        ).toBeTruthy()
+      }
+    }
+  })
 })

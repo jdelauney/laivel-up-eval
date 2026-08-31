@@ -93,6 +93,12 @@ const snapToStep = (value: number): number =>
  * fait rien tant que la réserve n'est pas vide, et `hold` / `place` / `nudge`
  * ne font plus rien une fois la phase `'revealed'` atteinte.
  *
+ * `submit` écrit la trace (`onLock`) au moment même où il bascule sur la
+ * révélation — jamais après qu'elle a été lue, sur le modèle de
+ * `useAmbiguityScan` :
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance` ne fait plus que passer au jeu suivant (`onAdvance`).
+ *
  * Le hook n'expose **jamais** `expected` ni `marker` avant leur heure : les
  * jetons rendus à l'écran ne portent que `id`, `number`, `label` et
  * `shortLabel`, et les repères n'apparaissent dans la valeur de retour qu'en
@@ -106,7 +112,8 @@ const snapToStep = (value: number): number =>
  */
 export const usePracticeMap = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas en cours de partie : la valider à chaque rendu
   // était du travail jeté.
@@ -123,7 +130,8 @@ export const usePracticeMap = (
     undefined,
   )
   const [phase, setPhase] = useState<PracticeMapPhase>('placing')
-  const submittedRef = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   /**
    * La saisie courante, doublée en référence.
@@ -236,20 +244,18 @@ export const usePracticeMap = (
     )
   }
 
-  /** Verrouille la lecture : ne fait rien tant qu'une pratique reste en réserve. */
+  /**
+   * Verrouille la lecture : ne fait rien tant qu'une pratique reste en
+   * réserve. Écrit la trace immédiatement, avant de basculer sur la
+   * révélation.
+   */
   const submit = (): void => {
     if (phase !== 'placing') return
     if (placements.size < parsed.practices.length) return
-    setPhase('revealed')
-  }
+    if (lockedRef.current) return
+    lockedRef.current = true
 
-  /** Transmet la trace à la façade, une seule fois. */
-  const advance = (): void => {
-    if (phase !== 'revealed') return
-    if (submittedRef.current) return
-    submittedRef.current = true
-
-    onSubmit(
+    onLock(
       buildPracticeMapAnswer(
         parsed,
         parsed.practices.map((practice) => {
@@ -263,6 +269,16 @@ export const usePracticeMap = (
         }),
       ),
     )
+    setPhase('revealed')
+  }
+
+  /** Passe au jeu suivant, une seule fois. */
+  const advance = (): void => {
+    if (phase !== 'revealed') return
+    if (advancedRef.current) return
+    advancedRef.current = true
+
+    onAdvance()
   }
 
   // Une seule liste ordonnée, source à la fois du numéro de badge (l'index

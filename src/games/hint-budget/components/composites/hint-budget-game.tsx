@@ -39,7 +39,11 @@ const PURCHASED_LOG_CAP = 2
  * contresens sur la dimension exacte que `c2` mesure. Se taire sur ce qui
  * est noté est une chose ; orienter dans le sens inverse en est une autre.
  */
-export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
+export const HintBudgetGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     situationNumber,
@@ -59,7 +63,7 @@ export const HintBudgetGame = ({ config, onSubmit }: GameComponentProps) => {
     buyHint,
     cut,
     advance,
-  } = useHintBudget(config, onSubmit)
+  } = useHintBudget(config, onLock, onAdvance)
 
   if (symptom === undefined || report === undefined) return null
 

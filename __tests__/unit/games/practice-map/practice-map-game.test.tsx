@@ -154,7 +154,9 @@ const dragFromReserve = (
 
 describe('practice map game, rendered', () => {
   it('lists every practice in the permanent legend, and the submit action unavailable', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     config.practices.forEach((entry) => {
       expect(
@@ -174,7 +176,9 @@ describe('practice map game, rendered', () => {
    * teinte seule.
    */
   it('keeps a placed practice listed in the legend, its marker turned solid, rather than removing it', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     fireEvent.click(plane(), { clientX: 10, clientY: 10 })
@@ -196,7 +200,9 @@ describe('practice map game, rendered', () => {
    * reste présent dans le DOM pour la révélation au focus.
    */
   it('shows a numbered badge on the plane once placed, keeping label as accessible name', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     fireEvent.click(plane(), { clientX: 10, clientY: 10 })
@@ -212,7 +218,9 @@ describe('practice map game, rendered', () => {
   })
 
   it('makes the submit action available once every practice is placed', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     config.practices.forEach((entry) => {
       holdFromReserve(entry.label)
@@ -225,7 +233,9 @@ describe('practice map game, rendered', () => {
   })
 
   it('reveals a marker per practice, never the expected zone or a placement verdict', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     config.practices.forEach((entry) => {
       holdFromReserve(entry.label)
@@ -242,9 +252,41 @@ describe('practice map game, rendered', () => {
     expect(visible).not.toMatch(/zone attendue|dans sa zone|hors zone/i)
   })
 
-  it('submits a trace of four placements only once, even if continue fires twice', () => {
-    const onSubmit = vi.fn()
-    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+  it('locks a trace of four placements on submit, before continue is even clicked', () => {
+    const onLock = vi.fn()
+    render(
+      <PracticeMapGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
+
+    config.practices.forEach((entry) => {
+      holdFromReserve(entry.label)
+      fireEvent.click(plane(), { clientX: 10, clientY: 10 })
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: /soumettre la lecture/i }),
+    )
+
+    expect(onLock).toHaveBeenCalledTimes(1)
+    const answer = onLock.mock.calls[0][0] as {
+      placements: { practiceId: string }[]
+    }
+    expect(answer.placements.map((entry) => entry.practiceId)).toEqual([
+      'p1',
+      'p2',
+      'p3',
+      'p4',
+    ])
+  })
+
+  it('advances only once, even if continue fires twice', () => {
+    const onAdvance = vi.fn()
+    render(
+      <PracticeMapGame
+        config={config}
+        onLock={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    )
 
     config.practices.forEach((entry) => {
       holdFromReserve(entry.label)
@@ -256,16 +298,7 @@ describe('practice map game, rendered', () => {
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
-    const answer = onSubmit.mock.calls[0][0] as {
-      placements: { practiceId: string }[]
-    }
-    expect(answer.placements.map((entry) => entry.practiceId)).toEqual([
-      'p1',
-      'p2',
-      'p3',
-      'p4',
-    ])
+    expect(onAdvance).toHaveBeenCalledTimes(1)
   })
 
   /**
@@ -276,7 +309,9 @@ describe('practice map game, rendered', () => {
    * est annoncée en mots dans la région `aria-live`.
    */
   it('records a placement and announces the position in words through the keyboard-only path', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     const target = plane()
@@ -289,7 +324,9 @@ describe('practice map game, rendered', () => {
   })
 
   it('announces the candidate position in words, never in numbers, while a token is held and nudged', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     const target = plane()
@@ -307,7 +344,9 @@ describe('practice map game, rendered', () => {
   })
 
   it('releases the held token on Escape, without recording a placement', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     const target = plane()
@@ -318,8 +357,10 @@ describe('practice map game, rendered', () => {
   })
 
   it('replaces the placement when picking up an already-placed token from the plane and moving it elsewhere, with no duplicate', () => {
-    const onSubmit = vi.fn()
-    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+    const onLock = vi.fn()
+    render(
+      <PracticeMapGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     config.practices.forEach((entry) => {
       holdFromReserve(entry.label)
@@ -338,12 +379,9 @@ describe('practice map game, rendered', () => {
       screen.getByRole('button', { name: /soumettre la lecture/i }),
     )
 
-    const answer = (() => {
-      fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
-      return onSubmit.mock.calls[0][0] as {
-        placements: { practiceId: string }[]
-      }
-    })()
+    const answer = onLock.mock.calls[0][0] as {
+      placements: { practiceId: string }[]
+    }
 
     const practiceIds = answer.placements.map((entry) => entry.practiceId)
     expect(practiceIds).toEqual(['p1', 'p2', 'p3', 'p4'])
@@ -358,7 +396,9 @@ describe('practice map game, rendered', () => {
    * conjonction de deux phrases entières débordait toute cellule du plan.
    */
   it('renders a decorative center cross and four quadrant labels from the config, hidden from the accessibility tree', () => {
-    render(<PracticeMapGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const hiddenChildren = [...plane().children].filter(
       (child) => child.getAttribute('aria-hidden') === 'true',
@@ -380,8 +420,10 @@ describe('practice map game, rendered', () => {
    * le vérifie sur la configuration locale, au clic pile au centre du plan.
    */
   it('places a token exactly on the crossing point, unsnapped, when dropped at the center', () => {
-    const onSubmit = vi.fn()
-    render(<PracticeMapGame config={config} onSubmit={onSubmit} />)
+    const onLock = vi.fn()
+    render(
+      <PracticeMapGame config={config} onLock={onLock} onAdvance={vi.fn()} />,
+    )
 
     holdFromReserve(config.practices[0].label)
     // Le mock de `getBoundingClientRect` rend un carré 100×100 à l'origine :
@@ -396,9 +438,8 @@ describe('practice map game, rendered', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /soumettre la lecture/i }),
     )
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }))
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       placements: { practiceId: string; intensity: number; rigor: number }[]
     }
     const centered = answer.placements.find(
@@ -420,7 +461,13 @@ describe('practice map game, rendered', () => {
    */
   it('keeps all seven practices listed in the legend, marked placed, once every practice of the real corpus is placed', () => {
     const realConfig = realG2_2Config()
-    render(<PracticeMapGame config={realConfig} onSubmit={vi.fn()} />)
+    render(
+      <PracticeMapGame
+        config={realConfig}
+        onLock={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    )
 
     realConfig.practices.forEach((entry) => {
       holdFromReserve(entry.label)

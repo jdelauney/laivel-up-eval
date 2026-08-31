@@ -23,7 +23,11 @@ import { ReviewSheet } from './review-sheet'
  * dépendance hallucinée porte son propre critère. « Un jeu ne dit jamais ce
  * qu'il note. »
  */
-export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
+export const DefectHuntGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     snippet,
@@ -38,7 +42,7 @@ export const DefectHuntGame = ({ config, onSubmit }: GameComponentProps) => {
     lineVerdict,
     reading,
     revelations,
-  } = useDefectHunt(config, onSubmit)
+  } = useDefectHunt(config, onLock, onAdvance)
 
   return (
     <div className="flex flex-col gap-6">

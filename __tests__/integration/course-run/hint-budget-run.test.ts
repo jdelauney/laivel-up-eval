@@ -9,6 +9,7 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { buildHintBudgetAnswer } from '@/games/hint-budget/actions/build-hint-budget-answer.action'
 import { readSituations } from '@/games/hint-budget/helpers/read-situations.helper'
 import { HintBudgetEvaluator } from '@/games/hint-budget/hint-budget.evaluator'
@@ -31,6 +32,7 @@ import projectSignature from '../../../config/signature.json'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur réel : le vrai registre, la vraie façade, la
@@ -726,6 +728,35 @@ describe('hint-budget in the course', () => {
           config.stages.map(() => 'laisser-passer'),
         )
       }
+      /**
+       * `g6-2` porte ambiguity-scan depuis la phase 4 de son propre plan :
+       * ce test ne mesure pas `pilotage-contexte`, donc n'importe quelle
+       * trace conforme suffit — ici, aucun segment signalé.
+       */
+      if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
+      /**
+       * `g5-2` porte flow-order depuis la phase 4 de son propre plan : ce
+       * test ne mesure pas `pilotage-contexte`, donc n'importe quelle
+       * trace conforme suffit — ici, l'ordre de présentation du corpus.
+       */
+      if (game.type === 'flow-order') {
+        const config = flowOrderConfigSchema.parse(game.config)
+        return { orderedIds: config.initialOrder }
+      }
+      /**
+       * `g4-2` porte keep-or-toss depuis la phase 4 de son propre plan : ce
+       * test ne mesure pas `verification`, donc n'importe quelle trace
+       * conforme suffit — ici, aucune carte triée.
+       */
+      if (game.type === 'keep-or-toss')
+        return { verdicts: [], elapsedSeconds: 0 }
+      /**
+       * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan :
+       * ce test ne mesure pas `resilience`, donc n'importe quelle trace
+       * conforme suffit — voir `defaultWrongAssistantAnswer`.
+       */
+      if (game.type === 'wrong-assistant')
+        return defaultWrongAssistantAnswer(game.config)
       return { selected: [] }
     }
 

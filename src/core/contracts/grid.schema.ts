@@ -17,6 +17,10 @@ import { z } from 'zod'
 export const dimensionBandSchema = z.object({
   from: z.number().min(0).max(1),
   label: z.string().min(1),
+  /** Le geste qui fait entrer dans cette bande. Donnée, jamais code. */
+  action: z.string().min(1).optional(),
+  /** Ce qui validerait ce geste : un artefact ou un compteur observable. */
+  proof: z.string().min(1).optional(),
 })
 
 /**

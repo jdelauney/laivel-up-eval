@@ -26,7 +26,11 @@ const VISIBLE_JOURNAL_ENTRIES = 4
 const olderEntriesLine = (count: number): string =>
   count > 1 ? `${count} étapes plus anciennes` : `${count} étape plus ancienne`
 
-export const CheckpointsGame = ({ config, onSubmit }: GameComponentProps) => {
+export const CheckpointsGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     stages,
     stage,
@@ -36,7 +40,7 @@ export const CheckpointsGame = ({ config, onSubmit }: GameComponentProps) => {
     budget,
     journal,
     choose,
-  } = useCheckpoints(config, onSubmit)
+  } = useCheckpoints(config, onLock, onAdvance)
 
   if (stage === undefined) return null
 

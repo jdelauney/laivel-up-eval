@@ -8,10 +8,15 @@ import { useTestBench } from '../../hooks/use-test-bench.hook'
  * filet plein ; une proposition laissée de côté garde son filet fin. L'état
  * est une quantité, jamais une opacité.
  */
-export const TestBenchGame = ({ config, onSubmit }: GameComponentProps) => {
+export const TestBenchGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const { statement, propositions, selected, toggle, submit } = useTestBench(
     config,
-    onSubmit,
+    onLock,
+    onAdvance,
   )
 
   return (

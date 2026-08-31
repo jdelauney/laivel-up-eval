@@ -21,7 +21,11 @@ import { RoundSheet } from './round-sheet'
  * noté : ni les seuils, ni le fait que l'assistant se trompe parfois.
  * `DESIGN.md`, « Un jeu ne dit jamais ce qu'il note. »
  */
-export const LieDetectorGame = ({ config, onSubmit }: GameComponentProps) => {
+export const LieDetectorGame = ({
+  config,
+  onLock,
+  onAdvance,
+}: GameComponentProps) => {
   const {
     statement,
     roundNumber,
@@ -36,7 +40,7 @@ export const LieDetectorGame = ({ config, onSubmit }: GameComponentProps) => {
     hold,
     advance,
     revelations,
-  } = useLieDetector(config, onSubmit)
+  } = useLieDetector(config, onLock, onAdvance)
 
   if (prompt === undefined) return null
 

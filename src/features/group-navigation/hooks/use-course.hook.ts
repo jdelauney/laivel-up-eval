@@ -5,8 +5,13 @@ import { buildRail } from '../../../components/group-rail/helpers/build-rail.hel
 import { useSessionStore } from '../../../store/session.store'
 
 /**
- * Le jeu courant, la soumission, l'avance. Le hook ne détermine pas la fin du
- * parcours : il la lit sur ce que la façade rend.
+ * Le jeu courant, le verrouillage, l'avance. Le hook ne détermine pas la fin
+ * du parcours : il la lit sur ce que la façade rend.
+ *
+ * `lock` et `advance` restent deux fonctions distinctes, jamais une seule qui
+ * les enchaînerait : c'est exactement la séparation que `GameComponentProps`
+ * porte jusqu'à l'écran, pour qu'un jeu à révélation puisse écrire sa trace
+ * sans avancer.
  */
 export const useCourse = () => {
   const facade = useSessionFacade()
@@ -18,17 +23,23 @@ export const useCourse = () => {
 
   const rail: RailGroup[] = buildRail(facade.courseShape(), currentIndex)
 
-  const submit = useCallback(
+  /** Évalue, empile et écrit la trace — sans avancer. */
+  const lock = useCallback(
     (answer: unknown): void => {
       facade.submitAnswer(answer)
-      facade.nextGame()
-
-      const next = facade.getProgress()
-      setProgress(next)
-      if (next.finished) showSummary()
+      setProgress(facade.getProgress())
     },
-    [facade, setProgress, showSummary],
+    [facade, setProgress],
   )
 
-  return { progress, rail, submit }
+  /** Passe au jeu suivant, ou au relevé si le parcours est fini. */
+  const advance = useCallback((): void => {
+    facade.nextGame()
+
+    const next = facade.getProgress()
+    setProgress(next)
+    if (next.finished) showSummary()
+  }, [facade, setProgress, showSummary])
+
+  return { progress, rail, lock, advance }
 }

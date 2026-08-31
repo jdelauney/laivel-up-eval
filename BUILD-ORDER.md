@@ -123,28 +123,31 @@ Vingt Stories, une par jeu. C'est le gros du travail et le cœur du produit.
 | 3 | [miser-ma-confiance-a-l-aveugle.md](aidd_docs/backlog/stories/miser-ma-confiance-a-l-aveugle.md) | **livrée** (jeu `confidence-bet`) |
 | 4 | [trouver-les-erreurs-sans-liste.md](aidd_docs/backlog/stories/trouver-les-erreurs-sans-liste.md) | **livrée** (jeu `defect-hunt`) |
 | 5 | [demasquer-l-affirmation-qui-ment.md](aidd_docs/backlog/stories/demasquer-l-affirmation-qui-ment.md) | **livrée** (jeu `lie-detector`) |
-| 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | |
-| 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | |
+| 6 | [acheter-des-indices-a-contrecoeur.md](aidd_docs/backlog/stories/acheter-des-indices-a-contrecoeur.md) | **livrée** |
+| 7 | [placer-les-pratiques-sur-deux-axes.md](aidd_docs/backlog/stories/placer-les-pratiques-sur-deux-axes.md) | **livrée** |
 | 8 | [repartir-un-budget-de-projet.md](aidd_docs/backlog/stories/repartir-un-budget-de-projet.md) | |
-| 9 | [repondre-a-une-ia-qui-se-trompe.md](aidd_docs/backlog/stories/repondre-a-une-ia-qui-se-trompe.md) | |
+| 9 | [repondre-a-une-ia-qui-se-trompe.md](aidd_docs/backlog/stories/repondre-a-une-ia-qui-se-trompe.md) | **livrée** (jeu `wrong-assistant`) |
 | 10 | [tenir-une-suite-de-decisions.md](aidd_docs/backlog/stories/tenir-une-suite-de-decisions.md) | |
 | 11 | [reconstituer-un-incident.md](aidd_docs/backlog/stories/reconstituer-un-incident.md) | |
 | 12 | [refuser-le-raccourci-dangereux.md](aidd_docs/backlog/stories/refuser-le-raccourci-dangereux.md) | |
-| 13 | [trier-sous-le-chronometre.md](aidd_docs/backlog/stories/trier-sous-le-chronometre.md) | |
+| 13 | [trier-sous-le-chronometre.md](aidd_docs/backlog/stories/trier-sous-le-chronometre.md) | **livrée** (jeu `keep-or-toss`) |
 | 14 | [reconstituer-une-architecture.md](aidd_docs/backlog/stories/reconstituer-une-architecture.md) | |
-| 15 | [remettre-le-flux-dans-l-ordre.md](aidd_docs/backlog/stories/remettre-le-flux-dans-l-ordre.md) | |
+| 15 | [remettre-le-flux-dans-l-ordre.md](aidd_docs/backlog/stories/remettre-le-flux-dans-l-ordre.md) | **livrée** (jeu `flow-order`) |
 | 16 | [completer-un-prompt-incomplet.md](aidd_docs/backlog/stories/completer-un-prompt-incomplet.md) | |
-| 17 | [reperer-les-segments-ambigus.md](aidd_docs/backlog/stories/reperer-les-segments-ambigus.md) | |
+| 17 | [reperer-les-segments-ambigus.md](aidd_docs/backlog/stories/reperer-les-segments-ambigus.md) | **livrée** (jeu `ambiguity-scan`) |
 | 18 | [confier-une-tache-en-autonomie.md](aidd_docs/backlog/stories/confier-une-tache-en-autonomie.md) | |
 | 19 | [decouper-une-feature-en-lots.md](aidd_docs/backlog/stories/decouper-une-feature-en-lots.md) | |
 | 20 | [equiper-le-depot-avant-les-vagues.md](aidd_docs/backlog/stories/equiper-le-depot-avant-les-vagues.md) | |
 
-Quatre règles propres à cette Epic :
+Sept règles propres à cette Epic :
 
 - Les jeux 1 et 2 portent les axes `intervention` et `parallele`. Sans eux, **aucun niveau à partir de Red n'est annonçable** : ils passent avant tout autre, et le 1 est déjà livré.
 - Le jeu `checkpoints` est le gabarit des jeux à état, pas des autres. Chaque jeu garde sa propre surface — ne pas dupliquer un écran existant pour aller plus vite.
 - Chaque jeu porte ses garde-fous anti-triche, dans sa Story. Un jeu livré sans garde-fou est un jeu qui se joue au lieu de mesurer.
 - **Un garde-fou anti-triche se mesure, il ne se déclare pas.** Leçon de `lie-detector`, dont deux critères passaient les tests en récompensant l'inverse de ce qu'ils annonçaient : l'un décrochait sans lecture, l'autre reprochait à un lecteur parfait une ignorance qu'il n'avait pas. Aucun test unitaire ne l'a vu, tous étaient verts. Ce qui l'a vu est le passage en force brute de **l'espace complet des parties possibles** — 65536 traces pour quatre manches de quatre choix — profil par profil : celui qui ne lit pas, celui qui suit toujours, celui qui ne bouge jamais, celui qui lit juste puis se dédit. Un jeu dont l'espace des traces tient en mémoire ne se valide pas autrement.
+- **Le corpus est une surface d'attaque, au même titre que le code.** Leçon de `keep-or-toss`, la plus coûteuse des quatre revues du 31/08 : ses douze pratiques de sécurité se tranchaient **douze sur douze au verbe de tête** — `Chiffrer`, `Valider`, `Limiter` d'un côté, `Désactiver`, `Partager`, `Laisser ouvert` de l'autre — sans qu'une seule notion de sécurité soit en jeu. Le plan avait pourtant interdit « jamais » et « toujours » : le tell s'était déplacé, pas fermé. Une interdiction nommée ferme un mot, elle ne ferme pas une classe. Ce qui la ferme est un **test qui calcule sur le corpus réel** qu'aucun lexème, aucun verbe de tête, aucune longueur, aucune position ne partitionne le lot selon la réponse attendue. À écrire pour tout jeu dont le corpus porte une réponse.
+- **La `question` affichée d'un critère doit décrire *exactement* ce que sa règle calcule** — dénominateur, comparaison, et ce qui est retranché compris. Leçon d'`ambiguity-scan`, dont la question promettait « la part des segments repérés » quand la règle lisait la part **nette** : 306 traces sur 512 s'entendaient dire « manqué » sur une question à laquelle elles répondaient oui. Même classe chez `keep-or-toss`, dont « le taux de bon classement » promettait la part parmi les cartes classées quand la règle divisait par le lot entier, et dont « dépasse » annonçait un `>` là où le code faisait `>=`. Le joueur ne lit que cette phrase : elle est le contrat, pas un libellé.
+- **Un seuil figé dans le code et un seuil déclaré dans le parcours doivent se voir quelque part, sinon le garde-fou ne garde rien.** Leçon de `flow-order`, dont le schéma figeait un déplacement de `1` et le parcours en déclarait un autre, sans que rien ne les compare : passer le parcours à `2`, un caractère, faisait que l'ordre de présentation du corpus satisfaisait un critère pendant que le schéma continuait de l'accepter. Deux remèdes, dans cet ordre de préférence : **dériver le plancher du corpus lui-même** — `keep-or-toss` calcule désormais ce qu'un geste unique répété obtient mécaniquement, une valeur qu'aucun caractère ne peut faire dériver — ou, à défaut, un test d'intégration qui lit le seuil **réel** du parcours et vérifie l'invariant à cette valeur-là.
 
 Les vingt Stories sont indépendantes les unes des autres. Pour en mener plusieurs de front :
 

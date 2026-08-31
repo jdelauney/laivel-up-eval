@@ -15,6 +15,7 @@ import { buildConfidenceBetAnswer } from '@/games/confidence-bet/actions/build-c
 import { confidenceBetConfigSchema } from '@/games/confidence-bet/schema/config.schema'
 import { buildDefectHuntAnswer } from '@/games/defect-hunt/actions/build-defect-hunt-answer.action'
 import { defectHuntConfigSchema } from '@/games/defect-hunt/schema/config.schema'
+import { flowOrderConfigSchema } from '@/games/flow-order/schema/config.schema'
 import { buildGameRegistry } from '@/games/register-games'
 import { buildThreeTracksAnswer } from '@/games/three-tracks/actions/build-three-tracks-answer.action'
 import { threeTracksConfigSchema } from '@/games/three-tracks/schema/config.schema'
@@ -26,6 +27,7 @@ import { defaultHintBudgetAnswer } from '../../fixtures/hint-budget-answer'
 import { defaultLieDetectorAnswer } from '../../fixtures/lie-detector-answer'
 import { MemoryPersistence } from '../../fixtures/memory-persistence'
 import { correctPracticeMapAnswer } from '../../fixtures/practice-map-answer'
+import { defaultWrongAssistantAnswer } from '../../fixtures/wrong-assistant-answer'
 
 /**
  * Le jeu traverse le moteur de production : le vrai parcours, le vrai registre,
@@ -131,6 +133,36 @@ const answerFor = (game: Game, choices: readonly Choice[]): unknown => {
    * propre zone.
    */
   if (game.type === 'practice-map') return correctPracticeMapAnswer(game.config)
+  /**
+   * `g6-2` porte ambiguity-scan depuis la phase 4 de son propre plan : ce
+   * test ne mesure pas `pilotage-contexte`, donc n'importe quelle trace
+   * conforme suffit — ici, aucun segment signalé.
+   */
+  if (game.type === 'ambiguity-scan') return { flaggedIds: [] }
+  /**
+   * `g5-2` porte flow-order depuis la phase 4 de son propre plan : ce test
+   * ne mesure pas `pilotage-contexte`, donc n'importe quelle trace
+   * conforme suffit — ici, l'ordre de présentation du corpus, qui couvre
+   * toujours exactement les étapes déclarées par construction du schéma.
+   */
+  if (game.type === 'flow-order') {
+    const config = flowOrderConfigSchema.parse(game.config)
+    return { orderedIds: config.initialOrder }
+  }
+  /**
+   * `g4-2` porte keep-or-toss depuis la phase 4 de son propre plan : ce
+   * test ne mesure pas `verification`, donc n'importe quelle trace
+   * conforme suffit — ici, aucune carte triée, une trace vide reste
+   * recevable puisqu'un tri inachevé est le sujet même du jeu.
+   */
+  if (game.type === 'keep-or-toss') return { verdicts: [], elapsedSeconds: 0 }
+  /**
+   * `g3-1` porte wrong-assistant depuis la phase 4 de son propre plan : ce
+   * test mesure `intervention`, jamais `resilience`, donc n'importe quelle
+   * trace conforme suffit — voir `defaultWrongAssistantAnswer`.
+   */
+  if (game.type === 'wrong-assistant')
+    return defaultWrongAssistantAnswer(game.config)
   if (game.type !== 'checkpoints') return { selected: [] }
   return buildCheckpointsAnswer(
     checkpointsConfigSchema.parse(game.config),
@@ -196,11 +228,19 @@ describe('checkpoints in the course', () => {
   it('carries the game submission into the audit trail', () => {
     const submission = checkpointsResults(playWholeCourse(EARLY_FRAMING))
 
-    expect(submission.results).toEqual([
+    expect(
+      submission.results.map(({ criterionId, satisfied }) => ({
+        criterionId,
+        satisfied,
+      })),
+    ).toEqual([
       { criterionId: 'g7-1-c1', satisfied: true },
       { criterionId: 'g7-1-c2', satisfied: true },
       { criterionId: 'g7-1-c3', satisfied: true },
     ])
+    // Le détail attribuable voyage avec le verdict : c'est lui qui permettra
+    // au résumé de nommer l'étape reprise, pas seulement de dire « tenu ».
+    expect(submission.results.every((result) => result.attributions)).toBe(true)
     expect(submission.answer).toMatchObject({ remainingBudget: 6 })
   })
 

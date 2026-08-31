@@ -1,12 +1,16 @@
+import { AmbiguityScanGame } from './ambiguity-scan/components/composites/ambiguity-scan-game'
 import { CheckpointsGame } from './checkpoints/components/composites/checkpoints-game'
 import { ConfidenceBetGame } from './confidence-bet/components/composites/confidence-bet-game'
 import { DefectHuntGame } from './defect-hunt/components/composites/defect-hunt-game'
+import { FlowOrderGame } from './flow-order/components/composites/flow-order-game'
 import { HintBudgetGame } from './hint-budget/components/composites/hint-budget-game'
+import { KeepOrTossGame } from './keep-or-toss/components/composites/keep-or-toss-game'
 import { LieDetectorGame } from './lie-detector/components/composites/lie-detector-game'
 import { PracticeMapGame } from './practice-map/components/composites/practice-map-game'
 import { TestBenchGame } from './test-bench/components/composites/test-bench-game'
 import { ThreeTracksGame } from './three-tracks/components/composites/three-tracks-game'
 import type { GameComponent } from './types/game-component'
+import { WrongAssistantGame } from './wrong-assistant/components/composites/wrong-assistant-game'
 
 /**
  * Le jumeau interface de `core/registry/register-games.ts`. Deuxième et
@@ -26,6 +30,10 @@ const components: Record<string, GameComponent> = {
   'lie-detector': LieDetectorGame,
   'hint-budget': HintBudgetGame,
   'practice-map': PracticeMapGame,
+  'ambiguity-scan': AmbiguityScanGame,
+  'flow-order': FlowOrderGame,
+  'keep-or-toss': KeepOrTossGame,
+  'wrong-assistant': WrongAssistantGame,
 }
 
 export const resolveGameComponent = (

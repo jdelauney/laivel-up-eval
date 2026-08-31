@@ -43,10 +43,20 @@ export type Revelation = {
  * ne permet de retirer ou de réécrire une mise déjà posée. C'est l'acceptance
  * première de la story, et elle se tient par l'absence du chemin, pas par une
  * garde.
+ *
+ * Le dernier extrait engagé écrit la trace complète (`onLock`) au même geste
+ * qui bascule sur sa révélation — jamais après qu'elle a été lue : un
+ * rechargement pendant la révélation du dernier extrait retrouve le jeu déjà
+ * soumis, jamais rejouable dans son état d'avant.
+ * `aidd_docs/backlog/defects/la-revelation-precede-le-verrou-donc-un-rechargement-la-rejoue.md`.
+ * `advance()` fait toujours passer à l'extrait suivant en local pour les
+ * extraits intermédiaires ; au dernier, il ne fait plus que passer au jeu
+ * suivant (`onAdvance`), la trace ayant déjà été écrite.
  */
 export const useConfidenceBet = (
   config: unknown,
-  onSubmit: (answer: unknown) => void,
+  onLock: (answer: unknown) => void,
+  onAdvance: () => void,
 ) => {
   // La config ne change pas d'un extrait à l'autre : la valider à chaque
   // rendu était du travail jeté.
@@ -59,7 +69,8 @@ export const useConfidenceBet = (
     undefined,
   )
   const [revealing, setRevealing] = useState(false)
-  const submitted = useRef(false)
+  const lockedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   const state = useMemo(() => replayBets(parsed, bets), [parsed, bets])
 
@@ -99,27 +110,38 @@ export const useConfidenceBet = (
     setSelectedStake(value)
   }
 
-  /** Verrouille la mise choisie : elle ne se reprend jamais. */
+  /**
+   * Verrouille la mise choisie : elle ne se reprend jamais. Au dernier
+   * extrait, écrit la trace complète (`onLock`) avant de basculer sur la
+   * révélation — jamais après.
+   */
   const engage = (): void => {
     if (revealing || isComplete || selectedStake === undefined) return
     if (snippet === undefined) return
 
-    setBets((current) => [
-      ...current,
-      { snippetId: snippet.id, stake: selectedStake },
-    ])
+    const nextBets = [...bets, { snippetId: snippet.id, stake: selectedStake }]
+    setBets(nextBets)
     setSelectedStake(undefined)
     setRevealing(true)
+
+    if (nextBets.length < parsed.snippets.length || lockedRef.current) return
+    lockedRef.current = true
+    onLock(buildConfidenceBetAnswer(parsed, nextBets))
   }
 
-  /** Ouvre l'extrait suivant, ou soumet au dernier, une seule fois. */
+  /**
+   * Ouvre l'extrait suivant en local, ou passe au jeu suivant **une seule
+   * fois** au dernier — la trace y a déjà été écrite par `engage`, `advance`
+   * ne fait plus que prévenir la façade.
+   */
   const advance = (): void => {
     if (!revealing) return
     setRevealing(false)
 
-    if (bets.length < parsed.snippets.length || submitted.current) return
-    submitted.current = true
-    onSubmit(buildConfidenceBetAnswer(parsed, bets))
+    if (bets.length < parsed.snippets.length) return
+    if (advancedRef.current) return
+    advancedRef.current = true
+    onAdvance()
   }
 
   return {

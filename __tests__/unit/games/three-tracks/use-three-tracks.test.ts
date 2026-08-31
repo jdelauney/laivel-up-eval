@@ -17,9 +17,10 @@ const config = {
   ],
 }
 
-const renderGame = (onSubmit = vi.fn()) => ({
-  onSubmit,
-  ...renderHook(() => useThreeTracks(config, onSubmit)),
+const renderGame = (onLock = vi.fn(), onAdvance = vi.fn()) => ({
+  onLock,
+  onAdvance,
+  ...renderHook(() => useThreeTracks(config, onLock, onAdvance)),
 })
 
 const findTrack = (tracks: readonly TrackView[], id: string): TrackView => {
@@ -133,8 +134,8 @@ describe('use three tracks', () => {
     expect(result.current.attentionRemaining).toBe(3)
   })
 
-  it('submits once, on the third turn and never before', () => {
-    const { result, onSubmit } = renderGame()
+  it('locks and advances once, on the third turn and never before', () => {
+    const { result, onLock, onAdvance } = renderGame()
 
     act(() => {
       result.current.closeTurn()
@@ -142,18 +143,22 @@ describe('use three tracks', () => {
     act(() => {
       result.current.closeTurn()
     })
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onLock).not.toHaveBeenCalled()
+    expect(onAdvance).not.toHaveBeenCalled()
 
     act(() => {
       result.current.closeTurn()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    // Ce jeu ne révèle rien entre le verrou et l'avance : les deux partent
+    // du même geste, sans révélation à protéger entre les deux.
+    expect(onLock).toHaveBeenCalledTimes(1)
+    expect(onAdvance).toHaveBeenCalledTimes(1)
     expect(result.current.isComplete).toBe(true)
   })
 
   it('offers no way back: closing once the game is complete changes nothing', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.closeTurn()
@@ -170,12 +175,12 @@ describe('use three tracks', () => {
       result.current.closeTurn()
     })
 
-    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onLock).toHaveBeenCalledTimes(1)
     expect(result.current.turnNumber).toBe(turnNumber)
   })
 
   it('submits a trace whose allocations follow the config order, never the click order', () => {
-    const { result, onSubmit } = renderGame()
+    const { result, onLock } = renderGame()
 
     act(() => {
       result.current.setAttention('beta', 1)
@@ -191,7 +196,7 @@ describe('use three tracks', () => {
       result.current.closeTurn()
     })
 
-    const answer = onSubmit.mock.calls[0][0] as {
+    const answer = onLock.mock.calls[0][0] as {
       turns: { allocations: { trackId: string }[] }[]
     }
     expect(answer.turns[0].allocations.map((entry) => entry.trackId)).toEqual(

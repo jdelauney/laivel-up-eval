@@ -10,9 +10,21 @@ import { repositorySlugSchema } from './repository-slug.schema'
  * restauration au clic sur « Reprendre ».
  */
 
+export const criterionAttributionSchema = z.object({
+  label: z.string().min(1),
+  held: z.boolean(),
+})
+
 export const criterionResultSchema = z.object({
   criterionId: z.string().min(1),
   satisfied: z.boolean(),
+  /**
+   * Optionnel pour la même raison que `repository` : un critère réellement
+   * binaire n'en porte pas, et une partie enregistrée avant ce champ n'en
+   * porte pas non plus. Sans lui, un instantané reprend le verdict mais perd
+   * le détail — plus pauvre après un rechargement qu'avant.
+   */
+  attributions: z.array(criterionAttributionSchema).readonly().optional(),
 })
 
 export const submissionSchema = z.object({

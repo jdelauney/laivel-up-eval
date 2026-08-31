@@ -45,7 +45,9 @@ describe('three tracks register, narrow viewport', () => {
   afterEach(() => setViewportWidth(WIDE_WIDTH))
 
   it('renders a list of blocks instead of a table, under md', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     const list = screen.getByRole('list', {
@@ -55,7 +57,9 @@ describe('three tracks register, narrow viewport', () => {
   })
 
   it('keeps the brief out of the first block accessible name', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const list = screen.getByRole('list', {
       name: /registre de bord des chantiers/i,
@@ -69,7 +73,9 @@ describe('three tracks register, narrow viewport', () => {
   })
 
   it('keeps the brief reachable in its own text, inside the block', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const list = screen.getByRole('list', {
       name: /registre de bord des chantiers/i,
@@ -82,7 +88,9 @@ describe('three tracks register, narrow viewport', () => {
   })
 
   it('shows the current turn and what the pastilles mean, per block', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const list = screen.getByRole('list', {
       name: /registre de bord des chantiers/i,
@@ -94,7 +102,9 @@ describe('three tracks register, narrow viewport', () => {
   })
 
   it('offers the same zero-to-plafond pastilles as the table, in the block', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const zero = screen.getByRole('radio', {
       name: /zéro unité sur La migration de la base, tour 1/i,
@@ -107,7 +117,9 @@ describe('three tracks register, narrow viewport', () => {
   })
 
   it('shows the progress gauge inside the block', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     const list = screen.getByRole('list', {
       name: /registre de bord des chantiers/i,
@@ -122,7 +134,9 @@ describe('three tracks register, wide viewport', () => {
   beforeEach(() => setViewportWidth(WIDE_WIDTH))
 
   it('still renders the four-column table, unchanged, at or above md', () => {
-    render(<ThreeTracksGame config={config} onSubmit={vi.fn()} />)
+    render(
+      <ThreeTracksGame config={config} onLock={vi.fn()} onAdvance={vi.fn()} />,
+    )
 
     expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.queryByRole('list')).not.toBeInTheDocument()

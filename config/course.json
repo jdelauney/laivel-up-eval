@@ -1048,11 +1048,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "pilotage-contexte",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1065,11 +1067,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "pilotage-contexte",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1084,65 +1088,123 @@
       "games": [
         {
           "id": "g3-1",
-          "type": "test-bench",
+          "type": "wrong-assistant",
           "label": "L'IA se trompe. Et vous ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Un assistant vous rend une fonctionnalité et commente son propre travail. Répondez-lui à mesure qu'il parle : un choix posé ne se reprend pas.",
+            "rootId": "n1",
+            "nodes": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "n1",
+                "speaker": "assistant",
+                "message": "Voilà, c'est prêt. J'ai lancé toute la suite de tests avant de vous la remettre : tout est vert, vous pouvez fusionner sans relire le diff.",
+                "flawed": true,
+                "flaw": "Seuls les tests unitaires ont tourné. Les deux tests d'intégration qui couvrent ce module n'ont jamais été exécutés sur cette branche, et l'un des deux échoue.",
+                "replies": [
+                  { "id": "n1-challenge", "text": "Un vendredi soir, ça me semble aller vite.", "stance": "challenge", "nextId": "n2" },
+                  { "id": "n1-accept", "text": "Va pour la fusion, je ne relis pas.", "stance": "accept", "nextId": "c1" },
+                  { "id": "n1-verify", "text": "Montrez-moi le rapport complet de la suite.", "stance": "verify", "nextId": "n2" }
+                ]
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "n2",
+                "speaker": "assistant",
+                "message": "Vous avez raison, seuls les tests unitaires sont passés. Sinon, les dépendances du module sont toutes épinglées à une version précise et à jour.",
+                "flawed": false,
+                "replies": [
+                  { "id": "n2-accept", "text": "Notez ça, et voyons la suite.", "stance": "accept", "nextId": "n3" },
+                  { "id": "n2-verify", "text": "Montrez-moi la liste exacte des dépendances épinglées.", "stance": "verify", "nextId": "n3" },
+                  { "id": "n2-challenge", "text": "Ça arrive souvent, ces trous dans la suite ?", "stance": "challenge", "nextId": "n3" }
+                ]
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "n3",
+                "speaker": "assistant",
+                "message": "Toutes les dépendances du module sont épinglées à une version précise et à jour, aucune n'a de faille connue.",
+                "flawed": true,
+                "flaw": "Le paquet de parsing utilisé est fixé sur `latest`, pas sur une version précise, et sa version courante porte une faille corrigée depuis trois semaines en amont.",
+                "replies": [
+                  { "id": "n3-reformulate", "text": "Fixez chaque dépendance à une version précise avant qu'on continue.", "stance": "reformulate", "nextId": "n4" },
+                  { "id": "n3-challenge", "text": "« Toutes », vraiment, sans exception ?", "stance": "challenge", "nextId": "n4" },
+                  { "id": "n3-accept", "text": "Parfait, ça peut rester tel quel.", "stance": "accept", "nextId": "c2" }
+                ]
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "n4",
+                "speaker": "assistant",
+                "message": "D'accord, je fige chaque dépendance à une version précise avant la prochaine remise.",
+                "flawed": false,
+                "replies": [
+                  { "id": "n4-challenge", "text": "Avant la prochaine remise, pas tout de suite ?", "stance": "challenge", "nextId": "n5" },
+                  { "id": "n4-reformulate", "text": "Faites-le tout de suite, pas seulement avant la prochaine remise.", "stance": "reformulate", "nextId": "n5" },
+                  { "id": "n4-accept", "text": "Notez ça aussi, et voyons la suite.", "stance": "accept", "nextId": "n5" }
+                ]
+              },
+              {
+                "id": "n5",
+                "speaker": "assistant",
+                "message": "Dernier point : la fonctionnalité gère bien le cas où le champ est vide, j'ai testé ce cas précis avant de vous la remettre.",
+                "flawed": true,
+                "flaw": "Le cas du champ vide n'est pas traité : la fonction lève une exception non interceptée dès qu'elle reçoit une chaîne vide, jamais testée avant cette remise.",
+                "replies": [
+                  { "id": "n5-accept", "text": "C'est réglé, on peut considérer que la remise est bonne pour la production.", "stance": "accept", "nextId": "c1" },
+                  { "id": "n5-challenge", "text": "Ce cas précis, vous l'avez vu passer où, au juste ?", "stance": "challenge" },
+                  { "id": "n5-reformulate", "text": "Ajoutez un test sur le champ vide avant qu'on referme ce point.", "stance": "reformulate" }
+                ]
+              },
+              {
+                "id": "c1",
+                "speaker": "assistant",
+                "message": "La fusion est passée sans relecture. Le pipeline de nuit signale un test d'intégration en échec sur cette branche, déjà en production.",
+                "flawed": false,
+                "consequence": "Une fusion acceptée sans vérification a laissé partir un test d'intégration en échec jusqu'en production.",
+                "replies": [
+                  { "id": "c1-verify", "text": "Montrez-moi le rapport d'échec complet.", "stance": "verify" },
+                  { "id": "c1-accept", "text": "Compris, j'ouvre un correctif tout de suite.", "stance": "accept" },
+                  { "id": "c1-challenge", "text": "Comment ce test a-t-il pu ne jamais tourner ?", "stance": "challenge" }
+                ]
+              },
+              {
+                "id": "c2",
+                "speaker": "assistant",
+                "message": "Le paquet resté sur `latest` a été mis à jour cette nuit côté registre : la faille corrigée en amont touche maintenant directement cette branche.",
+                "flawed": false,
+                "consequence": "Une dépendance laissée sur `latest` a fait entrer une faille connue dans la branche, sans qu'aucune version n'ait jamais été figée.",
+                "replies": [
+                  { "id": "c2-challenge", "text": "Le registre a mis à jour l'artefact sans qu'on le sache ?", "stance": "challenge" },
+                  { "id": "c2-reformulate", "text": "Épinglez chaque dépendance à une version précise, immédiatement.", "stance": "reformulate" },
+                  { "id": "c2-accept", "text": "Je fige les versions et je relance l'analyse.", "stance": "accept" }
+                ]
               }
             ]
           },
           "criteria": [
             {
               "id": "g3-1-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Aucun tour défectueux rencontré n'a-t-il été accepté tel quel ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "flaws-caught-before-accepting"
               },
               "mapping": [
                 {
-                  "dimension": "harness",
-                  "weight": 2
-                },
-                {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
             {
               "id": "g3-1-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "La branche reformuler ou vérifier a-t-elle été choisie au moins deux fois ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "corrective-replies-at-least",
+                "threshold": 2
               },
               "mapping": [
                 {
-                  "dimension": "harness",
-                  "weight": 1
-                },
-                {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1187,11 +1249,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1204,11 +1268,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1253,11 +1319,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1270,11 +1338,13 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "resilience",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1326,11 +1396,13 @@
               "mapping": [
                 {
                   "dimension": "intervention",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "verification",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1343,11 +1415,13 @@
               "mapping": [
                 {
                   "dimension": "intervention",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 },
                 {
                   "dimension": "verification",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1355,65 +1429,113 @@
         },
         {
           "id": "g4-2",
-          "type": "test-bench",
+          "type": "keep-or-toss",
           "label": "Garder ou jeter ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Ces pratiques ont été relevées sur un dépôt réel. Gardez celles qui tiennent, jetez celles qui exposent.",
+            "durationSeconds": 30,
+            "items": [
               {
                 "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "label": "Désactiver un compte après cinq échecs",
+                "keep": true,
+                "reason": "Un compte qui reste actif après des tentatives répétées laisse une attaque par force brute continuer sans limite ; le désactiver temporairement casse l'essai."
               },
               {
                 "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "label": "Désactiver la vérification TLS pour aller plus vite",
+                "keep": false,
+                "reason": "Désactiver la vérification TLS en test laisse fréquemment ce réglage traîner jusqu'en production, où il expose à l'interception."
               },
               {
                 "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "label": "Simplifier l'accès en partageant un jeton unique",
+                "keep": false,
+                "reason": "Un jeton partagé ne distingue plus qui a agi ; le retirer à une personne oblige à le changer pour toute l'équipe."
               },
               {
                 "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "label": "Valider et échapper les entrées côté serveur",
+                "keep": true,
+                "reason": "Une entrée non validée côté serveur reste exploitable même si le client la filtre déjà — le client se contourne, le serveur reste la seule limite fiable."
+              },
+              {
+                "id": "p5",
+                "label": "Chiffrer les secrets au repos",
+                "keep": true,
+                "reason": "Un secret en clair dans une base ou un fichier devient lisible dès qu'un accès de lecture fuite ; le chiffrer le protège même si la base fuite."
+              },
+              {
+                "id": "p6",
+                "label": "Stocker le mot de passe dans le code",
+                "keep": false,
+                "reason": "Un mot de passe commité reste dans l'historique même après suppression du fichier, lisible par quiconque clone le dépôt."
+              },
+              {
+                "id": "p7",
+                "label": "Refuser par défaut tout accès non autorisé",
+                "keep": true,
+                "reason": "Un accès qui reste possible tant qu'il n'est pas explicitement refusé oublie tôt ou tard un cas non prévu ; le refuser par défaut ferme cette faille par construction."
+              },
+              {
+                "id": "p8",
+                "label": "Simplifier l'accueil en donnant les droits admin",
+                "keep": false,
+                "reason": "Des droits administrateur donnés par défaut à chaque nouveau compte offrent plus que ce dont il a besoin, et à chaque compromission plus qu'elle ne devrait obtenir."
+              },
+              {
+                "id": "p9",
+                "label": "Accélérer les requêtes par concaténation SQL",
+                "keep": false,
+                "reason": "Une requête construite par concaténation laisse passer une valeur qui change la requête elle-même — l'injection SQL classique."
+              },
+              {
+                "id": "p10",
+                "label": "Bloquer le déploiement si un scan échoue",
+                "keep": true,
+                "reason": "Un déploiement qui ignore un scan en échec propage une dépendance vulnérable déjà connue, alors que le scan venait justement de la repérer."
+              },
+              {
+                "id": "p11",
+                "label": "Faciliter le support en laissant le port ouvert",
+                "keep": false,
+                "reason": "Un port de débogage ouvert en production expose des commandes internes à quiconque l'atteint sur le réseau."
+              },
+              {
+                "id": "p12",
+                "label": "Journaliser les échecs d'authentification",
+                "keep": true,
+                "reason": "Sans journal des échecs d'authentification, une tentative de force brute passe inaperçue jusqu'à ce qu'elle réussisse."
               }
             ]
           },
           "criteria": [
             {
               "id": "g4-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La part de pratiques bien classées sur l'ensemble du lot, cartes non triées comprises, atteint-elle le seuil ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "correct-share-at-least",
+                "threshold": 0.75
               },
               "mapping": [
                 {
-                  "dimension": "intervention",
-                  "weight": 2
-                },
-                {
                   "dimension": "verification",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
             {
               "id": "g4-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Le lot a-t-il été trié en entier avant la fin du temps imparti, avec un classement qui dépasse ce qu'un seul geste répété sur tout le lot aurait obtenu ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "sorting-completed-beyond-blind-floor"
               },
               "mapping": [
                 {
-                  "dimension": "intervention",
-                  "weight": 1
-                },
-                {
                   "dimension": "verification",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1465,7 +1587,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1478,7 +1601,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1486,56 +1610,88 @@
         },
         {
           "id": "g5-2",
-          "type": "test-bench",
+          "type": "flow-order",
           "label": "Dans quel ordre travaille-t-on ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Remettez ces sept gestes dans l'ordre où ce dépôt les enchaîne réellement pour livrer une Story — pas l'ordre que vous pratiquez par ailleurs.",
+            "steps": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "cadrage",
+                "label": "Le besoin se traduit en objectif mesurable et en périmètre déclaré.",
+                "rank": 1,
+                "note": "Sans un périmètre écrit, il n'y a rien à découper en phases : ce que le geste suivant borne a besoin de ce cadrage pour poser ses limites."
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "plan",
+                "label": "Le travail se découpe en phases, chacune bornée par un critère d'arrêt.",
+                "rank": 2,
+                "note": "Chaque phase du plan fixe un critère d'arrêt que le code qui suit doit satisfaire avant d'avancer — sans ce découpage, rien ne dit au geste suivant où s'arrêter."
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "implementation",
+                "label": "Le code s'écrit phase par phase, jusqu'à ce que ses critères tiennent.",
+                "rank": 3,
+                "note": "Le code s'écrit avant que les vérifications ne le confirment : il n'y a rien à faire tourner tant qu'une phase n'a pas produit un comportement à vérifier."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "assertions",
+                "label": "Les vérifications automatiques du projet confirment le comportement obtenu.",
+                "rank": 4,
+                "note": "Les vérifications automatiques tournent avant le regard indépendant, jamais après : une revue qui découvre encore une régression qu'un test aurait attrapée n'a pas de plan à confronter, seulement un bug à signaler."
+              },
+              {
+                "id": "revue",
+                "label": "Un regard indépendant confronte le résultat produit au plan qui l'a guidé.",
+                "rank": 5,
+                "note": "Ce dépôt fait confronter le diff au plan avant d'ouvrir la demande de fusion, à l'inverse d'un flux où la revue se loge dans une PR déjà ouverte : le geste suivant documente un résultat déjà confronté, pas un brouillon encore débattu."
+              },
+              {
+                "id": "pr",
+                "label": "La demande de fusion rassemble le diff, son résumé et son plan de test.",
+                "rank": 6,
+                "note": "La demande de fusion se forme une fois la revue tenue, pour porter un résumé et un plan de test déjà vérifiés — pas une promesse qu'il faudrait encore vérifier après coup, une fois le code déjà intégré."
+              },
+              {
+                "id": "merge",
+                "label": "Le code rejoint la branche principale.",
+                "rank": 7,
+                "note": "Le merge acte une revue tenue et une demande de fusion formée — jamais l'inverse : rien ne rejoint la branche principale sans être passé par les deux gestes qui le précèdent."
               }
+            ],
+            "initialOrder": [
+              "plan",
+              "cadrage",
+              "revue",
+              "implementation",
+              "merge",
+              "assertions",
+              "pr"
             ]
           },
           "criteria": [
             {
               "id": "g5-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "La frise est-elle dans l'ordre exact ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "order-exact"
               },
               "mapping": [
                 {
-                  "dimension": "taille",
+                  "dimension": "pilotage-contexte",
                   "weight": 2
                 }
               ]
             },
             {
               "id": "g5-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Chaque étape est-elle à sa place, à une position près ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "order-within-displacement",
+                "maxDisplacement": 1
               },
               "mapping": [
                 {
-                  "dimension": "taille",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
                 }
               ]
@@ -1588,7 +1744,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1601,7 +1758,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -1609,56 +1767,88 @@
         },
         {
           "id": "g6-2",
-          "type": "test-bench",
+          "type": "ambiguity-scan",
           "label": "Qu'est-ce qui est ambigu ici ?",
           "config": {
-            "statement": "Un assistant vous propose ces affirmations sur son propre travail. Retenez celles qui se vérifient.",
-            "propositions": [
+            "statement": "Un chef de produit vous transmet cette demande de fonctionnalité, telle quelle. Repérez les segments qui laissent une marge d'interprétation à l'IA qui l'exécutera — sans savoir combien il y en a.",
+            "promptTitle": "La demande transmise",
+            "segments": [
               {
-                "id": "p1",
-                "text": "Les dépendances citées existent et sont à jour.",
-                "expected": true
+                "id": "s1",
+                "text": "Ajoute une notification par email envoyée au client",
+                "ambiguous": false
               },
               {
-                "id": "p2",
-                "text": "Le code compile, donc il est correct.",
-                "expected": false
+                "id": "s2",
+                "text": "dès que la commande passe au statut « payée » dans Stripe,",
+                "ambiguous": false
               },
               {
-                "id": "p3",
-                "text": "Les cas limites sont couverts par un test.",
-                "expected": true
+                "id": "s3",
+                "text": "avec un contenu qui reprend le ton habituel de la marque,",
+                "ambiguous": true,
+                "reading": "« Le ton habituel » ne fixe ni gabarit, ni champs, ni longueur : une IA choisira elle-même la mise en forme, sans que personne ne l'ait validée."
               },
               {
-                "id": "p4",
-                "text": "La réponse est sûre parce qu'elle est détaillée.",
-                "expected": false
+                "id": "s4",
+                "text": "un lien vers la facture PDF déjà générée par le module de facturation,",
+                "ambiguous": false
+              },
+              {
+                "id": "s5",
+                "text": "sur un design similaire aux autres emails transactionnels,",
+                "ambiguous": true,
+                "reading": "« Similaire » ne désigne aucun gabarit précis : une IA retiendra le plus proche à ses yeux, pas nécessairement celui qu'on avait en tête."
+              },
+              {
+                "id": "s6",
+                "text": "avec une relance en cas d'échec d'envoi,",
+                "ambiguous": true,
+                "reading": "Ni le nombre de relances, ni le délai entre elles, ni ce qui compte comme un échec ne sont fixés : une IA choisira ces trois nombres seule."
+              },
+              {
+                "id": "s7",
+                "text": "limité aux commandes de plus de dix euros,",
+                "ambiguous": false
+              },
+              {
+                "id": "s8",
+                "text": "en priorité sur les nouveaux clients,",
+                "ambiguous": true,
+                "reading": "« En priorité » ne dit pas si les autres clients sont exclus ou seulement traités après : une IA tranchera entre exclusion et ordre d'envoi sans le dire."
+              },
+              {
+                "id": "s9",
+                "text": "à livrer avant la fin du sprint en cours.",
+                "ambiguous": false
               }
             ]
           },
           "criteria": [
             {
               "id": "g6-2-c1",
-              "question": "Toutes les propositions vérifiables ont-elles été retenues ?",
+              "question": "Une fois retranchés les segments clairs signalés à tort, la part des segments ambigus repérés reste-t-elle suffisante ?",
               "rule": {
-                "type": "all-expected-selected"
+                "type": "ambiguity-net-share-at-least",
+                "threshold": 0.5
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 2
                 }
               ]
             },
             {
               "id": "g6-2-c2",
-              "question": "Aucune proposition non vérifiable n'a-t-elle été retenue ?",
+              "question": "Les segments clairs ont-ils été laissés tranquilles ?",
               "rule": {
-                "type": "no-unexpected-selected"
+                "type": "clear-segments-spared-at-least",
+                "threshold": 0.8
               },
               "mapping": [
                 {
-                  "dimension": "harness",
+                  "dimension": "pilotage-contexte",
                   "weight": 1
                 }
               ]
@@ -1947,7 +2137,8 @@
               "mapping": [
                 {
                   "dimension": "initiative",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -1960,7 +2151,8 @@
               "mapping": [
                 {
                   "dimension": "initiative",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -2005,7 +2197,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -2018,7 +2211,8 @@
               "mapping": [
                 {
                   "dimension": "taille",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
@@ -2063,7 +2257,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 2
+                  "weight": 2,
+                  "evidence": "inferred"
                 }
               ]
             },
@@ -2076,7 +2271,8 @@
               "mapping": [
                 {
                   "dimension": "harness",
-                  "weight": 1
+                  "weight": 1,
+                  "evidence": "inferred"
                 }
               ]
             }
